@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Sign Up Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/sign_up.css">
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <span class="logo-text"><span class="blue">Spliter</span></span>
+    </div>
+    
+    <div class="signup-container">
+      <h1>Sign Up</h1>
+      
+      <form id="signupForm" class="signup-form">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="password-input">
+            <input type="password" id="password" required>
+            <button type="button" class="toggle-password">
+              <i class="fa-regular fa-eye show"></i>
+              <i class="fa-regular fa-eye-slash hide"></i>
+              <span class="toggle-text show">Show</span>
+              <span class="toggle-text hide">Hide</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <div class="password-input">
+            <input type="password" id="confirmPassword" required>
+            <button type="button" class="toggle-password">
+              <i class="fa-regular fa-eye show"></i>
+              <i class="fa-regular fa-eye-slash hide"></i>
+              <span class="toggle-text show">Show</span>
+              <span class="toggle-text hide">Hide</span>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="signup-button">Sign Up</button>
+      </form>
+    </div>
+  </div>
+  <script src="/js/script.js"></script>
+</body>
+</html>
