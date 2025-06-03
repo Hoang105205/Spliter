@@ -7,7 +7,7 @@ import { Separator } from "../components/ui/seperator.jsx";
 import { useNavigate } from 'react-router-dom';
 
 
-function Login() {
+function Signup() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -184,4 +184,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Signup;

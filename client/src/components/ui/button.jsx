@@ -27,6 +27,7 @@ const Button = forwardRef(({ className, variant = "default", size = "default", a
     />
   );
 });
+
 Button.displayName = "Button";
 
 export { Button };
