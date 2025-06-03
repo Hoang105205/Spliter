@@ -67,9 +67,9 @@ function Login() {
 
   return (
     <div className="bg-white flex flex-row justify-center w-full min-h-screen">
-      <div className="bg-white w-full max-w-[1350px] relative py-12">
+      <div className="bg-white w-full max-w-[1500px] relative py-12">
         {/* Logo */}
-        <div className="absolute w-[305px] h-[161px] top-0 left-0 font-['Pompiere',Helvetica] font-normal text-center text-[64px]">
+        <div className="absolute w-[230px] h-[130px] top-15 left-0 font-['Pompiere',Helvetica] font-normal text-center text-[64px]">
           <span className="text-[#4285f4] text-8xl">Spliter</span>
         </div>
     
