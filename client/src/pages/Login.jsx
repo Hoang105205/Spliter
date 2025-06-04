@@ -65,27 +65,33 @@ function Login() {
     navigate('/signup');
   };
 
+  // Navigate to Login
+  const handleLogoClick = () => {
+    navigate('/login');
+  };
+
   return (
     <div className="bg-white flex flex-row justify-center w-full min-h-screen">
       <div className="bg-white w-full max-w-[1500px] relative py-12">
         {/* Logo */}
-        <div className="absolute w-[230px] h-[130px] top-15 left-0 font-['Pompiere',Helvetica] font-normal text-center text-[64px]">
+        <Button
+          className="absolute w-[230px] h-[130px] top-8 left-0 font-['Pompiere',Helvetica] font-normal text-center text-[64px]"
+          onClick={handleLogoClick}>
           <span className="text-[#4285f4] text-8xl">Spliter</span>
-        </div>
+        </Button>
     
         {/* Login Form Container */}
-        <div className="flex flex-col items-center justify-center mt-12">
-          {/* Login Header */}
-          <h1 className="w-full text-center font-['Bree_Serif',Helvetica] font-normal text-black text-[50px] mb-12">
-            Log In
-          </h1>
-
+        <div className="flex flex-col items-center justify-center mt-0">
         {/* Form Fields */}
           <Card className="w-full max-w-[489px] border-none shadow-none">
+            {/* Login Header */}
+            <div className="w-full text-center font-['Bree_Serif',Helvetica] font-normal text-black text-[50px] mb-4">
+              Log In
+            </div>
             <CardContent className="p-0 space-y-6">
               <form onSubmit={handleSubmit} className='flex flex-col gap-6'>
                 {/* Username Field */}
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-0">
                     <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
                       Username
                     </label>
@@ -96,11 +102,12 @@ function Login() {
                     onChange={(e) => setUsername(e.target.value)}
                     autoComplete="username"
                   />
-                  <span className="error-message">{errors.username}</span>
+                  <span className={`error-message text-[#ef0a0acc] ${errors.username ? '' : 'invisible'}`}>
+                    {errors.username || 'placeholder'} </span>
                 </div>
 
                   {/* Password Field */}
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-0">
                     <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
                       Password
                     </label>
@@ -128,13 +135,14 @@ function Login() {
                     </span>
                   </button>
                 </div>
-                {/*<span className="error-message">{errors.password}</span>*/}
+                {<span className={`error-message text-[#ef0a0acc] ${errors.password ? '' : 'invisible'}`}>
+                    {errors.password || 'placeholder'} </span>}
                 </div>
 
                 {/* Login Button */}
                 <Button
                   type="submit"
-                  className="w-full h-10 bg-[#111111] hover:bg-[#3d3333] rounded-[20px] font-['Roboto_Flex',Helvetica] font-medium text-white text-[25px]"
+                  className="w-full h-10 bg-[#111111] hover:bg-[#696363] rounded-[20px] font-['Roboto_Flex',Helvetica] font-medium text-white text-[25px]"
                   disabled={isLoading}
                   id="login-btn"
                 >
@@ -171,7 +179,7 @@ function Login() {
 
               {/* Sign Up Button */}
               <Button
-                className="w-full h-10 bg-[#4285f4] rounded-[20px] font-['Radio_Canada_Big',Helvetica] font-medium text-white text-[25px]"
+                className="w-full h-10 bg-[#4285f4] hover:bg-[#78a7f1] rounded-[20px] font-['Radio_Canada_Big',Helvetica] font-medium text-white text-[25px]"
                 onClick={handleSignupClick}
               >
                 Sign Up
