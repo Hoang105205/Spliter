@@ -1,5 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const Users = require('../schemas/Users');
 
 // Đăng ký chiến lược Google
 passport.use(new GoogleStrategy({
@@ -7,23 +8,43 @@ passport.use(new GoogleStrategy({
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.GOOGLE_CALLBACK_URL 
   },
-  (accessToken, refreshToken, profile, done) => {
-    // Hàm này được gọi sau khi Google xác thực thành công
-        // Ở đây bạn sẽ tìm hoặc tạo người dùng trong database của bạn
-        // Ví dụ:
-        // User.findOrCreate({ googleId: profile.id, name: profile.displayName, email: profile.emails[0].value }, (err, user) => {
-        //   return done(err, user);
-        // });
-        // Tạm thời, chúng ta sẽ trả về profile trực tiếp (bạn cần xử lý user trong DB)
-        const user = {
-            id: profile.id,
-            displayName: profile.displayName,
-            email: profile.emails ? profile.emails[0].value : null,
-            photo: profile.photos ? profile.photos[0].value : null
-        };
-        return done(null, user); // user này sẽ được lưu vào req.user
+ 
+  // Nếu bạn muốn lưu thông tin googleId vào user (chua lam duoc)
+
+  // async (accessToken, refreshToken, profile, done) => {
+  //   try {
+  //     // Tìm user theo googleId hoặc email
+  //     let user = await Users.findOne({ where: { googleId: profile.id } });
+  //     if (!user) {
+  //       // Nếu chưa có, tạo mới
+  //       user = await Users.create({
+  //         username: profile.displayName,
+  //         email: profile.emails[0].value,
+  //         password: null, // nên để null nếu password nullable
+  //         role: 'user',
+  //       });
+  //     }
+  //     return done(null, user);
+  //   } catch (err) {
+  //     return done(err, null);
+  //   }
+
+  // }
+
+  // Hàm callback khi người dùng đăng nhập thành công (chua thao tac voi database)
+  async (accessToken, refreshToken, profile, done) => {
+    // Tạo một object user đơn giản từ profile Google
+    const user = {
+      googleId: profile.id,
+      username: profile.displayName,
+      email: profile.emails[0].value,
+      avatar: profile.photos?.[0]?.value // nếu muốn lấy avatar
+    };
+    // Gán vào req.user thông qua done
+    return done(null, user);
   }
 ));
+
 
 // serialize user vào session
 passport.serializeUser((user, done) => {

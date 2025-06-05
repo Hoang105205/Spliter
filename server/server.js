@@ -1,14 +1,29 @@
+// Environment variables 
 require('dotenv').config();
+
+// Import necessary modules
+ 
+// Express modules
 const express = require('express');
+
+// Path module to handle file paths
 const path = require('path');
+
+// Session and Passport for authentication
 const session = require('express-session');
 const passport = require('passport');
+
+// Database configuration and models
 const sequelize = require('./config/db');
 const UsersRoute = require('./routes/UsersRoute');
 
+// Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configure Passport for authentication
+require('./config/passport');
+const ensureAuthenticated = require('./middlewares/ensureAuthenticated');
 
 // Session config
 app.use(session({
@@ -21,24 +36,23 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// // Load passport strategy (Google OAuth)
-// require('./config/passport');
+//TODO: schemas/Users, routes/UsersRoute.js------------------------------------------------------
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
-// const authRouter = require('./routes/auth');
-// app.use('/auth', authRouter);
+// API routes
+const authRouter = require('./routes/auth');
+app.use('/auth', authRouter);
+
+app.get('/dashboard', (req, res) => {
+  res.send(`Hello ${req.user.email}`);
+});
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
 });
 
-
-// // Tạm thời route cho dashboard
-// app.get('/dashboard', (req, res) => {
-//   res.sendFile(path.join(__dirname, '../views/user/dashboard.html'));
-// });
 
 sequelize.sync()
     .then(() => {
