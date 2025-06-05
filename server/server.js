@@ -7,8 +7,7 @@ const passport = require('passport');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Static files
-app.use(express.static(path.join(__dirname, 'public')));
+
 
 // Session config
 app.use(session({
@@ -21,15 +20,25 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Load passport strategy (Google OAuth)
-require('./config/passport');
+// // Load passport strategy (Google OAuth)
+// require('./config/passport');
 
-// Routes
-const indexRouter = require('./routes/index');
-const authRouter = require('./routes/auth');
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../client/dist')));
 
-app.use('/', indexRouter);
-app.use('/auth', authRouter);
+// const authRouter = require('./routes/auth');
+// app.use('/auth', authRouter);
+
+
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+// });
+
+
+// // Tạm thời route cho dashboard
+// app.get('/dashboard', (req, res) => {
+//   res.sendFile(path.join(__dirname, '../views/user/dashboard.html'));
+// });
 
 // Start server
 app.listen(PORT, () => {
