@@ -3,10 +3,11 @@ const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const passport = require('passport');
+const sequelize = require('./config/db');
+const UsersRoute = require('./routes/UsersRoute');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
 
 
 // Session config
@@ -38,6 +39,21 @@ app.get('*', (req, res) => {
 // app.get('/dashboard', (req, res) => {
 //   res.sendFile(path.join(__dirname, '../views/user/dashboard.html'));
 // });
+
+sequelize.sync()
+    .then(() => {
+        console.log('Database connected successfully');
+    })
+    .catch((err) => {
+        console.error('Database connection failed:', err);
+    });
+
+// Middleware to parse JSON requests
+app.use(express.json());
+
+// Routes
+app.use('/api/users', UsersRoute);
+
 
 // Start server
 app.listen(PORT, () => {
