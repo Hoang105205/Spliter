@@ -9,7 +9,7 @@ passport.use(new GoogleStrategy({
     callbackURL: process.env.GOOGLE_CALLBACK_URL 
   },
  
-  //Nếu bạn muốn lưu thông tin googleId vào user (chua lam duoc)
+  //Nếu bạn muốn lưu thông tin googleId vào user (sap lam duoc)
 
   async (accessToken, refreshToken, profile, done) => {
     try {
