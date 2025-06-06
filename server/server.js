@@ -38,9 +38,6 @@ app.use(passport.session());
 
 //TODO: schemas/Users, routes/UsersRoute.js------------------------------------------------------
 
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, '../client/dist')));
-
 // API routes
 const authRouter = require('./routes/auth');
 app.use('/auth', authRouter);
@@ -48,11 +45,6 @@ app.use('/auth', authRouter);
 app.get('/dashboard', (req, res) => {
   res.send(`Hello ${req.user.email}`);
 });
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
-});
-
 
 sequelize.sync()
     .then(() => {
@@ -68,6 +60,12 @@ app.use(express.json());
 // Routes
 app.use('/api/users', UsersRoute);
 
+if(process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+  });
+}
 
 // Start server
 app.listen(PORT, () => {
