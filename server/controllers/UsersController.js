@@ -11,9 +11,9 @@ const getUsers = async (req, res) => {
 
 const getSingleUser = async (req, res) => {
     try {
-        const user = await Users.findByPk(req.params.id);
+        const user = await Users.findOne({ where: { username: req.params.username } });
         if (!user) {
-            return res.status(404).json({ message: 'Product not found' });
+            return res.status(404).json({ message: 'User not found' });
         }
         res.status(200).json(user);
     } catch (error) {
@@ -23,6 +23,11 @@ const getSingleUser = async (req, res) => {
 
 const createUser = async (req, res) => {
     try {
+        // Check if user already exists
+        const existingUser = await Users.findOne({ where: { username: req.body.username } });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Username already exists' });
+        }
         const user = await Users.create(req.body);
         res.status(200).json(user);
     } catch (error) {
@@ -33,10 +38,13 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
     try {
         const [updated] = await Users.update(req.body, {
-            where: { id: req.params.id },
+            where: { username: req.params.username },
             returning: true,
         });
-        const updatedUser = await Users.findByPk(req.params.id);
+        if (!updated) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const updatedUser = await Users.findOne({ where: { username: req.params.username } });
         res.status(200).json(updatedUser);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -46,12 +54,12 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
     try {
         const user = await Users.destroy({
-            where: { id: req.params.id }
+            where: { username: req.params.username }
         });
         if (!user) {
-            return res.status(404).json({ message: 'Product not found' });
+            return res.status(404).json({ message: 'User not found' });
         }
-        res.status(200).json({ message: 'Product deleted successfully' });
+        res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
