@@ -5,15 +5,17 @@ import { Card, CardContent } from "../components/ui/card.jsx";
 import { Input } from "../components/ui/input.jsx";
 import { Separator } from "../components/ui/seperator.jsx";
 import { useNavigate } from 'react-router-dom';
-
+import { useUser } from '../hooks/useUser.js';
 
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ username: '', password: '' });
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { findUser } = useUser();
+
 
   // Toggle password visibility
   const togglePasswordVisibility = () => {
@@ -45,14 +47,32 @@ function Login() {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    setLoading(true);
+    try {
+      const user = await findUser(username);
+      if (!user) {
+        setErrors({ username: 'User not found', password: '' });
+        setLoading(false);
+        return;
+      }
+      if (user.password !== password) {
+        setErrors({ username: '', password: 'Incorrect password' });
+        setLoading(false);
+        return;
+      }
+      setLoading(false);
       navigate('/dashboard');
-    }, 1500);
+    } catch (error) {
+      setLoading(false);
+      if (error.response && error.response.status === 404) {
+        setErrors({ username: 'User not found', password: '' });
+      } else {
+        setErrors({ username: 'Login failed', password: '' });
+      }
+    }
   };
 
   // Handle Google login
@@ -103,23 +123,23 @@ function Login() {
                     autoComplete="username"
                   />
                   <span className={`error-message text-[#ef0a0acc] ${errors.username ? '' : 'invisible'}`}>
-                    {errors.username || 'placeholder'} </span>
+                    {errors.username || 'placeholder'} 
+                  </span>
                 </div>
 
-                  {/* Password Field */}
-                  <div className="flex flex-col gap-0">
-                    <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        className="h-[35px] rounded-xl border-[#66666659]"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        autoComplete="current-password"
-                      />
-
+                {/* Password Field */}
+                <div className="flex flex-col gap-0">
+                  <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      className="h-[35px] rounded-xl border-[#66666659]"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="current-password"
+                    />
                   <button 
                     className="absolute right-3 top-1 flex items-center gap-2 cursor-pointer" 
                     onClick={togglePasswordVisibility}
@@ -143,10 +163,10 @@ function Login() {
                 <Button
                   type="submit"
                   className="w-full h-10 bg-[#111111] hover:bg-[#696363] rounded-[20px] font-['Roboto_Flex',Helvetica] font-medium text-white text-[25px]"
-                  disabled={isLoading}
+                  disabled={loading}
                   id="login-btn"
                 >
-                  {isLoading ? 'Logging in...' : 'Log In'}
+                  {loading ? 'Logging in...' : 'Log In'}
                 </Button>
               </form>
 

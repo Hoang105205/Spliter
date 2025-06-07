@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { Button } from "../components/ui/button.jsx";
 import { Card, CardContent } from "../components/ui/card.jsx";
 import { Input } from "../components/ui/input.jsx";
 import { useNavigate } from 'react-router-dom';
-
+import { useUser } from '../hooks/useUser.js';
 
 function Signup() {
   const [username, setUsername] = useState("");
@@ -16,6 +16,7 @@ function Signup() {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { addUser } = useUser();
 
   // Toggle password visibility
   const togglePasswordVisibility = () => {
@@ -70,14 +71,25 @@ function Signup() {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      // Call addUser from your hook
+      await addUser({ username, email, password });
       setIsLoading(false);
-      navigate('/dashboard');
-    }, 1500);
+      navigate('/login'); // Redirect to login after successful signup
+    } catch (error) {
+      setIsLoading(false);
+      // Optionally, set an error message to display to the user
+      const errorMessage = error.response?.data?.message || error.message || 'An error occurred during signup' || 'Failed to sign up. Please try again.';
+      setErrors(prev => ({
+        ...prev,
+        username: errorMessage.includes('Username already exists') ? errorMessage : prev.username,
+        general: !errorMessage.includes('Username already exists') ? errorMessage : ''
+      }));
+    }
   };
 
   return (
@@ -199,7 +211,7 @@ function Signup() {
                     {errors.confirmPassword || 'placeholder'} </span>
                 </div>
                 {/* Sign Up Button */}
-              <Button
+                <Button
                   type="submit"
                   className="w-full h-10 bg-[#111111] hover:bg-[#3d3333] rounded-[20px] font-['Roboto_Flex',Helvetica] font-medium text-white text-[25px]"
                   disabled={isLoading}
@@ -213,7 +225,7 @@ function Signup() {
         </div>
       </div>
     </div>
-);
+  );
 }
 
 export default Signup;
