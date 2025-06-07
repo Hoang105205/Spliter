@@ -101,6 +101,10 @@ function Dashboard_recently() {
     setShowAccountScrolldown(false); // Close account dropdown if open
   };
 
+  // Controll logout functionality
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -187,10 +191,21 @@ function Dashboard_recently() {
                         {accountScroll.map((accScr, index) => (
                           <div
                             key={index}
-                            className="px-4 py-2 border-b hover:bg-gray-100 text-[20px] text-gray-800 text-center rounded-[15px]"
+                            className="px-4 py-2 border-b hover:bg-gray-100 text-[20px] text-gray-800 text-center rounded-[15px] cursor-pointer"
+                            onClick={() => {
+                              if (accScr.title === "Account") {
+                                //navigate('/account'); // Navigate to account page
+                              }
+                              else if (accScr.title === "Report") {
+                                //navigate('/report'); // Navigate to report page
+                              }
+                              else if (accScr.title === "Logout") {
+                                setShowLogoutModal(true);
+                                setShowAccountScrolldown(false);
+                              }
+                            }}
                           >
                             <div>{accScr.title}</div>
-                            <div className="text-xs text-gray-500">{}</div>
                           </div>
                         ))}
                       </motion.div>
@@ -298,6 +313,39 @@ function Dashboard_recently() {
               </div>
             </aside>
           </div>
+
+          {/* Logout Confirmation Modal */}
+          <AnimatePresence>
+            {showLogoutModal && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50"
+              >
+                <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[300px]">
+                  <h2 className="text-xl font-bold mb-2">ARE YOU SURE?</h2>
+                  <p className="mb-4">You will no longer be logged in on the server.</p>
+                  <div className="flex justify-around">
+                    <Button className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors"
+                      onClick={() => {
+                        setShowLogoutModal(false);
+                        navigate('/login'); // Redirect to login page
+                      }}
+                    >
+                      Log out
+                    </Button>
+                    <Button className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
+                      onClick={() => setShowLogoutModal(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
         </div>
       </div>
     </div>
