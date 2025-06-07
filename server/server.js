@@ -36,26 +36,24 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
 }));
+// Configure session
+require('./config/session')(app);
 
 // Passport config
+require('./config/passport');
 app.use(passport.initialize());
 app.use(passport.session());
 
-//TODO: schemas/Users, routes/UsersRoute.js------------------------------------------------------
+const ensureAuthenticated = require('./middlewares/ensureAuthenticated');
 
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, '../client/dist')));
+//TODO: schemas/Users, routes/UsersRoute.js------------------------------------------------------
 
 // API routes
 const authRouter = require('./routes/auth');
 app.use('/auth', authRouter);
 
-app.get('/dashboard', (req, res) => {
-  res.send(`Hello ${req.user.email}`);
-});
-
-// app.get('*', (req, res) => {
-//   res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+// app.get('/dashboard', (req, res) => {
+//   res.send(`Hello ${req.user.email}`);
 // });
 
 sequelize.sync()
@@ -70,6 +68,12 @@ sequelize.sync()
 // Routes
 app.use('/api/users', UsersRoute);
 
+if(process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+  });
+}
 
 // Start server
 app.listen(PORT, () => {
