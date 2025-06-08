@@ -67,12 +67,10 @@ sequelize.sync()
 app.use('/api/users', UsersRoute);
 
 // ngoai login va signup, cac route khac can phai xac thuc (vd: req.isAuthenticated()) thi moi direct, phai dat truoc app.get('*') de khong bi ghi de
-if(process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, '../client/dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
-  });
-}
+app.use(express.static(path.join(__dirname, '../client/dist')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+});
 
 // Start server
 app.listen(PORT, () => {
