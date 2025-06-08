@@ -44,8 +44,6 @@ require('./config/passport');
 app.use(passport.initialize());
 app.use(passport.session());
 
-const ensureAuthenticated = require('./middlewares/ensureAuthenticated');
-
 //TODO: schemas/Users, routes/UsersRoute.js------------------------------------------------------
 
 // API routes
