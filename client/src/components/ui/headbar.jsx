@@ -6,6 +6,7 @@ import { Separator } from "../../components/ui/seperator.jsx";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { useUser } from '../../hooks/useUser.js';
 
 // Button data
 const notifications = [
@@ -25,6 +26,8 @@ function Head_bar(){
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAccountScrolldown, setShowAccountScrolldown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  
+  const { setUserData, userData } = useUser();
 
   const notifRef = useRef(null);
   const accountRef = useRef(null);
@@ -100,8 +103,13 @@ function Head_bar(){
             <Avatar className="w-[34px] h-[33px] bg-[#d9d9d9]">
               <AvatarFallback />
             </Avatar>
+            {/*Username*/}
             <span className="ml-2 [font-family:'Poetsen_One',Helvetica] font-normal text-white text-2xl">
-              user's name
+              {userData.username
+                ? userData.username.length > 8
+                  ? userData.username.slice(0, 8) + "..."
+                  : userData.username
+                : "User"}
             </span>
             <Button variant="ghost" size="icon" className="text-white ml-1" onClick={handleAvatarClick}>
               <ChevronDownIcon className="w-6 h-6 text-white" />
@@ -158,6 +166,9 @@ function Head_bar(){
                   className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors"
                   onClick={() => {
                     setShowLogoutModal(false);
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("userData");
+                    setUserData({});
                     navigate("/login");
                   }}
                 >

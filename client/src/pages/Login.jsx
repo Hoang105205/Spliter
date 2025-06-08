@@ -7,6 +7,8 @@ import { Separator } from "../components/ui/seperator.jsx";
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/useUser.js';
 
+
+
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -14,7 +16,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { findUser, userData } = useUser();
+  const { findUser, userDat, setUserData } = useUser();
 
 
   // Toggle password visibility
@@ -64,7 +66,7 @@ function Login() {
         return;
       }
 
-      setUserData({ username: user.username }); // Set user data in Zustand store
+      setUserData({ username: String(user.username) }); // Set user data in Zustand store
 
       setLoading(false);
       navigate('/dashboard');

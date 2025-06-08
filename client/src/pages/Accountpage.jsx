@@ -1,5 +1,5 @@
 import { BellIcon, ChevronDownIcon, PencilIcon } from "lucide-react";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
@@ -7,20 +7,45 @@ import { Select, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Separator } from "../components/ui/seperator";
 import Head_bar from "../components/ui/headbar";   
 
+import { useUser } from '../hooks/useUser.js';
+
 function AcountPage() {
-  const [userData, setUserData] = useState({
-    name: "Placeholder",
-    email: "Placeholder@gmail.com",
-    phone: "1234567890",
-    password: "*************",
-    language: "English",
-    bio: ""
-  });
+  const {findUser, userData, setUserData } = useUser(); 
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    async function fetchUserProfile() {
+      const user = await findUser(userData.username); 
+      setProfile(user);
+      
+    }
+    fetchUserProfile();
+  }, [userData.username, findUser]);
+
+  if (!profile) {
+    // Đợi dữ liệu, render loading
+    return <div>Đang tải dữ liệu tài khoản...</div>;
+  }
+
+  // Thêm bio, mặc định là rỗng nếu chưa có
+  const {
+    username,
+    email,
+    password,
+    role,
+    createdAt,
+    updatedAt,
+    bio = "",
+    phone_number = "",
+    language = ""   // <-- mặc định bio là ""
+  } = profile;
+
 
   const [editText, setEditText] = useState("Edit");
   var defaultBio = "There is still nothing here, how about you spice something up?"
-  if (userData.bio != "") {
-    defaultBio = userData.bio
+
+  if (bio != "") {
+    defaultBio = bio
   }
 
   const [editState, setEditState] = useState(false)
@@ -119,7 +144,7 @@ function AcountPage() {
                   </p>}
 
                   {editState &&
-                  <textarea onChange={setBio} className="resize-none w-[300px] h-[150px] focus:border-0 focus:outline-none [font-family:'Roboto_Condensed',Helvetica] font-normal text-[#b3b3b3] text-base" value = {userData.bio}></textarea>}
+                  <textarea onChange={setBio} className="resize-none w-[300px] h-[150px] focus:border-0 focus:outline-none [font-family:'Roboto_Condensed',Helvetica] font-normal text-[#b3b3b3] text-base" value = {bio}></textarea>}
                 </CardContent>
               </Card>
             </div>
@@ -132,9 +157,9 @@ function AcountPage() {
                 </label>
                 {!editIState && 
                 <p className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]">
-                  {userData.name}
+                  {username}
                 </p>}
-                {editIState && <input onChange={setName} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {userData.name}></input>}
+                {editIState && <input onChange={setName} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {username}></input>}
               </div>
 
               <div className="space-y-2">
@@ -143,9 +168,9 @@ function AcountPage() {
                 </label>
                 {!editIState && 
                 <p className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]">
-                  {userData.email}
+                  {email}
                 </p>}
-                {editIState && <input onChange={setEmail} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {userData.email}></input>}
+                {editIState && <input onChange={setEmail} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {email}></input>}
               </div>
 
               <div className="space-y-2">
@@ -154,9 +179,9 @@ function AcountPage() {
                 </label>
                 {!editIState &&
                 <p className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]">
-                  {userData.phone}
+                  {phone_number}
                 </p>}
-                {editIState && <input onChange={setPhone} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {userData.phone}></input>}
+                {editIState && <input onChange={setPhone} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {phone_number}></input>}
               </div>
 
               <div className="space-y-2">
@@ -166,7 +191,7 @@ function AcountPage() {
 
                 {!editIState &&
                 <p className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]">
-                  {userData.password}
+                  {password}
                 </p>}
 
                 {editIState &&
@@ -221,7 +246,7 @@ function AcountPage() {
                 <label className="block [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-[25px]">
                   Language
                 </label>
-                <Select defaultValue={userData.language}>
+                <Select defaultValue={language}>
                   <SelectTrigger className="w-[350px] [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-xl">
                     <SelectValue />
                   </SelectTrigger>

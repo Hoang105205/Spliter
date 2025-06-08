@@ -11,6 +11,8 @@ import Dashboard_recently from './pages/Dashboard/Dashboard_recently';
 import Dashboard_group from './pages/Dashboard/Dashboard_group';
 import Dashboard_statistics from './pages/Dashboard/Dashboard_statistics';
 
+import OAuth2RedirectHandler from './components/googleOAuth/OAuth2RedirectHandler.jsx';
+
 function App() {
   return (
       <div className="App">
@@ -24,6 +26,8 @@ function App() {
           <Route path="/dashboard/group" element={<Dashboard_group />} />
           <Route path="/dashboard/statistics" element={<Dashboard_statistics />} />
           <Route path="/account" element={<AcountPage />} />
+
+          <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
 
           {/* Redirect any unknown paths to the login page */}
         
