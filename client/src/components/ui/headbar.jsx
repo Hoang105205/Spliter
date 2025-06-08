@@ -130,9 +130,9 @@ function Head_bar(){
                       className="px-4 py-2 border-b hover:bg-gray-100 text-[20px] text-gray-800 text-center cursor-pointer"
                       onClick={() => {
                         if (accScr.title === "Account") {
-                          navigate("/account");
+                          navigate("/dashboard/account");
                         } else if (accScr.title === "Report") {
-                          navigate("/report");
+                          navigate("/dashboard/report");
                         } else if (accScr.title === "Logout") {
                           setShowLogoutModal(true);
                           setShowAccountScrolldown(false);

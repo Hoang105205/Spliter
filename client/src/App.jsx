@@ -4,7 +4,7 @@ import './App.css';
 
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import AcountPage from './pages/Accountpage';
+import AccountPage from './pages/Dashboard/Accountpage';
 
 import Dashboard_main from './pages/Dashboard/Dashboard_main';
 import Dashboard_recently from './pages/Dashboard/Dashboard_recently';
@@ -25,7 +25,8 @@ function App() {
           <Route path="/dashboard/recently" element={<Dashboard_recently />} />
           <Route path="/dashboard/group" element={<Dashboard_group />} />
           <Route path="/dashboard/statistics" element={<Dashboard_statistics />} />
-          <Route path="/account" element={<AcountPage />} />
+          
+          <Route path="/dashboard/account" element={<AccountPage />} />
 
           <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
 
