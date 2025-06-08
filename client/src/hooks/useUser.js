@@ -6,6 +6,13 @@ export const useUser = create((set, get) => ({
   users: [],
   error: null,
 
+  userData: {
+    // Key atribute for user data (ID key)
+    username: '',
+  },
+
+  setUserData: (newUserData) => set({ userData: newUserData }),
+
   addUser: async (userData) => {
     try {
       await api.post('/api/users', userData);

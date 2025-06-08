@@ -2,6 +2,11 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const Users = require('../schemas/Users');
 
+function getUsernameFromEmail(email) {
+  if (!email) return '';
+  return email.split('@')[0];
+}
+
 // Đăng ký chiến lược Google
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
@@ -9,7 +14,7 @@ passport.use(new GoogleStrategy({
     callbackURL: process.env.GOOGLE_CALLBACK_URL 
   },
  
-  //Nếu bạn muốn lưu thông tin googleId vào user (sap lam duoc)
+  //Nếu bạn muốn lưu thông tin googleId vào user (lam duoc roi)
 
   async (accessToken, refreshToken, profile, done) => {
     try {
@@ -18,10 +23,10 @@ passport.use(new GoogleStrategy({
       let user = await Users.findOne({ where: { email: profile.emails[0].value } });
 
       if ( !user) {
-        // Nếuchưa có, tạo mới (default password là "abc123")
-        try {
+        // Nếu chưa có, tạo mới (default password là "abc123", default username là phần trước @ trong email)
+        try { 
           user = await Users.create({
-            username: profile.displayName,
+            username: getUsernameFromEmail(profile.emails[0].value),
             email:  profile.emails[0].value,
             password: "abc123",
             role: "user"
@@ -30,24 +35,7 @@ passport.use(new GoogleStrategy({
           console.error('Lỗi khi tạo user:', err); // Log đầy đủ error object
           return done(err, null);
         }
-        
-        console.log('da Creating user với:'), {
-          username: profile.displayName,
-          email: profile.emails[0].value,
-          password: null,
-          role: 'user',
-        }
       }
-
-      else{
-        console.log('user da co trong db:', {
-          username: user.username,
-          email: user.email,
-          role: user.role,
-          password: user.password,
-        });
-      }
-
       return done(null, user);
     } catch (err) {
       return done(err, null);
@@ -81,3 +69,4 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser((user, done) => {
   done(null, user);
 });
+

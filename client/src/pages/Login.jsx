@@ -14,7 +14,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { findUser } = useUser();
+  const { findUser, userData } = useUser();
 
 
   // Toggle password visibility
@@ -63,6 +63,9 @@ function Login() {
         setLoading(false);
         return;
       }
+
+      setUserData({ username: user.username }); // Set user data in Zustand store
+
       setLoading(false);
       navigate('/dashboard');
     } catch (error) {
