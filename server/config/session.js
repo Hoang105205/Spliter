@@ -2,14 +2,15 @@ const session = require('express-session');
 const RedisStore = require('connect-redis')(session);
 const redis = require('redis');
 
-const redisClient = redis.createClient({
-  url: process.env.REDIS_URL,
-  legacyMode: true,
-});
-redisClient.connect().catch(console.error);
 
 module.exports = (app) => {
   if (process.env.NODE_ENV === 'production') {
+    const redisClient = redis.createClient({
+      url: process.env.REDIS_URL,
+      legacyMode: true,
+    });
+    redisClient.connect().catch(console.error);
+    
     app.use(session({
       store: new RedisStore({ client: redisClient }),
       secret: process.env.SESSION_SECRET || 'default_secret',
