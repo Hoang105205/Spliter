@@ -6,13 +6,9 @@ import { Separator } from "../../components/ui/seperator.jsx";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Head_bar from "../../components/ui/headbar.jsx";
-import { useUser } from '../../hooks/useUser.js';
 
 
 function Dashboard_main() {
-  const { userData } = useUser();
-
-
   // Friend data for the right sidebar
   const friendsList = [
     { id: 1, name: "Friend's name" },
