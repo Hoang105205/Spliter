@@ -14,7 +14,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { findUser, userData } = useUser();
+  const { findUser, userData, setUserData } = useUser();
 
 
   // Toggle password visibility
