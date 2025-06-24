@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar.jsx";
 import { Button } from "../../components/ui/button.jsx";
 import { Separator } from "../../components/ui/seperator.jsx";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Head_bar from "../../components/ui/headbar.jsx";
 
@@ -19,28 +19,29 @@ function Dashboard_statistics() {
 
   // Navigate to Dashboard
   const navigate = useNavigate();
+  const { id } = useParams();
 
   // Handle tab clicks
   const [activeTab, setActiveTab] = useState("statistics"); // or "recently", etc.
 
   const handleDashboardClick = () => {
     setActiveTab("dashboard");
-    navigate("/dashboard");
+    navigate(`/dashboard/${id}`);
   };
 
   const handleDashboardRecentlyClick = () => {
     setActiveTab("recently");
-    navigate("/dashboard/recently");
+    navigate(`/dashboard/${id}/recently`);
   };
 
   const handleStatisticsClick = () => {
     setActiveTab("statistics");
-    navigate("/dashboard/statistics");
+    navigate(`/dashboard/${id}/statistics`);
   };
 
   const handleGroupClick = () => {
     setActiveTab("group");
-    navigate("/dashboard/group");
+    navigate(`/dashboard/${id}/group`);
   };
 
   return (

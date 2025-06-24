@@ -21,12 +21,12 @@ function App() {
 
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/dashboard" element={<Dashboard_main />} />
-          <Route path="/dashboard/recently" element={<Dashboard_recently />} />
-          <Route path="/dashboard/group" element={<Dashboard_group />} />
-          <Route path="/dashboard/statistics" element={<Dashboard_statistics />} />
+          <Route path="/dashboard/:id" element={<Dashboard_main />} />
+          <Route path="/dashboard/:id/recently" element={<Dashboard_recently />} />
+          <Route path="/dashboard/:id/group" element={<Dashboard_group />} />
+          <Route path="/dashboard/:id/statistics" element={<Dashboard_statistics />} />
           
-          <Route path="/dashboard/account" element={<AccountPage />} />
+          <Route path="/dashboard/:id/account" element={<AccountPage />} />
 
           <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
 

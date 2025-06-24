@@ -43,7 +43,7 @@ function Head_bar(){
   };
 
   const handleLogoClick = () => {
-    navigate("/dashboard");
+    navigate(`/dashboard/${userData.id}`);
   };
 
   useEffect(() => {
@@ -130,9 +130,9 @@ function Head_bar(){
                       className="px-4 py-2 border-b hover:bg-gray-100 text-[20px] text-gray-800 text-center cursor-pointer"
                       onClick={() => {
                         if (accScr.title === "Account") {
-                          navigate("/dashboard/account");
+                          navigate(`/dashboard/${userData.id}/account`);
                         } else if (accScr.title === "Report") {
-                          navigate("/dashboard/report");
+                          navigate(`/dashboard/${userData.id}/report`);
                         } else if (accScr.title === "Logout") {
                           setShowLogoutModal(true);
                           setShowAccountScrolldown(false);

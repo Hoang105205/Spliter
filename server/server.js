@@ -17,6 +17,7 @@ const passport = require('passport');
 // Database configuration and models
 const sequelize = require('./config/db');
 const UsersRoute = require('./routes/UsersRoute');
+const FriendsRoute = require('./routes/FriendsRoute');
 
 // Initialize Express app
 const app = express();
@@ -65,6 +66,7 @@ sequelize.sync()
 
 // Routes
 app.use('/api/users', UsersRoute);
+app.use('/api/friends', FriendsRoute);
 
 // ngoai login va signup, cac route khac can phai xac thuc (vd: req.isAuthenticated()) thi moi direct, phai dat truoc app.get('*') de khong bi ghi de
 app.use(express.static(path.join(__dirname, '../client/dist')));

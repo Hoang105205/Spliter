@@ -14,8 +14,16 @@ function OAuth2RedirectHandler() {
       localStorage.setItem('token', token);
       // Giải mã lấy username từ JWT
       const decoded = jwtDecode(token);
-      setUserData({ username: String(decoded.username) });
-      navigate('/dashboard');
+      setUserData({ 
+        id: decoded.id,
+        username: decoded.username,
+        email: decoded.email,
+        role: decoded.role || 'user', // Default to 'user' if role is not present
+        createdAt: decoded.createdAt,
+        updatedAt: decoded.updatedAt,
+        bio: decoded.bio || ''
+      });
+      navigate(`/dashboard/${decoded.id}`);
     } else {
       navigate('/login');
     }
