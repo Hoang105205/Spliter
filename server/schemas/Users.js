@@ -4,9 +4,15 @@ const sequelize = require('../config/db');
 const Users = sequelize.define(
   'Users',
   {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
     username: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
       validate: {
         notEmpty: true,
       }
@@ -14,6 +20,7 @@ const Users = sequelize.define(
     email: {
       type: DataTypes.STRING,
       allowNull: true,
+      unique: true,
       validate: {
         notEmpty: true,
       }
@@ -28,6 +35,16 @@ const Users = sequelize.define(
       allowNull: false,
       defaultValue: 'user',
     },
+    bio: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
+    phone_number: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    }
   }, 
   {
     timestamps: true,

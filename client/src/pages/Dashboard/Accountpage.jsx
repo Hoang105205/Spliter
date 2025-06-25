@@ -10,8 +10,7 @@ import Head_bar from "../../components/ui/headbar.jsx";
 import { useUser } from '../../hooks/useUser.js';
 
 function AccountPage() {
-  const {findUser, userData, setUserData } = useUser();
-  const [profile, setProfile] = useState(null);
+  const { userData, setUserData } = useUser();
   const [localData, setLocalData] = useState({
     username: '',
     email: '',
@@ -24,26 +23,22 @@ function AccountPage() {
   });
 
   useEffect(() => {
-    async function fetchUserProfile() {
-      const user = await findUser(userData.username); 
-      setProfile(user);
-      setLocalData({
-        username: user.username || '',
-        email: user.email || '',
-        phone_number: user.phone_number || '',
-        password: user.password || '',
-        role: user.role || '',
-        createdAt: user.createdAt || '',
-        updatedAt: user.updatedAt || '',
-        bio: user.bio || '',
-      });
-    }
-    fetchUserProfile();
-  }, [userData.username]);
+    // When the component mounts, fetch the user data
+    setLocalData({
+      username: userData.username || '',
+      email: userData.email || '',
+      phone_number: userData.phone_number || '',
+      password: userData.password || '',
+      role: userData.role || '',
+      createdAt: userData.createdAt || '',
+      updatedAt: userData.updatedAt || '',
+      bio: userData.bio || '',
+    });
+  }, [userData]);
 
   const [editText, setEditText] = useState("Edit");
   var defaultBio = "There is still nothing here, how about you spice something up?"
-
+  
   if (localData.bio !== "") {
     defaultBio = localData.bio
   }
@@ -111,7 +106,7 @@ function AccountPage() {
     setNewPass(event.target.value)
   }
 
-  if (!profile) {
+  if (!userData) {
     // Đợi dữ liệu, render loading
     return <div>Đang tải dữ liệu tài khoản...</div>;
   }

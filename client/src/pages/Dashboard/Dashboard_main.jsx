@@ -3,12 +3,26 @@ import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar.jsx";
 import { Button } from "../../components/ui/button.jsx";
 import { Separator } from "../../components/ui/seperator.jsx";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Head_bar from "../../components/ui/headbar.jsx";
+import { use } from "react";
+import { useUser } from '../../hooks/useUser.js';
 
 
 function Dashboard_main() {
+  const { userData } = useUser(); // Lấy trạng thái người dùng từ hook useUser
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Kiểm tra nếu không có userData thì chuyển hướng tới /login
+    if (!userData || !userData.username) {
+      navigate("/login");
+    }
+  }, [userData, navigate]);
+
+ 
+
   // Friend data for the right sidebar
   const friendsList = [
     { id: 1, name: "Friend's name" },
@@ -32,29 +46,30 @@ function Dashboard_main() {
     { id: 3, name: "Friend's name", amount: "... đ" },
   ];
 
-  const navigate = useNavigate();
+  
+  const { id } = useParams(); // Get the user ID from the URL
 
   // Handle tab clicks
   const [activeTab, setActiveTab] = useState("dashboard"); // or "recently", etc.
 
   const handleDashboardClick = () => {
     setActiveTab("dashboard");
-    navigate("/dashboard");
+    navigate(`/dashboard/${id}`);
   };
 
   const handleDashboardRecentlyClick = () => {
     setActiveTab("recently");
-    navigate("/dashboard/recently");
+    navigate(`/dashboard/${id}/recently`);
   };
 
   const handleStatisticsClick = () => {
     setActiveTab("statistics");
-    navigate("/dashboard/statistics");
+    navigate(`/dashboard/${id}/statistics`);
   };
 
   const handleGroupClick = () => {
     setActiveTab("group");
-    navigate("/dashboard/group");
+    navigate(`/dashboard/${id}/group`);
   };
 
 
