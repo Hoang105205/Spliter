@@ -19,3 +19,5 @@ router.put('/:id/accept', acceptFriendRequest);
 
 // Delete a friend
 router.delete('/:id', deleteFriend);
+
+module.exports = router;
