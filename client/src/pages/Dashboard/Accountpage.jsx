@@ -30,7 +30,7 @@ function AccountPage() {
       setLocalData({
         username: user.username || '',
         email: user.email || '',
-        phone_number: '',
+        phone_number: user.phone_number || '',
         password: user.password || '',
         role: user.role || '',
         createdAt: user.createdAt || '',
