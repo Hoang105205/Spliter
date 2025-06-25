@@ -27,7 +27,7 @@ function Head_bar(){
   const [showAccountScrolldown, setShowAccountScrolldown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
-  const { setUserData, userData } = useUser();
+  const { clearUserData, userData } = useUser();
 
   const notifRef = useRef(null);
   const accountRef = useRef(null);
@@ -164,12 +164,19 @@ function Head_bar(){
               <div className="flex justify-around">
                 <Button
                   className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors"
-                  onClick={() => {
+                  onClick={async () => {
                     setShowLogoutModal(false);
                     localStorage.removeItem("token");
                     localStorage.removeItem("userData");
-                    setUserData({});
-                    navigate("/login");
+                    await clearUserData();
+                    
+                    const clearedData = useUser.getState().userData;
+                    
+                    if (!clearedData.id && !clearedData.username && !clearedData.email) {
+                      navigate("/login");
+                    } else {
+                      console.error("Failed to clear userData completely!");
+                    }
                   }}
                 >
                   Log out
