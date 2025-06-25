@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Head_bar from "../../components/ui/headbar.jsx";
 import { use } from "react";
 import { useUser } from '../../hooks/useUser.js';
+import Left_bar from "../../components/ui/leftbar.jsx";
 
 
 function Dashboard_main() {
@@ -20,13 +21,12 @@ function Dashboard_main() {
       navigate("/login");
     }
   }, [userData, navigate]);
-
  
 
   // Friend data for the right sidebar
   const [friendsList, setFriendsList] = useState([
-    // { id: 1, name: "Friend's name" },
-    // { id: 2, name: "Friend's name" },
+    { id: 1, name: "Alice Smith" },
+    { id: 2, name: "Bob Johnson" },
   ]);
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -82,32 +82,8 @@ function Dashboard_main() {
     { id: 3, name: "Friend's name", amount: "... đ" },
   ];
 
-  
-  const { id } = useParams(); // Get the user ID from the URL
-
   // Handle tab clicks
   const [activeTab, setActiveTab] = useState("dashboard"); // or "recently", etc.
-
-  const handleDashboardClick = () => {
-    setActiveTab("dashboard");
-    navigate(`/dashboard/${id}`);
-  };
-
-  const handleDashboardRecentlyClick = () => {
-    setActiveTab("recently");
-    navigate(`/dashboard/${id}/recently`);
-  };
-
-  const handleStatisticsClick = () => {
-    setActiveTab("statistics");
-    navigate(`/dashboard/${id}/statistics`);
-  };
-
-  const handleGroupClick = () => {
-    setActiveTab("group");
-    navigate(`/dashboard/${id}/group`);
-  };
-
 
   return (
     <div className="bg-white flex flex-row justify-center w-full">
@@ -119,65 +95,7 @@ function Dashboard_main() {
           {/* Main Content */}
           <div className="flex mt-4">
             {/* Left Sidebar */}
-            <aside className="w-[342px] h-screen pr-4 border-r-4 border-[#4A73A8]">
-              <nav className="mt-4 space-y-6">
-                {/* Dashboard */}
-                <div
-                  className={`${
-                    activeTab === "dashboard"
-                      ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
-                      : ""
-                  } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
-                    activeTab === "dashboard" ? "text-[#5a96f0]" : "text-[#193865]"
-                  }`}
-                  onClick={handleDashboardClick}
-                >
-                  Dashboard
-                </div>
-
-                {/* Recently */}
-                <div
-                  className={`${
-                    activeTab === "recently"
-                      ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
-                      : ""
-                  } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
-                    activeTab === "recently" ? "text-[#5a96f0]" : "text-[#193865]"
-                  }`}
-                  onClick={handleDashboardRecentlyClick}
-                >
-                  Recently
-                </div>
-
-                {/* Statistics */}
-                <div
-                  className={`${
-                    activeTab === "statistics"
-                      ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
-                      : ""
-                  } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
-                    activeTab === "statistics" ? "text-[#5a96f0]" : "text-[#193865]"
-                  }`}
-                  onClick={handleStatisticsClick}
-                >
-                  Statistics
-                </div>
-
-                {/* Your group */}
-                <div
-                  className={`${
-                    activeTab === "group"
-                      ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
-                      : ""
-                  } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
-                    activeTab === "group" ? "text-[#5a96f0]" : "text-[#193865]"
-                  }`}
-                  onClick={handleGroupClick}
-                >
-                  Your group
-                </div>
-              </nav>
-            </aside>
+            <Left_bar activeTab={activeTab} setActiveTab={setActiveTab} />
 
             {/* Main Content Area */}
             <main className="flex-1 px-4">
