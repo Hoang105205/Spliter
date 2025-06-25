@@ -4,6 +4,7 @@ require('dotenv').config();
 // Import necessary modules
 const cors = require('cors'); 
 const path = require('path');
+const http = require('http');
 
 // Express modules
 const express = require('express');
@@ -52,8 +53,10 @@ sequelize.sync()
 //////////
 
 ////////// Import and create WebSocket server
-// const createWebSocketServer = require('./websocket/websocket-server');
-// const server = require('http').createServer(app);
+const server = require('http').createServer(app);
+const createWebSocketServer = require('./websocket/websocket-server');
+createWebSocketServer(server);
+
 
 //////////
 
@@ -81,6 +84,6 @@ app.get('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
