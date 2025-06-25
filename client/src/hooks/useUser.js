@@ -38,7 +38,27 @@ export const useUser = create(
           set({ error: error.response ? error.response.data : error.message });
           throw error; // Re-throw the error to handle it in the component
         }
-      }
+      },
+      
+      clearUserData: async () => {
+        return new Promise((resolve) => {
+          set({
+            userData: {
+              id: '',
+              username: '',
+              email: '',
+              password: '',
+              role: '',
+              createdAt: '',
+              updatedAt: '',
+              bio: ''
+            }
+          });
+          localStorage.removeItem('user-storage'); // Clear Zustand persisted storage
+          localStorage.removeItem('token')
+          resolve();
+        });
+      },
     }), 
     {
       name: 'user-storage', // unique name for the storage

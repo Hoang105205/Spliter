@@ -25,3 +25,5 @@ export const WebSocketProvider = ({ children }) => {
     </WebSocketContext.Provider>
   );
 };
+
+export default WebSocketProvider;
