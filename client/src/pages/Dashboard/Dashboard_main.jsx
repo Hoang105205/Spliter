@@ -6,9 +6,23 @@ import { Separator } from "../../components/ui/seperator.jsx";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Head_bar from "../../components/ui/headbar.jsx";
+import { use } from "react";
+import { useUser } from '../../hooks/useUser.js';
 
 
 function Dashboard_main() {
+  const { userData } = useUser(); // Lấy trạng thái người dùng từ hook useUser
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Kiểm tra nếu không có userData thì chuyển hướng tới /login
+    if (!userData || !userData.username) {
+      navigate("/login");
+    }
+  }, [userData, navigate]);
+
+ 
+
   // Friend data for the right sidebar
   const friendsList = [
     { id: 1, name: "Friend's name" },
@@ -32,7 +46,7 @@ function Dashboard_main() {
     { id: 3, name: "Friend's name", amount: "... đ" },
   ];
 
-  const navigate = useNavigate();
+  
   const { id } = useParams(); // Get the user ID from the URL
 
   // Handle tab clicks
