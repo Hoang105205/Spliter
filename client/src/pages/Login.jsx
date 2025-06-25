@@ -15,7 +15,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { findUser, setUserData } = useUser();
+  const { login } = useUser();
 
 
   // Toggle password visibility
@@ -53,34 +53,14 @@ function Login() {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      const user = await findUser(username);
-      if (!user) {
-        setErrors({ username: 'User not found', password: '' });
-        setLoading(false);
-        return;
-      }
-      if (user.password !== password) {
-        setErrors({ username: '', password: 'Incorrect password' });
-        setLoading(false);
-        return;
-      }
-
-      // Set user data in the store
-      setUserData({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        bio: user.bio || ''
-      });
-
+      const user = await login(username, password);
       setLoading(false);
       navigate(`/dashboard/${user.id}`); // Navigate to the user's dashboard
     } catch (error) {
       setLoading(false);
-      if (error.response && error.response.status === 404) {
+      if (error.status === 401) {
+      setErrors({ username: '', password: 'Incorrect password' });
+      } else if (error.status === 404) {
         setErrors({ username: 'User not found', password: '' });
       } else {
         setErrors({ username: 'Login failed', password: '' });
