@@ -82,9 +82,8 @@ export const useUser = create(
       login: async (username, password) => {
         try {
           const response = await api.post('/api/users/login', { username, password });
-          const userData = response.data.user;
+          const userData = response.data;
           set({ userData });
-          localStorage.setItem('token', response.data.token); // Store token in localStorage
           return userData;
         } catch (error) {
           set({ error: error.response ? error.response.data : error.message });

@@ -14,11 +14,30 @@ const getFriendsOfUser = async (req, res) => {
         ]
       },
       include: [
-        { model: Users, as: 'requester', attributes: ['id', 'username', 'email'] },
-        { model: Users, as: 'addressee', attributes: ['id', 'username', 'email'] }
+        // Just include requester and addressee information
+        {
+          model: Users,
+          as: 'requester',
+          attributes: ['id', 'username', 'email'],
+          where: { id: { [Op.ne]: userId } },
+          required: false
+        },
+        {
+          model: Users,
+          as: 'addressee',
+          attributes: ['id', 'username', 'email'],
+          where: { id: { [Op.ne]: userId } },
+          required: false
+        }
       ]
     });
-    res.status(200).json(friends);
+
+    // Chỉ trả về thông tin của friend (không trả về cả 2 phía)
+    const result = friends.map(f => {
+      // Nếu user là requester thì friend là addressee, ngược lại friend là requester
+      return f.requester ? f.requester : f.addressee;
+    });
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -67,9 +86,47 @@ const deleteFriend = async (req, res) => {
   }
 };
 
+// Get pending friend requests for a user
+const getPendingFriendRequests = async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const requests = await Friends.findAll({
+      where: {
+        status: 'pending',
+        addresseeId: userId
+      },
+      include: [
+        // just include requester information
+        { model: Users, as: 'requester', attributes: ['id', 'username', 'email'] }
+      ]
+    });
+    res.status(200).json(requests);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Deny a friend request
+const denyFriendRequest = async (req, res) => {
+  const { id } = req.params; // Friends table record id
+  try {
+    const friendRequest = await Friends.findByPk(id);
+    if (!friendRequest || friendRequest.status !== 'pending') {
+      return res.status(404).json({ message: 'Pending friend request not found.' });
+    }
+    friendRequest.status = 'rejected';
+    await friendRequest.save(); // Save the change to status
+    res.status(200).json({ message: 'Friend request rejected.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getFriendsOfUser,
   sendFriendRequest,
   acceptFriendRequest,
   deleteFriend,
+  getPendingFriendRequests,
+  denyFriendRequest,
 };

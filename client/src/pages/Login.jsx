@@ -63,6 +63,7 @@ function Login() {
       } else if (error.status === 404) {
         setErrors({ username: 'User not found', password: '' });
       } else {
+        console.log(error);
         setErrors({ username: 'Login failed', password: '' });
       }
     }
