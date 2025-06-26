@@ -1,5 +1,5 @@
 import { BellIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar.jsx";
 import { Button } from "../../components/ui/button.jsx";
 import { Separator } from "../../components/ui/seperator.jsx";
@@ -11,22 +11,21 @@ import { useUser } from '../../hooks/useUser.js';
 import Left_bar from "../../components/ui/leftbar.jsx";
 
 
+import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
+
 function Dashboard_main() {
-  const { userData } = useUser(); // Lấy trạng thái người dùng từ hook useUser
+  const [loading, setLoading] = useState(false);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const { userData, findUser } = useUser(); // Lấy trạng thái người dùng từ hook useUser
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Kiểm tra nếu không có userData thì chuyển hướng tới /login
-    if (!userData || !userData.username) {
-      navigate("/login");
-    }
-  }, [userData, navigate]);
- 
+  
+  // Websocket context to handle real-time updates
+  const ws = useContext(WebSocketContext);
 
-  // Friend data for the right sidebar
+  // Need to fetch friend data from an API or a global state management solution
   const [friendsList, setFriendsList] = useState([
-    { id: 1, name: "Alice Smith" },
-    { id: 2, name: "Bob Johnson" },
+    
   ]);
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -43,17 +42,51 @@ function Dashboard_main() {
     { id: 6, name: "Booby Dry" },
   ];
 
-  const filteredUsers = allUsers.filter(
-    (user) =>
-      user.name.toLowerCase().includes(search.toLowerCase()) &&
-      !friendsList.some((friend) => friend.id === user.id)
-  );
+  
+  const handleSearch = () => {
+    setLoading(true); // Hiển thị trạng thái loading
+    setTimeout(async() => {
+      try {
+        const user = await findUser(search);
+        if (user && user.username !== userData.username) {
+          setFilteredUsers([{ id: user.id, username: user.username }]);
+        } else {
+          setFilteredUsers([]); // No matching user
+        }
+        console.log('User found:', user.username);
+      } catch (error) {
+        console.error('Error finding user:', error);
+        setFilteredUsers([]); // Reset results
+      }
+
+      setLoading(false); // Tắt trạng thái loading
+    }, 500); // Giả lập độ trễ của API (500ms)
+
+  };
 
   const handleAddFriend = (user) => {
-    setFriendsList((prev) => [...prev, user]);
-    setSearch("");
-    setShowAddModal(false);
-  };
+    if (!ws) {
+      console.error('WebSocket instance is not available.');
+      alert('WebSocket connection is not available. Please try again later.');
+      return;
+    }
+
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: 'ADD_FRIEND',
+          payload: {
+            senderId: userData.id, // ID of the current user
+            receiverId: user.id,  // ID of the user to be added as a friend
+          },
+        })
+      );
+      console.log(`Sent friend request to user ${user.username}`);
+    } else {
+      console.error('WebSocket connection is not open.');
+      alert('WebSocket connection is not open. Please try again later.');
+    }
+};
 
   // Lock background scroll when modal is open
   useEffect(() => {
@@ -227,6 +260,11 @@ function Dashboard_main() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleSearch(); // Thực hiện tìm kiếm khi nhấn Enter
+                      }
+                    }}
                   />
                   <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
                         style={{ maxHeight: "250px" }}>
@@ -238,12 +276,12 @@ function Dashboard_main() {
                         key={user.id}
                         className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
                       >
-                        <span>{user.name}</span>
+                        <span>{user.username}</span>
                         <Button
                           size="sm"
                           className="bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded-[20px]"
                           onClick={() => handleAddFriend(user)}
-                        >
+                          >
                           + Friend
                         </Button>
                       </div>
