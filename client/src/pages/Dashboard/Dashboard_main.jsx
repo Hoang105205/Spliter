@@ -1,5 +1,5 @@
 import { BellIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar.jsx";
 import { Button } from "../../components/ui/button.jsx";
 import { Separator } from "../../components/ui/seperator.jsx";
@@ -8,29 +8,98 @@ import { motion, AnimatePresence } from "framer-motion";
 import Head_bar from "../../components/ui/headbar.jsx";
 import { use } from "react";
 import { useUser } from '../../hooks/useUser.js';
+import Left_bar from "../../components/ui/leftbar.jsx";
 
+
+import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
 
 function Dashboard_main() {
-  const { userData } = useUser(); // Lấy trạng thái người dùng từ hook useUser
+  const [loading, setLoading] = useState(false);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const { userData, findUser } = useUser(); // Lấy trạng thái người dùng từ hook useUser
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Kiểm tra nếu không có userData thì chuyển hướng tới /login
-    if (!userData || !userData.username) {
-      navigate("/login");
-    }
-  }, [userData, navigate]);
+  
+  // Websocket context to handle real-time updates
+  const ws = useContext(WebSocketContext);
 
- 
+  // Need to fetch friend data from an API or a global state management solution
+  const [friendsList, setFriendsList] = useState([
+    
+  ]);
 
-  // Friend data for the right sidebar
-  const friendsList = [
-    { id: 1, name: "Friend's name" },
-    { id: 2, name: "Friend's name" },
-    { id: 3, name: "Friend's name" },
-    { id: 4, name: "Friend's name" },
-    { id: 5, name: "Friend's name" },
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [search, setSearch] = useState("");
+
+
+  // Dummy global user list (replace with API or actual list later)
+  const allUsers = [
+    { id: 1, name: "Alice Smith" },
+    { id: 2, name: "Bob Johnson" },
+    { id: 3, name: "Charlie Brown" },
+    { id: 4, name: "John Smith" },
+    { id: 5, name: "Mickel Jackon" },
+    { id: 6, name: "Booby Dry" },
   ];
+
+  
+  const handleSearch = () => {
+    setLoading(true); // Hiển thị trạng thái loading
+    setTimeout(async() => {
+      try {
+        const user = await findUser(search);
+        if (user && user.username !== userData.username) {
+          setFilteredUsers([{ id: user.id, username: user.username }]);
+        } else {
+          setFilteredUsers([]); // No matching user
+        }
+        console.log('User found:', user.username);
+      } catch (error) {
+        console.error('Error finding user:', error);
+        setFilteredUsers([]); // Reset results
+      }
+
+      setLoading(false); // Tắt trạng thái loading
+    }, 500); // Giả lập độ trễ của API (500ms)
+
+  };
+
+  const handleAddFriend = (user) => {
+    if (!ws) {
+      console.error('WebSocket instance is not available.');
+      alert('WebSocket connection is not available. Please try again later.');
+      return;
+    }
+
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: 'ADD_FRIEND',
+          payload: {
+            senderId: userData.id, // ID of the current user
+            receiverId: user.id,  // ID of the user to be added as a friend
+          },
+        })
+      );
+      console.log(`Sent friend request to user ${user.username}`);
+    } else {
+      console.error('WebSocket connection is not open.');
+      alert('WebSocket connection is not open. Please try again later.');
+    }
+};
+
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (showAddModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showAddModal]);
 
   // Data for people you owe
   const youOweList = [
@@ -46,32 +115,8 @@ function Dashboard_main() {
     { id: 3, name: "Friend's name", amount: "... đ" },
   ];
 
-  
-  const { id } = useParams(); // Get the user ID from the URL
-
   // Handle tab clicks
   const [activeTab, setActiveTab] = useState("dashboard"); // or "recently", etc.
-
-  const handleDashboardClick = () => {
-    setActiveTab("dashboard");
-    navigate(`/dashboard/${id}`);
-  };
-
-  const handleDashboardRecentlyClick = () => {
-    setActiveTab("recently");
-    navigate(`/dashboard/${id}/recently`);
-  };
-
-  const handleStatisticsClick = () => {
-    setActiveTab("statistics");
-    navigate(`/dashboard/${id}/statistics`);
-  };
-
-  const handleGroupClick = () => {
-    setActiveTab("group");
-    navigate(`/dashboard/${id}/group`);
-  };
-
 
   return (
     <div className="bg-white flex flex-row justify-center w-full">
@@ -83,65 +128,7 @@ function Dashboard_main() {
           {/* Main Content */}
           <div className="flex mt-4">
             {/* Left Sidebar */}
-            <aside className="w-[342px] h-screen pr-4 border-r-4 border-[#4A73A8]">
-              <nav className="mt-4 space-y-6">
-                {/* Dashboard */}
-                <div
-                  className={`${
-                    activeTab === "dashboard"
-                      ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
-                      : ""
-                  } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
-                    activeTab === "dashboard" ? "text-[#5a96f0]" : "text-[#193865]"
-                  }`}
-                  onClick={handleDashboardClick}
-                >
-                  Dashboard
-                </div>
-
-                {/* Recently */}
-                <div
-                  className={`${
-                    activeTab === "recently"
-                      ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
-                      : ""
-                  } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
-                    activeTab === "recently" ? "text-[#5a96f0]" : "text-[#193865]"
-                  }`}
-                  onClick={handleDashboardRecentlyClick}
-                >
-                  Recently
-                </div>
-
-                {/* Statistics */}
-                <div
-                  className={`${
-                    activeTab === "statistics"
-                      ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
-                      : ""
-                  } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
-                    activeTab === "statistics" ? "text-[#5a96f0]" : "text-[#193865]"
-                  }`}
-                  onClick={handleStatisticsClick}
-                >
-                  Statistics
-                </div>
-
-                {/* Your group */}
-                <div
-                  className={`${
-                    activeTab === "group"
-                      ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
-                      : ""
-                  } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
-                    activeTab === "group" ? "text-[#5a96f0]" : "text-[#193865]"
-                  }`}
-                  onClick={handleGroupClick}
-                >
-                  Your group
-                </div>
-              </nav>
-            </aside>
+            <Left_bar activeTab={activeTab} setActiveTab={setActiveTab} />
 
             {/* Main Content Area */}
             <main className="flex-1 px-4">
@@ -234,7 +221,7 @@ function Dashboard_main() {
                 <span className="[font-family:'Roboto',Helvetica] text-[#666666] text-xl">
                   Your friend
                 </span>
-                <Button variant="ghost" size="icon" className="p-0">
+                <Button variant="ghost" size="icon" className="p-0" onClick={() => setShowAddModal(true)}>
                   <PlusIcon className="w-6 h-6" />
                 </Button>
               </div>
@@ -256,6 +243,63 @@ function Dashboard_main() {
                 ))}
               </div>
             </aside>
+            
+            <AnimatePresence>
+            {showAddModal && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[999]"
+              >
+                <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[700px] h-[500px] flex flex-col">
+                  <h2 className="text-xl font-bold mb-2">Add a Friend</h2>
+                  <input
+                    type="text"
+                    placeholder="Enter friend's name"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleSearch(); // Thực hiện tìm kiếm khi nhấn Enter
+                      }
+                    }}
+                  />
+                  <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
+                        style={{ maxHeight: "250px" }}>
+                    {filteredUsers.length === 0 && (
+                      <p className="text-gray-500">No matching users</p>
+                    )}
+                    {filteredUsers.map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
+                      >
+                        <span>{user.username}</span>
+                        <Button
+                          size="sm"
+                          className="bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded-[20px]"
+                          onClick={() => handleAddFriend(user)}
+                          >
+                          + Friend
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-auto pt-2">
+                    <Button
+                      className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
+                      onClick={() => setShowAddModal(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           </div>
 
         </div>

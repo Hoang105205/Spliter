@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import connectWebSocket from './websocket-client';
+import { useUser } from '../hooks/useUser';
+
 
 // Tạo Context
 export const WebSocketContext = createContext(null);
@@ -7,15 +9,19 @@ export const WebSocketContext = createContext(null);
 // Tạo Provider để quản lý WebSocket
 export const WebSocketProvider = ({ children }) => {
   const [ws, setWebSocket] = useState(null);
-
+  const { userData } = useUser(); 
   useEffect(() => {
-    // Kết nối WebSocket khi ứng dụng khởi động
-    const websocket = connectWebSocket();
-    setWebSocket(websocket);
+    let websocket;
+    
+    try {
+      websocket = connectWebSocket(userData);
+      setWebSocket(websocket);
+    } catch (error) {
+      console.error('Failed to connect WebSocket:', error);
+    }
 
-    // Cleanup: Ngắt kết nối WebSocket khi component bị hủy
     return () => {
-      websocket.close();
+      websocket && websocket.close();
     };
   }, []);
 
