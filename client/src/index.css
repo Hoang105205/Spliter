@@ -4,7 +4,15 @@
 
 @layer components {
     .normal-input {
-        @apply [font-family:'Roboto_Condensed',Helvetica] border border-gray-300 p-1 rounded w-[350px] font-bold text-black text-[25px]
+        @apply [font-family:'Roboto_Condensed',Helvetica] border-[2.5px] border-gray-300 p-1 rounded w-[350px] font-bold text-black text-[25px]
+    }
+
+    .error-input {
+        @apply [font-family:'Roboto_Condensed',Helvetica] border-[2.5px] border-red-400 p-1 rounded w-[350px] font-bold text-black text-[25px]
+    }
+
+    .error-text {
+        @apply [font-family:'Roboto_Condensed',Helvetica] font-medium text-red-400 text-sm mt-1 ml-1
     }
 
     .normal-input-header {
