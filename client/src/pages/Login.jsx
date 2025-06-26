@@ -53,34 +53,7 @@ function Login() {
     if (!validateForm()) return;
     setLoading(true);
     try {
-<<<<<<< HEAD
-      const user = await findUser(username);
-      if (!user) {
-        setErrors({ username: 'User not found', password: '' });
-        setLoading(false);
-        return;
-      }
-      if (user.password !== password) {
-        setErrors({ username: '', password: 'Incorrect password' });
-        setLoading(false);
-        return;
-      }
-
-      // Set user data in the store
-      setUserData({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        bio: user.bio || '',
-        phone_number: user.phone_number || ''
-      });
-
-=======
       const user = await login(username, password);
->>>>>>> 1668265a7e277dd82cc178db34fc9fbea6039b5b
       setLoading(false);
       navigate(`/dashboard/${user.id}`); // Navigate to the user's dashboard
     } catch (error) {
