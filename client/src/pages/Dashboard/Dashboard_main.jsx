@@ -290,7 +290,11 @@ function Dashboard_main() {
                   <div className="mt-auto pt-2">
                     <Button
                       className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
-                      onClick={() => setShowAddModal(false)}
+                      onClick={() => { 
+                        setSearch("");
+                        setFilteredUsers([]);
+                        setShowAddModal(false);
+                      }}
                     >
                       Cancel
                     </Button>

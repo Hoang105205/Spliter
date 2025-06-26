@@ -21,7 +21,10 @@ module.exports = function(ws, connectedClients) {
 
 
         default:
-          ws.send(JSON.stringify({ message: `Loại tin nhắn không được hỗ trợ: ${jsonData.type}` }));
+          ws.send(JSON.stringify({ 
+            type: 'ERROR',
+            message: `Loại tin nhắn không được hỗ trợ: ${jsonData.type}` 
+          }));
       }
     } catch (error) {
       console.error("Lỗi khi parse JSON: ", error);
@@ -44,10 +47,15 @@ function handleLogin(ws, connectedClients, payload) {
     console.log(`Đã lưu client: ${username} (${userID})`);
 
     // Phản hồi lại client
-    ws.send(JSON.stringify({ message: `Đăng nhập thành công: ${username}` }));
+    ws.send(JSON.stringify({
+      type : 'SUCCESS',
+      message: `Đăng nhập thành công: ${username}` 
+    }));
   } else {
     console.warn("Thiếu thông tin định danh (userID hoặc username).");
-    ws.send(JSON.stringify({ message: "Đăng nhập thất bại: Thiếu thông tin định danh." }));
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: "Đăng nhập thất bại: Thiếu thông tin định danh." }));
   }
 }
 
@@ -58,7 +66,9 @@ function handleAddFriend(ws, connectedClients, payload) {
 
   if (!senderId || !receiverId) {
     console.warn("Thiếu thông tin senderId hoặc receiverId.");
-    ws.send(JSON.stringify({ message: "Yêu cầu kết bạn thất bại: Thiếu thông tin người gửi hoặc người nhận." }));
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: "Yêu cầu kết bạn thất bại: Thiếu thông tin người gửi hoặc người nhận." }));
     return;
   }
 
@@ -90,7 +100,11 @@ function handleAddFriend(ws, connectedClients, payload) {
     console.log(`Đã gửi yêu cầu kết bạn tới ${receiverClient.username} (${receiverId})`);
 
     // Phản hồi lại người gửi
-    ws.send(JSON.stringify({ message: `Yêu cầu kết bạn đã được gửi tới ${receiverClient.username}.` }));
+    ws.send(JSON.stringify({ 
+      type: 'SUCCESS',
+      message: `Yêu cầu kết bạn đã được gửi tới ${receiverClient.username}.` 
+    }));
+
   } else {
     console.warn(`Người nhận (${receiverId}) không kết nối.`);
     ws.send(
@@ -108,7 +122,9 @@ function handleFriendRequest(ws, connectedClients, payload) {
 
   if (!requestId || !senderId || !status) {
     console.warn("Thiếu thông tin requestId, senderId, hoặc status.");
-    ws.send(JSON.stringify({ message: "Phản hồi kết bạn thất bại: Thiếu thông tin cần thiết." }));
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: "Phản hồi kết bạn thất bại: Thiếu thông tin cần thiết." }));
     return;
   }
 

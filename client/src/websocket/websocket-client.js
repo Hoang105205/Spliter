@@ -20,10 +20,13 @@ function connectWebSocket(userData) {
     }
   };
 
-  ws.onmessage = (event) => { 
+   ws.onmessage = (event) => {
     try {
       const jsonData = JSON.parse(event.data);
       console.log("Tin nhắn từ Server: ", jsonData);
+      
+      // Xử lý tin nhắn từ server theo loại
+      handleServerMessage(jsonData.type, jsonData);
     } catch (error) {
       console.error("Lỗi parse JSON từ server: ", error);
     }
@@ -35,5 +38,47 @@ function connectWebSocket(userData) {
 
   return ws;
 }
+
+// Hàm xử lý tin nhắn từ server
+function handleServerMessage(type, jsonData) {
+  switch (type) {
+    case 'SUCCESS':
+      console.log(`Thành công: ${jsonData.message}`);
+      break;
+    case 'ERROR':
+      console.error(`Lỗi: ${jsonData.message}`);
+      break;
+
+    case 'login_message':
+      console.log(`Đăng nhập thành công: ${jsonData.payload.message}`);
+      break;
+
+    case 'FRIEND_REQUEST':
+      handleFriendRequest(jsonData.payload);
+      break;
+
+    case 'ERROR':
+      
+      break;
+
+    case 'NOTIFICATION':
+      
+      break;
+
+    case 'MESSAGE':
+      
+      break;
+
+    default:
+      console.warn(`Loại tin nhắn không được hỗ trợ: ${type}`);
+  }
+}
+
+function handleFriendRequest(payload) {
+  const { senderId, senderUsername, status } = payload;
+  console.log(`Yêu cầu kết bạn nhận được từ ${senderUsername} (${senderId}). Trạng thái: ${status}`);
+  // Thêm logic xử lý, ví dụ: hiển thị pop-up yêu cầu kết bạn
+}
+
 
 export default connectWebSocket;

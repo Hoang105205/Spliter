@@ -12,7 +12,12 @@ function createWebSocketServer(server) {
     console.log("Client đã kết nối!");
 
     // Gửi thông báo khi kết nối thành công
-    ws.send(JSON.stringify({ message: "Chào mừng bạn đến với WebSocket Server!" }));
+    ws.send(JSON.stringify({
+      type: "login_message", // Thêm field type để định nghĩa loại tin nhắn
+      payload: {
+        message: "Chào mừng bạn đến với WebSocket Server!" 
+      }
+    }));
 
     // Định nghĩa các sự kiện
     require('./events')(ws, connectedClients);
