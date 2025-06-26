@@ -12,7 +12,6 @@ export const useUser = create(
         id: '',
         username: '',
         email: '',
-        password: '',
         role: 'user', // Default role
         createdAt: '',
         updatedAt: '',
@@ -48,7 +47,6 @@ export const useUser = create(
               id: '',
               username: '',
               email: '',
-              password: '',
               role: '',
               createdAt: '',
               updatedAt: '',
@@ -61,6 +59,39 @@ export const useUser = create(
           resolve();
         });
       },
+
+      updateUser: async (userData) => {
+        try {
+          const response = await api.put(`/api/users/${userData.id}`, userData);
+          set({ userData: response.data });
+        } catch (error) {
+          set({ error: error.response ? error.response.data : error.message });
+          throw error; // Re-throw the error to handle it in the component
+        }
+      },
+
+      handleChangePassword: async (currentPassword, newPassword) => {
+        const userID = get().userData.id;
+        try {
+          const response = await api.put(`/api/users/${userID}/change-password`, { currentPassword, newPassword });
+          return response.data;
+        } catch (error) {
+          set({ error: error.response ? error.response.data : error.message });
+          throw error; // Re-throw the error to handle it in the component
+        }
+      },
+
+      login: async (username, password) => {
+        try {
+          const response = await api.post('/api/users/login', { username, password });
+          const userData = response.data;
+          set({ userData });
+          return userData;
+        } catch (error) {
+          set({ error: error.response ? error.response.data : error.message });
+          throw error; // Re-throw the error to handle it in the component
+        }
+      }
     }), 
     {
       name: 'user-storage', // unique name for the storage

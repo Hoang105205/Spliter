@@ -5,7 +5,9 @@ const {
     getSingleUser,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    changePassword,
+    loginUser
 } = require('../controllers/UsersController');
 const ensureAuthenticated = require('../middlewares/ensureAuthenticated');
 
@@ -19,10 +21,17 @@ router.get('/:username', getSingleUser);
 router.post('/', createUser);
 
 // Update a user
-router.put('/:username', ensureAuthenticated, updateUser);
+router.put('/:id', ensureAuthenticated, updateUser);
 
 // Delete a user
-router.delete('/:username', ensureAuthenticated, deleteUser);
+router.delete('/:id', ensureAuthenticated, deleteUser);
+
+// Change password
+router.put('/:id/change-password', ensureAuthenticated, changePassword);
+
+// Login user
+router.post('/login', loginUser);
+
 
 // (Tạo thêm route lấy user hiện tại nếu cần)
 router.get('/me', ensureAuthenticated, (req, res) => {

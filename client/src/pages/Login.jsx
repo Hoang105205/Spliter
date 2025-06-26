@@ -15,7 +15,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { findUser, setUserData } = useUser();
+  const { login } = useUser();
 
 
   // Toggle password visibility
@@ -53,6 +53,7 @@ function Login() {
     if (!validateForm()) return;
     setLoading(true);
     try {
+<<<<<<< HEAD
       const user = await findUser(username);
       if (!user) {
         setErrors({ username: 'User not found', password: '' });
@@ -77,11 +78,16 @@ function Login() {
         phone_number: user.phone_number || ''
       });
 
+=======
+      const user = await login(username, password);
+>>>>>>> 1668265a7e277dd82cc178db34fc9fbea6039b5b
       setLoading(false);
       navigate(`/dashboard/${user.id}`); // Navigate to the user's dashboard
     } catch (error) {
       setLoading(false);
-      if (error.response && error.response.status === 404) {
+      if (error.status === 401) {
+      setErrors({ username: '', password: 'Incorrect password' });
+      } else if (error.status === 404) {
         setErrors({ username: 'User not found', password: '' });
       } else {
         setErrors({ username: 'Login failed', password: '' });
