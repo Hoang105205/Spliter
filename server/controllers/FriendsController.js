@@ -15,27 +15,15 @@ const getFriendsOfUser = async (req, res) => {
       },
       include: [
         // Just include requester and addressee information
-        {
-          model: Users,
-          as: 'requester',
-          attributes: ['id', 'username', 'email'],
-          where: { id: { [Op.ne]: userId } },
-          required: false
-        },
-        {
-          model: Users,
-          as: 'addressee',
-          attributes: ['id', 'username', 'email'],
-          where: { id: { [Op.ne]: userId } },
-          required: false
-        }
+        { model: Users, as: 'requester', attributes: ['id', 'username', 'email'] },
+        { model: Users, as: 'addressee', attributes: ['id', 'username', 'email'] }
       ]
     });
 
-    // Chỉ trả về thông tin của friend (không trả về cả 2 phía)
+    // Map the results to get only the user information
     const result = friends.map(f => {
-      // Nếu user là requester thì friend là addressee, ngược lại friend là requester
-      return f.requester ? f.requester : f.addressee;
+      // If requester is the user, return addressee, otherwise return requester
+      return f.requesterId === userId ? f.addressee : f.requester;
     });
     res.status(200).json(result);
   } catch (error) {

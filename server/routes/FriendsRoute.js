@@ -14,7 +14,7 @@ const {
 router.get('/:id', getFriendsOfUser);
 
 // Send a friend request
-router.post('/', sendFriendRequest);
+router.post('/add-friend', sendFriendRequest);
 
 // Get pending friend requests for a user
 router.get('/:id/pending', getPendingFriendRequests);
