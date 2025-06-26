@@ -73,7 +73,8 @@ function Login() {
         role: user.role,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
-        bio: user.bio || ''
+        bio: user.bio || '',
+        phone_number: user.phone_number || ''
       });
 
       setLoading(false);

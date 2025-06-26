@@ -14,25 +14,24 @@ function AccountPage() {
   const [localData, setLocalData] = useState({
     username: '',
     email: '',
-    phone_number: '',
-    password: '',
     role: '',
     createdAt: '',
     updatedAt: '',
     bio: '',
+    phone_number: '',
   });
 
   useEffect(() => {
+    console.log(userData)
     // When the component mounts, fetch the user data
     setLocalData({
       username: userData.username || '',
       email: userData.email || '',
-      phone_number: userData.phone_number || '',
-      password: userData.password || '',
       role: userData.role || '',
       createdAt: userData.createdAt || '',
       updatedAt: userData.updatedAt || '',
       bio: userData.bio || '',
+      phone_number: userData.phone_number || ''
     });
   }, [userData]);
 
@@ -45,6 +44,8 @@ function AccountPage() {
 
   const [editState, setEditState] = useState(false)
   const [editIState, setEditIState] = useState(false)
+  const [errorCurrent, setEC] = useState(false)
+  const [errorNew, setEN] = useState(false)
   const [currentPass, setCurrentPass] = useState("")
   const [newPass, setNewPass] = useState("")
 
@@ -62,11 +63,25 @@ function AccountPage() {
   const onEditIClick = () => {
     if (editIState == false) {
       setEditIState(true)
+      setCurrentPass("")
+      setNewPass("")
     }
     else {
       setEditIState(false)
-      setCurrentPass("")
-      setNewPass("")
+
+      if (currentPass != localData.password) {
+        setEC(true)
+      }
+      else {
+        setEC(false)
+      }
+
+      if (newPass == "") {
+        setEN(true)
+      }
+      else {
+        setEN(false)
+      }
     }
   }
 
@@ -131,7 +146,7 @@ function AccountPage() {
               </Avatar>
 
               <Button onClick={onEditClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors duration-200 border border-transparent hover:border-white">
-                <span className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-white text-[23.5px]">
+                <span className="button-blue-data">
                   {editText}
                 </span>
               </Button>
@@ -152,68 +167,68 @@ function AccountPage() {
             {/* Middle section */}
             <div className="flex flex-col w-[350px] ml-16 space-y-6">
               <div className="space-y-2">
-                <label className="block [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-[25px]">
+                <label className="normal-header">
                   Your name
                 </label>
                 {!editIState && 
-                <p className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]">
+                <p className="normal-data">
                   {localData.username}
                 </p>}
-                {editIState && <input onChange={setName} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {localData.username}></input>}
+                {editIState && <input onChange={setName} className="normal-input" value = {localData.username}></input>}
               </div>
 
               <div className="space-y-2">
-                <label className="block [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-[25px]">
+                <label className="normal-header">
                   Your email address
                 </label>
                 {!editIState && 
-                <p className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]">
+                <p className="normal-data">
                   {localData.email}
                 </p>}
-                {editIState && <input onChange={setEmail} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {localData.email}></input>}
+                {editIState && <input onChange={setEmail} className="normal-input" value = {localData.email}></input>}
               </div>
 
               <div className="space-y-2">
-                <label className="block [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-[25px]">
+                <label className="normal-header">
                   Your phone number
                 </label>
                 {!editIState &&
-                <p className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]">
+                <p className="normal-data">
                   {localData.phone_number}
                 </p>}
-                {editIState && <input onChange={setPhone} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {localData.phone_number}></input>}
+                {editIState && <input onChange={setPhone} className="normal-input" value = {localData.phone_number}></input>}
               </div>
 
               <div className="space-y-2">
-                <label className="block [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-[25px]">
+                <label className="normal-header">
                   Your password
                 </label>
 
                 {!editIState &&
-                <p className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]">
+                <p className="normal-data">
                   {localData.password}
                 </p>}
 
                 {editIState &&
-                <p className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-[20px]"> Current password </p>}
+                <p className="normal-input-header"> Current password </p>}
                 {editIState &&
-                <input onChange={setCurrentPassword} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {currentPass}></input>}
+                <input onChange={setCurrentPassword} className={errorCurrent ? 'error-input' : 'normal-input'} value = {currentPass}></input>}
                 {editIState &&
-                <p className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-[20px]"> New password </p>}
+                <p className="normal-input-header"> New password </p>}
                 {editIState &&
-                <input onChange={setNewPassword} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {newPass}></input>}
+                <input onChange={setNewPassword} className={errorCurrent ? 'error-input' : 'normal-input'} value = {newPass}></input>}
               </div>
 
               <div className="flex items-center text-[#5a96f0]">
                 {!editIState &&
-                <button onClick = {onEditIClick} className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-[23.5px] text-center">
+                <button onClick = {onEditIClick} className="data">
                   Change information
                 </button>}
                 {!editIState &&
                 <PencilIcon onClick={onEditIClick} className="w-6 h-6 ml-2" />}
                 {editIState &&
                 <Button onClick={onEditIClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors duration-200 border border-transparent hover:border-white">
-                  <span className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-white text-[23.5px]">
+                  <span className="button-blue-data">
                     Confirm
                   </span>
                 </Button>}
@@ -241,7 +256,7 @@ function AccountPage() {
                 </a>
               </div>
               <div className="space-y-2">
-                <label className="block [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-[25px]">
+                <label className="normal-header">
                   Language
                 </label>
                 <Select defaultValue={localData.language}>

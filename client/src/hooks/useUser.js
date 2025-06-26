@@ -16,7 +16,8 @@ export const useUser = create(
         role: 'user', // Default role
         createdAt: '',
         updatedAt: '',
-        bio: ''
+        bio: '',
+        phone_number: ''
       },
 
       setUserData: (newUserData) => set({ userData: newUserData }),
@@ -51,7 +52,8 @@ export const useUser = create(
               role: '',
               createdAt: '',
               updatedAt: '',
-              bio: ''
+              bio: '',
+              phone_number: ''
             }
           });
           localStorage.removeItem('user-storage'); // Clear Zustand persisted storage
