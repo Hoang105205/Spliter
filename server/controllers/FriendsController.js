@@ -45,7 +45,7 @@ const sendFriendRequest = async (req, res) => {
           { requesterId: addresseeId, addresseeId: requesterId }
         ]
       },
-      status: 'pending'
+      status: { [Op.in]: ['pending', 'accepted'] }
     });
     if (exists) {
       return res.status(400).json({ message: 'Friend request already sent or exists.' });
@@ -75,11 +75,7 @@ const acceptFriendRequest = async (req, res) => {
 const deleteFriend = async (req, res) => {
   const { requestId } = req.params; // Friends table record id
   try {
-<<<<<<< HEAD
     const deleted = await Friends.destroy({ where: { id: requestId } });
-=======
-    const deleted = await Friends.destroy({ where: { requestId } });
->>>>>>> master
     if (!deleted) {
       return res.status(404).json({ message: 'Friend not found.' });
     }
@@ -119,7 +115,7 @@ const denyFriendRequest = async (req, res) => {
     }
     friendRequest.status = 'rejected';
     await friendRequest.save(); // Save the change to status
-    res.status(200).json({ message: 'Friend request rejected.' });
+    res.status(200).json({ message: 'Friend request is rejected.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
