@@ -7,11 +7,11 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { useUser } from '../../hooks/useUser.js';
+import { useFriend } from '../../hooks/useFriend.js';
 
 // Button data
 const notifications = [
-  { title: "New update available", time: "2 hours ago" },
-  { title: "Welcome to the app!", time: "1 day ago" },
+  
 ];
 
 const accountScroll = [
@@ -27,13 +27,23 @@ function Head_bar(){
   const [showAccountScrolldown, setShowAccountScrolldown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
+  // User data
   const { clearUserData, userData } = useUser();
+
+  // Friend requests
+  const { fetchPendingRequests, requests } = useFriend();
 
   const notifRef = useRef(null);
   const accountRef = useRef(null);
 
   const handleBellClick = () => {
-    setShowNotifications((prev) => !prev);
+    setShowNotifications((prev) => {
+      const next = !prev;
+      if (next && userData.id) {
+        fetchPendingRequests(userData.id); // ✅ GỌI MỖI LẦN MỞ
+      }
+      return next;
+    });
     setShowAccountScrolldown(false);
   };
 
@@ -45,6 +55,21 @@ function Head_bar(){
   const handleLogoClick = () => {
     navigate(`/dashboard/${userData.id}`);
   };
+
+  // Fetch friend requests when userData.id changes
+  useEffect(() => {
+    if (userData.id) {
+      fetchPendingRequests(userData.id);
+    }
+  }, [userData.id]);
+
+  // Format friend requests into notifications
+  const friendRequestNotifs = requests.map((r) => ({
+    title: `Friend request from Username: ${r.requester.username}`,
+    time: '', // có thể format thời gian nếu cần
+  }));
+
+  const combinedNotifs = [...friendRequestNotifs, ...notifications];
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -84,7 +109,7 @@ function Head_bar(){
                   className="absolute right-0 top-full mt-2 w-[380px] bg-white shadow-lg rounded-lg border z-50 max-h-[400px] overflow-y-auto"
                 >
                   <div className="p-4 border-b font-bold text-gray-800">What's new?</div>
-                  {notifications.map((notif, index) => (
+                  {combinedNotifs.map((notif, index) => (
                     <div key={index} className="px-4 py-2 border-b hover:bg-gray-100 text-sm text-gray-800">
                       <div>{notif.title}</div>
                       <div className="text-xs text-gray-500">{notif.time}</div>
