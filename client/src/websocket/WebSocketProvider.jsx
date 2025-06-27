@@ -11,10 +11,8 @@ export const WebSocketProvider = ({ children }) => {
   const [ws, setWebSocket] = useState(null);
   const { userData } = useUser(); 
   useEffect(() => {
-    if (!userData?.id) return; // Chờ userData sẵn sàng
-
     let websocket;
-
+    
     try {
       websocket = connectWebSocket(userData);
       setWebSocket(websocket);
@@ -24,8 +22,8 @@ export const WebSocketProvider = ({ children }) => {
 
     return () => {
       websocket && websocket.close();
-  };
-}, [userData]);
+    };
+  }, []);
 
   return (
     <WebSocketContext.Provider value={ws}>

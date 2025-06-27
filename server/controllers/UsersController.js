@@ -46,13 +46,13 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
     try {
         const [updated] = await Users.update(req.body, {
-            where: { username: req.params.id },
+            where: { id: req.params.id },
             returning: true,
         });
         if (!updated) {
             return res.status(404).json({ message: 'User not found' });
         }
-        const updatedUser = await Users.findOne({ where: { username: req.params.username } });
+        const updatedUser = await Users.findOne({ where: { id: req.params.id } });
         const { password, ...userWithoutPassword } = updatedUser.toJSON();
         res.status(200).json(userWithoutPassword);
     } catch (error) {
@@ -63,7 +63,7 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
     try {
         const user = await Users.destroy({
-            where: { username: req.params.id }
+            where: { id: req.params.id }
         });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });

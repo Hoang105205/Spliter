@@ -1,6 +1,6 @@
 function connectWebSocket(userData) {
   const ws = new WebSocket('wss://spliter-gr0z.onrender.com');
-
+  
   ws.onopen = () => {
     console.log("Đã kết nối tới WebSocket Server!");
 

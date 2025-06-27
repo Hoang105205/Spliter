@@ -10,7 +10,7 @@ import { useUser } from '../../hooks/useUser.js';
 
 function Left_bar({ activeTab, setActiveTab }) {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { userData } = useUser();
 
   const handleClick = (tabName, path) => {
     setActiveTab(tabName);
@@ -29,7 +29,7 @@ function Left_bar({ activeTab, setActiveTab }) {
           } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
             activeTab === "dashboard" ? "text-[#5a96f0]" : "text-[#193865]"
           }`}
-          onClick={() => handleClick("dashboard", `/dashboard/${id}`)}
+          onClick={() => handleClick("dashboard", `/dashboard/${userData.id}`)}
         >
           Dashboard
         </div>
@@ -43,7 +43,7 @@ function Left_bar({ activeTab, setActiveTab }) {
           } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
             activeTab === "recently" ? "text-[#5a96f0]" : "text-[#193865]"
           }`}
-          onClick={() => handleClick("recently", `/dashboard/${id}/recently`)}
+          onClick={() => handleClick("recently", `/dashboard/${userData.id}/recently`)}
         >
           Recently
         </div>
@@ -57,7 +57,7 @@ function Left_bar({ activeTab, setActiveTab }) {
           } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
             activeTab === "statistics" ? "text-[#5a96f0]" : "text-[#193865]"
           }`}
-          onClick={() => handleClick("statistics", `/dashboard/${id}/statistics`)}
+          onClick={() => handleClick("statistics", `/dashboard/${userData.id}/statistics`)}
         >
           Statistics
         </div>
@@ -71,7 +71,7 @@ function Left_bar({ activeTab, setActiveTab }) {
           } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
             activeTab === "group" ? "text-[#5a96f0]" : "text-[#193865]"
           }`}
-          onClick={() => handleClick("group", `/dashboard/${id}/group`)}
+          onClick={() => handleClick("group", `/dashboard/${userData.id}/group`)}
         >
           Your group
         </div>

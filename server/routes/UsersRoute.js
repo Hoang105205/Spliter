@@ -21,13 +21,13 @@ router.get('/:username', getSingleUser);
 router.post('/', createUser);
 
 // Update a user
-router.put('/:id', ensureAuthenticated, updateUser);
+router.put('/:id', updateUser);
 
 // Delete a user
-router.delete('/:id', ensureAuthenticated, deleteUser);
+router.delete('/:id', deleteUser);
 
 // Change password
-router.put('/:id/change-password', ensureAuthenticated, changePassword);
+router.put('/:id/change-password', changePassword);
 
 // Login user
 router.post('/login', loginUser);

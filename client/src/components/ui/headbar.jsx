@@ -166,9 +166,10 @@ function Head_bar(){
                   className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors"
                   onClick={async () => {
                     setShowLogoutModal(false);
-                    localStorage.removeItem("token");
-                    localStorage.removeItem("userData");
+
                     await clearUserData();
+
+                    localStorage.removeItem("token");
                     
                     const clearedData = useUser.getState().userData;
                     
