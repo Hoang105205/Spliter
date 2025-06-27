@@ -1,3 +1,41 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .normal-input {
+        @apply [font-family:'Roboto_Condensed',Helvetica] border-[2.5px] border-gray-300 p-1 rounded w-[350px] font-bold text-black text-[25px]
+    }
+
+    .error-input {
+        @apply [font-family:'Roboto_Condensed',Helvetica] border-[2.5px] border-red-400 p-1 rounded w-[350px] font-bold text-black text-[25px]
+    }
+
+    .error-text {
+        @apply [font-family:'Roboto_Condensed',Helvetica] font-medium text-red-400 text-sm mt-1 ml-1
+    }
+
+    .normal-input-header {
+        @apply [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-[20px]
+    }
+
+    .normal-data {
+        @apply [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]
+    }
+
+    .normal-header {
+        @apply [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-[25px]
+    }
+
+    .data {
+        @apply [font-family:'Roboto_Condensed',Helvetica] font-normal text-center text-[23.5px]
+    }
+
+    .button-blue {
+        @apply mt-5 w-[110px] h-[52px] rounded-[15px] bg-blue-500 hover:bg-blue-600 transition-colors duration-200 border border-transparent hover:border-white text-white
+    }
+
+    .button-blue-data {
+        @apply [font-family:'Roboto_Condensed',Helvetica] font-normal text-white text-[23.5px]
+    }
+}

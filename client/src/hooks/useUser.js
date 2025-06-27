@@ -15,7 +15,8 @@ export const useUser = create(
         role: 'user', // Default role
         createdAt: '',
         updatedAt: '',
-        bio: ''
+        bio: '',
+        phone_number: ''
       },
 
       setUserData: (newUserData) => set({ userData: newUserData }),
@@ -49,7 +50,8 @@ export const useUser = create(
               role: '',
               createdAt: '',
               updatedAt: '',
-              bio: ''
+              bio: '',
+              phone_number: ''
             }
           });
           localStorage.removeItem('user-storage'); // Clear Zustand persisted storage
@@ -58,9 +60,9 @@ export const useUser = create(
         });
       },
 
-      updateUser: async (userData) => {
+      updateUser: async (updateData) => {
         try {
-          const response = await api.put(`/api/users/${userData.id}`, userData);
+          const response = await api.put(`/api/users/${updateData.id}`, updateData);
           set({ userData: response.data });
         } catch (error) {
           set({ error: error.response ? error.response.data : error.message });
