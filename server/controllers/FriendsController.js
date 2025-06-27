@@ -75,7 +75,7 @@ const acceptFriendRequest = async (req, res) => {
 const deleteFriend = async (req, res) => {
   const { requestId } = req.params; // Friends table record id
   try {
-    const deleted = await Friends.destroy({ where: { requestId } });
+    const deleted = await Friends.destroy({ where: { id: requestId } });
     if (!deleted) {
       return res.status(404).json({ message: 'Friend not found.' });
     }
