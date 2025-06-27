@@ -93,7 +93,7 @@ export const useUser = create(
     }), 
     {
       name: 'user-storage', // unique name for the storage
-      getStorage: (state) => ({ userData: state.userData }), // use localStorage as the storage
+      partialize: (state) => ({ userData: state.userData }) // use localStorage as the storage
     }
   )
 );
