@@ -23,7 +23,6 @@ function AccountPage() {
   })
 
   useEffect(() => {
-    console.log(userData)
     // When the component mounts, fetch the user data
     setLocalData({
       id: userData.id || '',
@@ -52,10 +51,15 @@ function AccountPage() {
   const [currentPass, setCurrentPass] = useState("")
   const [newPass, setNewPass] = useState("")
 
-  const onEditBioClick = () => {
+  const onEditBioClick = async () => {
     if (editState === true) {
       setEditText("Edit")
-      setEditState(false)
+      try {
+        await updateUser({ id: localData.id, bio: localData.bio }) // chỉ gửi id và bio
+        setEditState(false) // exit edit mode after success
+      } catch (error) {
+        alert("Failed to update bio " + error)
+      }
     }
     else {
       setEditText("Comfirm")
@@ -85,9 +89,9 @@ function AccountPage() {
         else {
           setWarningNewPass("")
         }
-        await handleChangePassword(currentPass, newPass)
+        const result = await handleChangePassword(currentPass, newPass)
 
-        alert("Password changed successfully!")
+        alert(result.message)
         setEditPassword(false)
         setEC(false)
         setEN(false)
@@ -116,8 +120,14 @@ function AccountPage() {
   const onEditIClick = async () => {
     if (editIState === true) {
       try {
-        console.log(localData)
-        await updateUser(localData) // update on server
+        await updateUser(
+          {
+            id: localData.id,
+            username: localData.username,
+            email: localData.email,
+            phone_number: localData.phone_number,
+          }
+        ) // update on server
         setEditIState(false)        // exit edit mode after success
       } catch (error) {
         alert("Failed to change user's data " + error)
