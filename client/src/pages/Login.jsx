@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/useUser.js';
 
 
-
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -16,7 +15,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { findUser, userDat, setUserData } = useUser();
+  const { login } = useUser();
 
 
   // Toggle password visibility
@@ -54,27 +53,17 @@ function Login() {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      const user = await findUser(username);
-      if (!user) {
-        setErrors({ username: 'User not found', password: '' });
-        setLoading(false);
-        return;
-      }
-      if (user.password !== password) {
-        setErrors({ username: '', password: 'Incorrect password' });
-        setLoading(false);
-        return;
-      }
-
-      setUserData({ username: String(user.username) }); // Set user data in Zustand store
-
+      const user = await login(username, password);
       setLoading(false);
-      navigate('/dashboard');
+      navigate(`/dashboard/${user.id}`); // Navigate to the user's dashboard
     } catch (error) {
       setLoading(false);
-      if (error.response && error.response.status === 404) {
+      if (error.status === 401) {
+      setErrors({ username: '', password: 'Incorrect password' });
+      } else if (error.status === 404) {
         setErrors({ username: 'User not found', password: '' });
       } else {
+        console.log(error);
         setErrors({ username: 'Login failed', password: '' });
       }
     }

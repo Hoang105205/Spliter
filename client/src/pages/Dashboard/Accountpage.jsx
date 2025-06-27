@@ -1,51 +1,44 @@
 import { BellIcon, ChevronDownIcon, PencilIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { Avatar, AvatarFallback } from "../components/ui/avatar";
-import { Button } from "../components/ui/button";
-import { Card, CardContent } from "../components/ui/card";
-import { Select, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Separator } from "../components/ui/seperator";
-import Head_bar from "../components/ui/headbar";   
+import { Avatar, AvatarFallback } from "../../components/ui/avatar.jsx";
+import { Button } from "../../components/ui/button.jsx";
+import { Card, CardContent } from "../../components/ui/card.jsx";
+import { Select, SelectTrigger, SelectValue } from "../../components/ui/select.jsx";
+import { Separator } from "../../components/ui/seperator.jsx";
+import Head_bar from "../../components/ui/headbar.jsx";   
 
-import { useUser } from '../hooks/useUser.js';
+import { useUser } from '../../hooks/useUser.js';
 
-function AcountPage() {
-  const {findUser, userData, setUserData } = useUser(); 
-  const [profile, setProfile] = useState(null);
+function AccountPage() {
+  const { userData, setUserData } = useUser();
+  const [localData, setLocalData] = useState({
+    username: '',
+    email: '',
+    phone_number: '',
+    role: '',
+    createdAt: '',
+    updatedAt: '',
+    bio: '',
+  });
 
   useEffect(() => {
-    async function fetchUserProfile() {
-      const user = await findUser(userData.username); 
-      setProfile(user);
-      
-    }
-    fetchUserProfile();
-  }, [userData.username, findUser]);
-
-  if (!profile) {
-    // Đợi dữ liệu, render loading
-    return <div>Đang tải dữ liệu tài khoản...</div>;
-  }
-
-  // Thêm bio, mặc định là rỗng nếu chưa có
-  const {
-    username,
-    email,
-    password,
-    role,
-    createdAt,
-    updatedAt,
-    bio = "",
-    phone_number = "",
-    language = ""   // <-- mặc định bio là ""
-  } = profile;
-
+    // When the component mounts, fetch the user data
+    setLocalData({
+      username: userData.username || '',
+      email: userData.email || '',
+      phone_number: userData.phone_number || '',
+      role: userData.role || '',
+      createdAt: userData.createdAt || '',
+      updatedAt: userData.updatedAt || '',
+      bio: userData.bio || '',
+    });
+  }, [userData]);
 
   const [editText, setEditText] = useState("Edit");
   var defaultBio = "There is still nothing here, how about you spice something up?"
-
-  if (bio != "") {
-    defaultBio = bio
+  
+  if (localData.bio !== "") {
+    defaultBio = localData.bio
   }
 
   const [editState, setEditState] = useState(false)
@@ -76,32 +69,32 @@ function AcountPage() {
   }
 
   const setBio = (event) => {
-    setUserData(prevData => ({
-      ...prevData,
+    setLocalData({
+      ...localData,
       bio: event.target.value,
-    }))
-  }
+    });
+  };
 
   const setName = (event) => {
-    setUserData(prevData => ({
-      ...prevData,
-      name: event.target.value,
-    }))
-  }
+    setLocalData({
+      ...localData,
+      username: event.target.value,
+    });
+  };
 
   const setEmail = (event) => {
-    setUserData(prevData => ({
-      ...prevData,
+    setLocalData({
+      ...localData,
       email: event.target.value,
-    }))
-  }
+    });
+  };
 
   const setPhone = (event) => {
-    setUserData(prevData => ({
-      ...prevData,
-      phone: event.target.value,
-    }))
-  }
+    setLocalData({
+      ...localData,
+      phone_number: event.target.value,
+    });
+  };
 
   const setCurrentPassword = (event) => {
     setCurrentPass(event.target.value)
@@ -109,6 +102,11 @@ function AcountPage() {
 
   const setNewPassword = (event) => {
     setNewPass(event.target.value)
+  }
+
+  if (!userData) {
+    // Đợi dữ liệu, render loading
+    return <div>Đang tải dữ liệu tài khoản...</div>;
   }
 
   return (
@@ -130,7 +128,7 @@ function AcountPage() {
                 <AvatarFallback></AvatarFallback>
               </Avatar>
 
-              <Button onClick={onEditClick} className="mt-5 w-[100px] h-10 bg-[#5a96f0] rounded-md">
+              <Button onClick={onEditClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors duration-200 border border-transparent hover:border-white">
                 <span className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-white text-[23.5px]">
                   {editText}
                 </span>
@@ -144,7 +142,7 @@ function AcountPage() {
                   </p>}
 
                   {editState &&
-                  <textarea onChange={setBio} className="resize-none w-[300px] h-[150px] focus:border-0 focus:outline-none [font-family:'Roboto_Condensed',Helvetica] font-normal text-[#b3b3b3] text-base" value = {bio}></textarea>}
+                  <textarea onChange={setBio} className="resize-none w-[300px] h-[150px] focus:border-0 focus:outline-none [font-family:'Roboto_Condensed',Helvetica] font-normal text-[#b3b3b3] text-base" value = {localData.bio}></textarea>}
                 </CardContent>
               </Card>
             </div>
@@ -157,9 +155,9 @@ function AcountPage() {
                 </label>
                 {!editIState && 
                 <p className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]">
-                  {username}
+                  {localData.username}
                 </p>}
-                {editIState && <input onChange={setName} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {username}></input>}
+                {editIState && <input onChange={setName} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {localData.username}></input>}
               </div>
 
               <div className="space-y-2">
@@ -168,9 +166,9 @@ function AcountPage() {
                 </label>
                 {!editIState && 
                 <p className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]">
-                  {email}
+                  {localData.email}
                 </p>}
-                {editIState && <input onChange={setEmail} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {email}></input>}
+                {editIState && <input onChange={setEmail} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {localData.email}></input>}
               </div>
 
               <div className="space-y-2">
@@ -179,9 +177,9 @@ function AcountPage() {
                 </label>
                 {!editIState &&
                 <p className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]">
-                  {phone_number}
+                  {localData.phone_number}
                 </p>}
-                {editIState && <input onChange={setPhone} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {phone_number}></input>}
+                {editIState && <input onChange={setPhone} className="w-[350px] border border-gray-300 p-1 rounded [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]" value = {localData.phone_number}></input>}
               </div>
 
               <div className="space-y-2">
@@ -191,7 +189,7 @@ function AcountPage() {
 
                 {!editIState &&
                 <p className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]">
-                  {password}
+                  {localData.password}
                 </p>}
 
                 {editIState &&
@@ -212,14 +210,12 @@ function AcountPage() {
                 {!editIState &&
                 <PencilIcon onClick={onEditIClick} className="w-6 h-6 ml-2" />}
                 {editIState &&
-                <Button onClick={onEditIClick} className="mt-5 w-[120px] h-10 bg-[#5a96f0] rounded-md">
-                  <span className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-[23.5px] text-center">
+                <Button onClick={onEditIClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors duration-200 border border-transparent hover:border-white">
+                  <span className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-white text-[23.5px]">
                     Confirm
                   </span>
                 </Button>}
               </div>
-
-
             </div>
 
             <Separator orientation="vertical" className="mx-8 h-screen" />
@@ -246,7 +242,7 @@ function AcountPage() {
                 <label className="block [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-[25px]">
                   Language
                 </label>
-                <Select defaultValue={language}>
+                <Select defaultValue={localData.language}>
                   <SelectTrigger className="w-[350px] [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-xl">
                     <SelectValue />
                   </SelectTrigger>
@@ -260,4 +256,4 @@ function AcountPage() {
   );
 };
 
-export default AcountPage;
+export default AccountPage;
