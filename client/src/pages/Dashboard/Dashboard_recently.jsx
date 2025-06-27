@@ -7,6 +7,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Head_bar from "../../components/ui/headbar.jsx";
 import Left_bar from "../../components/ui/leftbar.jsx";
+import ActivityList from "../../components/ui/activities_list.jsx";
 
 function Dashboard_recently() {
 
@@ -28,6 +29,7 @@ function Dashboard_recently() {
 
             {/* Main Content Area */}
             <main className="flex-1 px-4">
+              <ActivityList />
             </main>
 
             {/* Right Sidebar */}
