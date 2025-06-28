@@ -26,15 +26,21 @@ function Head_bar(){
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAccountScrolldown, setShowAccountScrolldown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // Active Notification
+  const [activeRequestId, setActiveRequestId] = useState(null);
   
+  
+
   // User data
   const { clearUserData, userData } = useUser();
 
   // Friend requests
-  const { fetchPendingRequests, requests } = useFriend();
+  const { fetchPendingRequests, requests, acceptFriendRequest, denyFriendRequest } = useFriend();
 
   const notifRef = useRef(null);
   const accountRef = useRef(null);
+  const friendRequestPopupRef = useRef(null);
 
   const handleBellClick = () => {
     setShowNotifications((prev) => {
@@ -71,6 +77,32 @@ function Head_bar(){
 
   const combinedNotifs = [...friendRequestNotifs, ...notifications];
 
+
+  //Handle accept friend request
+  const handleAccept = async (requestId) => {
+    try {
+      await acceptFriendRequest(requestId);
+      await fetchPendingRequests(userData.id);
+      setActiveRequestId(null);
+    } catch (err) {
+      console.error("Accept failed:", err);
+    }
+  };
+
+  //Handle decline friend request
+  const handleDecline = async (requestId) => {
+    try {
+      await denyFriendRequest(requestId);
+      await fetchPendingRequests(userData.id);
+      setActiveRequestId(null);
+    } catch (err) {
+      console.error("Decline failed:", err);
+    }
+  };
+
+
+
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -80,10 +112,18 @@ function Head_bar(){
         setShowNotifications(false);
         setShowAccountScrolldown(false);
       }
+
+      if (
+        friendRequestPopupRef.current && !friendRequestPopupRef.current.contains(event.target)
+      ) {
+        setActiveRequestId(null);
+      }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
 
   return(
     <>
@@ -109,12 +149,18 @@ function Head_bar(){
                   className="absolute right-0 top-full mt-2 w-[380px] bg-white shadow-lg rounded-lg border z-50 max-h-[400px] overflow-y-auto"
                 >
                   <div className="p-4 border-b font-bold text-gray-800">What's new?</div>
-                  {combinedNotifs.map((notif, index) => (
-                    <div key={index} className="px-4 py-2 border-b hover:bg-gray-100 text-sm text-gray-800">
-                      <div>{notif.title}</div>
-                      <div className="text-xs text-gray-500">{notif.time}</div>
+                  
+                  {/* On-click notifications */}
+                  {requests.map((r, index) => (
+                    <div
+                      key={r.id}
+                      onClick={() => setActiveRequestId(r.id)}
+                      className="px-4 py-2 border-b hover:bg-gray-100 text-sm text-gray-800 cursor-pointer"
+                    >
+                      <div>Friend request from: {r.requester.username}</div>
                     </div>
                   ))}
+
                   <div className="text-center py-2 text-green-600 font-medium hover:underline cursor-pointer">
                     See all
                   </div>
@@ -218,6 +264,51 @@ function Head_bar(){
           </motion.div>
         )}
       </AnimatePresence>
+
+
+      <AnimatePresence>
+        {activeRequestId && (
+          (() => {
+            const activeRequest = requests.find((r) => r.id === activeRequestId);
+            return (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50"
+                onClick={() => setActiveRequestId(null)}
+              >
+                <div
+                  ref={friendRequestPopupRef}
+                  className="bg-white rounded-lg shadow-lg p-6 w-[300px] text-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h2 className="text-lg font-bold mb-4">
+                    Friend Request from {activeRequest?.requester?.username || "Unknown"}
+                  </h2>
+                  <p className="mb-4">Do you want to accept this request?</p>
+                  <div className="flex justify-between">
+                    <Button
+                      className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                      onClick={() => handleAccept(activeRequestId)}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+                      onClick={() => handleDecline(activeRequestId)}
+                    >
+                      Decline
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })()
+        )}
+      </AnimatePresence>
+
     </>
   );
 }
