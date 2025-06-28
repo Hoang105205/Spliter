@@ -66,9 +66,9 @@ export const useFriend = create((set) => ({
   },
 
   // Xóa bạn
-  deleteFriend: async (friendId) => {
+  deleteFriend: async (relationshipId) => {
     try {
-      const res = await api.delete(`/api/friends/${friendId}`);
+      const res = await api.delete(`/api/friends/${relationshipId}`);
       return res.data;
     } catch (err) {
       throw err.response ? err.response.data : err;
