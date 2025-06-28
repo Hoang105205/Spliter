@@ -1,3 +1,5 @@
+const { createFriendRequest } = require('../services/friendService.js');
+
 module.exports = function(ws, connectedClients) {
   ws.on('message', (message) => {
     const parsedMessage = message.toString();
@@ -61,7 +63,7 @@ function handleLogin(ws, connectedClients, payload) {
 
 
 // Hàm xử lý ADD_FRIEND
-function handleAddFriend(ws, connectedClients, payload) {
+async function handleAddFriend(ws, connectedClients, payload) {
   const { senderId, receiverId } = payload;
 
   if (!senderId || !receiverId) {
@@ -72,47 +74,50 @@ function handleAddFriend(ws, connectedClients, payload) {
     return;
   }
 
-  // Log trạng thái của connectedClients và WebSocket
-  console.log("Trạng thái hiện tại của connectedClients: ", connectedClients);
-  console.log(`Sender WebSocket readyState: ${connectedClients[senderId]?.ws.readyState}`);
-  console.log(`Receiver WebSocket readyState: ${connectedClients[receiverId]?.ws.readyState}`);
+  try {
+    
+    const { exists, record } = await createFriendRequest(senderId, receiverId);
 
-  // Log thông tin nhận được từ client
-  console.log(`Yêu cầu kết bạn nhận được:`);
-  console.log(`Người gửi (senderId): ${senderId}`);
-  console.log(`Người nhận (receiverId): ${receiverId}`);
+    if (exists) {
+      return ws.send(JSON.stringify({
+        type: 'ERROR',
+        message: 'Yêu cầu kết bạn đã tồn tại.',
+        data: record
+      }));
+    }
 
-  // Tìm WebSocket của người nhận trong danh sách đã kết nối
-  const receiverClient = connectedClients[receiverId];
+    const receiverClient = connectedClients[receiverId];
 
-  if (receiverClient && receiverClient.ws.readyState === ws.OPEN) {
-    // Gửi thông báo yêu cầu kết bạn tới người nhận
-    receiverClient.ws.send(
-      JSON.stringify({
+    if (receiverClient && receiverClient.ws.readyState === ws.OPEN) {
+
+      receiverClient.ws.send(JSON.stringify({
         type: 'FRIEND_REQUEST',
         payload: {
-          senderId: senderId,
-          senderUsername: connectedClients[senderId]?.username || "Người dùng không xác định",
-          status: 'pending', // Trạng thái ban đầu là 'pending'
-        },
-      })
-    );
-    console.log(`Đã gửi yêu cầu kết bạn tới ${receiverClient.username} (${receiverId})`);
-
-    // Phản hồi lại người gửi
-    ws.send(JSON.stringify({ 
-      type: 'SUCCESS',
-      message: `Yêu cầu kết bạn đã được gửi tới ${receiverClient.username}.` 
-    }));
-
-  } else {
-    console.warn(`Người nhận (${receiverId}) không kết nối.`);
-    ws.send(
-      JSON.stringify({
+          senderId,
+          senderUsername: connectedClients[senderId]?.username || "Không rõ",
+          status: 'pending'
+        }
+      }));
+      ws.send(JSON.stringify({
+        type: 'SUCCESS',
+        message: `Đã gửi lời mời kết bạn.`,
+        data: record
+      }));
+      
+    } 
+    else {
+      ws.send(JSON.stringify({
         type: 'ERROR',
-        message: `Người nhận (${receiverId}) không online hoặc không kết nối.`,
-      })
-    );
+        message: `Người nhận không online hoặc không kết nối.`
+      }));
+    }
+
+  } catch (err) {
+    console.error("Lỗi tạo lời mời kết bạn:", err);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: err.message
+    }));
   }
 }
 

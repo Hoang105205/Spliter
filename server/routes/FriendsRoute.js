@@ -6,27 +6,31 @@ const {
   acceptFriendRequest,
   deleteFriend,
   getPendingFriendRequests,
-  denyFriendRequest
+  denyFriendRequest,
+  getSentFriendRequests
 } = require('../controllers/FriendsController');
 
 
 // Get friends of a user
-router.get('/:id', getFriendsOfUser);
+router.get('/:userid', getFriendsOfUser);
 
 // Send a friend request
 router.post('/add-friend', sendFriendRequest);
 
 // Get pending friend requests for a user
-router.get('/:id/pending', getPendingFriendRequests);
+router.get('/:userid/pending', getPendingFriendRequests);
+
+// Get sent friend requests for the logged-in user
+router.get('/:userid/sent-requests', getSentFriendRequests);
 
 // Accept a friend request
-router.put('/:id/accept', acceptFriendRequest);
+router.put('/:requestId/accept', acceptFriendRequest);
 
 // Deny a friend request
-router.put('/:id/deny', denyFriendRequest);
+router.put('/:requestId/deny', denyFriendRequest);
 
 // Delete a friend
-router.delete('/:id', deleteFriend);
+router.delete('/:requestId', deleteFriend);
 
 
 module.exports = router;
