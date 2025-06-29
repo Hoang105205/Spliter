@@ -2,37 +2,37 @@ const { Friends, Users } = require('../schemas');
 const { Op } = require('sequelize');
 
 const getFriendsOfUser = async (req, res) => {
-  const { userid } = req.params;
-  
+  const userid = Number(req.params.userid); // ép kiểu sang số
+
   try {
     const friends = await Friends.findAll({
       where: {
         status: 'accepted',
-        // Get all where user is either userId or friendId
         [Op.or]: [
           { requesterId: userid },
           { addresseeId: userid }
         ]
       },
       include: [
-        // Just include requester and addressee information
         { model: Users, as: 'requester', attributes: ['id', 'username', 'email'] },
         { model: Users, as: 'addressee', attributes: ['id', 'username', 'email'] }
       ]
     });
+
     if (!friends || friends.length === 0) {
       return res.status(404).json({ message: 'No friends found.' });
     }
-    // Map the results to get only the user information
+
     const result = friends.map(f => {
-      // If requester is the user, return addressee, otherwise return requester
+      // chính xác vì cả requesterId và userid đều là số
       return f.requesterId === userid ? f.addressee : f.requester;
     });
+
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
+}
 
 const sendFriendRequest = async (req, res) => {
   const { requesterId, addresseeId } = req.body;

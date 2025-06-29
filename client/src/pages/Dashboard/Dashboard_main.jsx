@@ -7,40 +7,46 @@ import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Head_bar from "../../components/ui/headbar.jsx";
 import { use } from "react";
-import { useUser } from '../../hooks/useUser.js';
 import Left_bar from "../../components/ui/leftbar.jsx";
 
+// API
+import { useUser } from '../../hooks/useUser.js';
+import { useFriend } from '../../hooks/useFriend.js';
 
+// WebSocket context
 import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
 
 function Dashboard_main() {
   const [loading, setLoading] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const { userData, findUser } = useUser(); // Lấy trạng thái người dùng từ hook useUser
+  const { fetchFriends, friends } = useFriend();
   const navigate = useNavigate();
 
   
   // Websocket context to handle real-time updates
   const ws = useContext(WebSocketContext);
 
-  // Need to fetch friend data from an API or a global state management solution
-  const [friendsList, setFriendsList] = useState([
-    
-  ]);
+  useEffect(() => {
+    if (userData.id) {
+      fetchFriends(userData.id);
+    }
+  }, [userData.id]);
 
+  
   const [showAddModal, setShowAddModal] = useState(false);
   const [search, setSearch] = useState("");
 
 
   // Dummy global user list (replace with API or actual list later)
-  const allUsers = [
-    { id: 1, name: "Alice Smith" },
-    { id: 2, name: "Bob Johnson" },
-    { id: 3, name: "Charlie Brown" },
-    { id: 4, name: "John Smith" },
-    { id: 5, name: "Mickel Jackon" },
-    { id: 6, name: "Booby Dry" },
-  ];
+  // const allUsers = [
+  //   { id: 1, name: "Alice Smith" },
+  //   { id: 2, name: "Bob Johnson" },
+  //   { id: 3, name: "Charlie Brown" },
+  //   { id: 4, name: "John Smith" },
+  //   { id: 5, name: "Mickel Jackon" },
+  //   { id: 6, name: "Booby Dry" },
+  // ];
 
   
   const handleSearch = () => {
@@ -227,7 +233,7 @@ function Dashboard_main() {
               </div>
 
               <div className="mt-4 space-y-6">
-                {friendsList.map((friend) => (
+                {friends.map((friend) => (
                   <div key={friend.id} className="flex items-center">
                     <div className="relative">
                       <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
@@ -237,7 +243,7 @@ function Dashboard_main() {
                       </div>
                     </div>
                     <div className="ml-2 [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg">
-                      {friend.name}
+                      {friend.username}
                     </div>
                   </div>
                 ))}

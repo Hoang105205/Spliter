@@ -4,6 +4,8 @@ const router = express.Router();
 
 const jwt = require('jsonwebtoken');
 
+// API: /auth/
+
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get('/google/callback',
