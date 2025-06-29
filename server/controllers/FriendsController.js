@@ -43,9 +43,9 @@ const sendFriendRequest = async (req, res) => {
         [Op.or]: [
           { requesterId, addresseeId },
           { requesterId: addresseeId, addresseeId: requesterId }
-        ]
+        ],
+        status: { [Op.in]: ['pending', 'accepted'] }
       },
-      status: { [Op.in]: ['pending', 'accepted'] }
     });
     if (exists) {
       return res.status(400).json({ message: 'Friend request already sent or exists.' });
@@ -115,7 +115,7 @@ const denyFriendRequest = async (req, res) => {
     }
     friendRequest.status = 'rejected';
     await friendRequest.save(); // Save the change to status
-    res.status(200).json({ message: 'Friend request is rejected.' });
+    res.status(200).json({ message: 'Friend request rejected.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
