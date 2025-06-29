@@ -45,7 +45,7 @@ const sendFriendRequest = async (req, res) => {
           { requesterId: addresseeId, addresseeId: requesterId }
         ],
         status: { [Op.in]: ['pending', 'accepted'] }
-      },
+      }
     });
     if (exists) {
       return res.status(400).json({ message: 'Friend request already sent or exists.' });
