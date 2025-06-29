@@ -1,18 +1,25 @@
 import { BellIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar.jsx";
 import { Button } from "../../components/ui/button.jsx";
 import { Separator } from "../../components/ui/seperator.jsx";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
+// API
 import { useUser } from '../../hooks/useUser.js';
 import { useFriend } from '../../hooks/useFriend.js';
+
+// WebSocket context
+import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
 
 // Button data
 const notifications = [
   
 ];
+
+
+
 
 const accountScroll = [
   { title: "Account" },
@@ -37,6 +44,11 @@ function Head_bar(){
 
   // Friend requests
   const { fetchPendingRequests, requests, acceptFriendRequest, denyFriendRequest } = useFriend();
+
+
+  // Websocket context to handle real-time updates
+  const ws = useContext(WebSocketContext);
+  
 
   const notifRef = useRef(null);
   const accountRef = useRef(null);
@@ -81,9 +93,25 @@ function Head_bar(){
   //Handle accept friend request
   const handleAccept = async (requestId) => {
     try {
+      const request = requests.find(r => r.id === Number(requestId));
+
       await acceptFriendRequest(requestId);
-      await fetchPendingRequests(userData.id);
+
+      // Gửi socket thông báo cho cả requester và accepter
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: "ACCEPT_FRIEND_REQUEST",
+          payload: {
+            requestId,
+            accepterId: userData.id,
+            requesterId: request?.requester?.id // có thể giúp server nhẹ hơn
+          }
+        }));
+      }
+
       setActiveRequestId(null);
+      // Có thể bỏ dòng sau nếu server gửi lại 'FRIEND_ACCEPTED' rồi client xử lý realtime
+      await fetchPendingRequests(userData.id);
     } catch (err) {
       console.error("Accept failed:", err);
     }

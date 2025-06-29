@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
+import { Toaster } from 'sonner';
 
 // Import pages
 import Login from './pages/Login';
@@ -19,6 +20,9 @@ import ProtectedLayout from './components/ProtectedLayout';
 function App() {
   return (
       <div className="App">
+        {/* ✅ Hiển thị thông báo toast */}
+        <Toaster position="bottom-right" richColors />
+
         <Routes>
 
           {/* Routes without authenticated */}

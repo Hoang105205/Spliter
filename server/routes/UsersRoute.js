@@ -11,6 +11,8 @@ const {
 } = require('../controllers/UsersController');
 const ensureAuthenticated = require('../middlewares/ensureAuthenticated');
 
+// API: /api/users/
+
 // Get all users
 router.get('/', getUsers);
 

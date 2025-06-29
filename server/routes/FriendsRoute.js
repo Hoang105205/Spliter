@@ -11,6 +11,8 @@ const {
 } = require('../controllers/FriendsController');
 
 
+// API: /api/friends/
+
 // Get friends of a user
 router.get('/:userid', getFriendsOfUser);
 

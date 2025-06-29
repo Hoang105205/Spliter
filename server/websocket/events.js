@@ -9,6 +9,7 @@ module.exports = function(ws, connectedClients) {
       console.log("Client gửi: ", jsonData);
 
       switch (jsonData.type) {
+        
         case 'login':
           handleLogin(ws, connectedClients, jsonData.payload);
           break;
@@ -19,6 +20,11 @@ module.exports = function(ws, connectedClients) {
 
         case 'FRIEND_REQUEST':
           handleFriendRequest(ws, connectedClients, jsonData.payload);
+          break;
+
+
+        case 'ACCEPT_FRIEND_REQUEST':
+          handleAcceptFriendRequest(ws, connectedClients, jsonData.payload);
           break;
 
 
@@ -159,4 +165,50 @@ function handleFriendRequest(ws, connectedClients, payload) {
   //   console.warn(`Người gửi (${senderId}) không kết nối.`);
   //   ws.send(JSON.stringify({ message: `Người gửi (${senderId}) không online hoặc không kết nối.` }));
   // }
+}
+
+
+// Hàm xử lý ACCEPT_FRIEND_REQUEST
+async function handleAcceptFriendRequest(ws, connectedClients, payload) {
+  const { requestId, accepterId, requesterId } = payload;
+
+  if (!requestId || !accepterId || !requesterId) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu requestId, accepterId hoặc requesterId.'
+    }));
+  }
+
+  try {
+
+    const accepterClient = connectedClients[accepterId];
+    const requesterClient = connectedClients[requesterId];
+
+    const message = {
+      type: 'FRIEND_ACCEPTED',
+      payload: {
+        requestId,
+        senderId: requesterId,
+        accepterId,
+        status: 'accepted'
+      }
+    };
+
+    if (accepterClient?.ws?.readyState === ws.OPEN) {
+      accepterClient.ws.send(JSON.stringify(message));
+    }
+
+    if (requesterClient?.ws?.readyState === ws.OPEN) {
+      requesterClient.ws.send(JSON.stringify(message));
+    }
+
+    console.log(`Đã gửi tín hiệu FRIEND_ACCEPTED cho ${requesterId} và ${accepterId}`);
+
+  } catch (err) {
+    console.error("Lỗi khi xử lý ACCEPT_FRIEND_REQUEST:", err);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: err.message
+    }));
+  }
 }

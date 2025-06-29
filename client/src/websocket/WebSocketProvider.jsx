@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
-import connectWebSocket from './websocket-client';
 import { useUser } from '../hooks/useUser';
 
+import { useWebSocketHandler } from './useWebSocketHandler.js';
 
 // Tạo Context
 export const WebSocketContext = createContext(null);
@@ -10,20 +10,22 @@ export const WebSocketContext = createContext(null);
 export const WebSocketProvider = ({ children }) => {
   const [ws, setWebSocket] = useState(null);
   const { userData } = useUser(); 
+
   useEffect(() => {
-    let websocket;
-    
-    try {
-      websocket = connectWebSocket(userData);
-      setWebSocket(websocket);
-    } catch (error) {
-      console.error('Failed to connect WebSocket:', error);
-    }
+    if (!userData?.id) return;
+
+    const socket = new WebSocket('ws://localhost:3000');
+
+    setWebSocket(socket);
 
     return () => {
-      websocket && websocket.close();
+      socket.close();
     };
-  }, []);
+  }, [userData?.id]);
+
+  // 👇 Gọi custom hook lắng nghe sự kiện
+  useWebSocketHandler(ws);
+
 
   return (
     <WebSocketContext.Provider value={ws}>
