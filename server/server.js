@@ -23,6 +23,8 @@ app.use(express.json());
 const UsersRoute = require('./routes/UsersRoute');
 const FriendsRoute = require('./routes/FriendsRoute');
 const NotificationsRoute = require('./routes/NotificationsRoute');
+const groupMembersRoute = require('./routes/groupMembersRoute');
+const GroupsRoute = require('./routes/GroupsRoute');
 const authRouter = require('./routes/auth');
 /////////
 
@@ -78,6 +80,8 @@ app.use('/auth', authRouter);
 app.use('/api/users', UsersRoute);
 app.use('/api/friends', FriendsRoute);
 app.use('/api/notifications', NotificationsRoute);
+app.use('/api/group-members', groupMembersRoute);
+app.use('/api/groups', GroupsRoute);
 
 // ngoai login va signup, cac route khac can phai xac thuc (vd: req.isAuthenticated()) thi moi direct, phai dat truoc app.get('*') de khong bi ghi de
 app.use(express.static(path.join(__dirname, '../client/dist')));
