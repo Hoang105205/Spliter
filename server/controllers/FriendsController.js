@@ -36,9 +36,10 @@ const getFriendsOfUser = async (req, res) => {
 
 const sendFriendRequest = async (req, res) => {
   const { requesterId, addresseeId } = req.body;
+
   try {
-    // Check if request already exists
-    const exists = await Friends.findOne({ 
+    // Kiểm tra xem đã có lời mời trước đó chưa
+    const existing = await Friends.findOne({ 
       where: {
         [Op.or]: [
           { requesterId, addresseeId },
@@ -47,11 +48,35 @@ const sendFriendRequest = async (req, res) => {
         status: { [Op.in]: ['pending', 'accepted'] }
       }
     });
-    if (exists) {
-      return res.status(400).json({ message: 'Friend request already sent or exists.' });
+
+    if (existing) {
+      return res.status(400).json({ message: 'Friend request already sent or already friends.' });
     }
+
+    // Kiểm tra nếu có lời mời rejected trước đó → xóa nó đi hoặc update lại
+    const rejected = await Friends.findOne({
+      where: {
+        [Op.or]: [
+          { requesterId, addresseeId },
+          { requesterId: addresseeId, addresseeId: requesterId }
+        ],
+        status: 'rejected'
+      }
+    });
+
+    if (rejected) {
+      // Gửi lại bằng cách update lại bản ghi cũ
+      rejected.requesterId = requesterId;
+      rejected.addresseeId = addresseeId;
+      rejected.status = 'pending';
+      await rejected.save();
+      return res.status(200).json(rejected);
+    }
+
+    // Nếu không có rejected thì tạo mới
     const friendRequest = await Friends.create({ requesterId, addresseeId, status: 'pending' });
     res.status(201).json(friendRequest);
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
