@@ -4,11 +4,14 @@ const Users = require('../schemas/Users');
 const getUsers = async (req, res) => {
     try {
         const user = await Users.findAll({ 
-            attributes: { exclude: ['password', 'avatar', 'avatar_mimetype'] } 
+            attributes: { exclude: ['password'] } 
         });
         const result = user.map(u => {
             const data = u.toJSON();
-            data.avatarURL = `${req.protocol}://${req.get('host')}/users/${data.id}/avatar`;
+            data.avatarURL = data.avatar
+            ? `${req.protocol}://${req.get('host')}/users/${data.id}/avatar` : null;
+            delete data.avatar;
+            delete data.avatar_mimetype;
             return data;
         });
         res.status(200).json(result);
@@ -21,13 +24,16 @@ const getSingleUser = async (req, res) => {
     try {
         const user = await Users.findOne({ 
             where: { username: req.params.username },
-            attributes: { exclude: ['password', 'avatar', 'avatar_mimetype'] } 
+            attributes: { exclude: ['password'] } 
         });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
         const data = user.toJSON();
-        data.avatarURL = `${req.protocol}://${req.get('host')}/users/${data.id}/avatar`;
+        data.avatarURL = data.avatar
+        ? `${req.protocol}://${req.get('host')}/users/${data.id}/avatar` : null;
+        delete data.avatar;
+        delete data.avatar_mimetype;
         res.status(200).json(data);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -61,6 +67,7 @@ const updateUser = async (req, res) => {
         }
         const updatedUser = await Users.findOne({ where: { id: req.params.id } });
         const { password, ...userWithoutPassword } = updatedUser.toJSON();
+        userWithoutPassword.avatarURL = updatedUser.avatar ? `${req.protocol}://${req.get('host')}/users/${userWithoutPassword.id}/avatar` : null;
         res.status(200).json(userWithoutPassword);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -115,6 +122,7 @@ const loginUser = async (req, res) => {
         }
         // Exclude password from the response
         const { password: userPassword, ...userWithoutPassword } = user.toJSON();
+        userWithoutPassword.avatarURL = user.avatar ? `${req.protocol}://${req.get('host')}/users/${userWithoutPassword.id}/avatar` : null;
         res.status(200).json(userWithoutPassword);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -123,7 +131,7 @@ const loginUser = async (req, res) => {
 
 const getAvatar = async (req, res) => {
     try {
-        const user = await Users.findbyPk(req.params.id, {
+        const user = await Users.findByPk(req.params.id, {
             attributes: ['avatar', 'avatar_mimetype']
         });
         if (!user || !user.avatar) {

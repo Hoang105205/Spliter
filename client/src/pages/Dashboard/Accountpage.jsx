@@ -11,7 +11,7 @@ import Head_bar from "../../components/ui/headbar.jsx"
 import { useUser } from '../../hooks/useUser.js'
 
 function AccountPage() {
-  const { updateUser, handleChangePassword, userData, setUserData } = useUser()
+  const { updateUser, handleChangePassword, userData, setUserData, setAvatar, getAvatar, revokeAvatarUrl } = useUser()
   const [localData, setLocalData] = useState({
     id: '',
     username: '',
@@ -71,13 +71,46 @@ function AccountPage() {
   }
 
   const [showPopup, setShowPopup] = useState(false)
-  const [imageUrl, setImageUrl] = useState("")
+  const [avatarUrl, setAvatarUrl] = useState("")
 
-  const handleImageChange = (e) => {
+  // Lấy avatar từ backend khi userId thay đổi
+  useEffect(() => {
+    let isMounted = true;
+    let oldUrl = avatarUrl;
+    if (userData.id) {
+      getAvatar(userData.id).then(url => {
+        if (isMounted) {
+          setAvatarUrl(url)
+          // Giải phóng URL cũ nếu có
+          if (oldUrl) revokeAvatarUrl(oldUrl)
+        }
+      })
+    }
+    return () => {
+      isMounted = false;
+      if (avatarUrl) revokeAvatarUrl(avatarUrl)
+    }
+    // eslint-disable-next-line
+  }, [userData.id])
+
+  const handleImageChange = async (e) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const url = URL.createObjectURL(file)
-      setImageUrl(url)
+    if (!file) {
+      console.error("No file selected")
+      return
+    }
+    try {
+      await setAvatar(file)
+      // Sau khi upload thành công, lấy lại avatar mới nhất
+      if (userData.id) {
+        const newUrl = await getAvatar(userData.id)
+        // Giải phóng URL cũ
+        if (avatarUrl) revokeAvatarUrl(avatarUrl)
+        setAvatarUrl(newUrl)
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error)
+      alert("Failed to upload image: " + error.message)
     }
   }
 
@@ -211,7 +244,7 @@ function AccountPage() {
 
               <div className="relative w-[216px] h-[216px]">
                 <Avatar className="w-full h-full bg-[#d9d9d9]">
-                  <AvatarImage src={imageUrl} />
+                  <AvatarImage src={avatarUrl || localData.avatarURL} />
                   <AvatarFallback></AvatarFallback>
                 </Avatar>
 
@@ -228,8 +261,8 @@ function AccountPage() {
                       <h2 className="font-bold normal-header text-center">Change Avatar</h2>
                       <div className="flex flex-row items-center gap-4">
                         <InputFile
-                          onChange={(e) => {
-                            handleImageChange(e);
+                          onChange={async (e) => {
+                            await handleImageChange(e);
                             setShowPopup(false);
                           }}
                           label="Upload image"

@@ -111,7 +111,27 @@ export const useUser = create(
           set({ error: error.response ? error.response.data : error.message });
           throw error; // Re-throw the error to handle it in the component
         }
-      }
+      },
+
+      getAvatar: async (userId) => {
+        try {
+          const response = await api.get(`/api/users/${userId}/avatar`, {
+            responseType: 'blob' // Ensure the response is treated as a blob
+          });
+          const imageUrl = URL.createObjectURL(response.data); // Create a local URL for the image blob
+          return imageUrl; // Return the image URL
+        } catch (error) {
+          set({ error: error.response ? error.response.data : error.message });
+          throw error; // Re-throw the error to handle it in the component
+        }
+      },
+
+      // Giải phóng object URL khi không dùng nữa để tránh memory leak
+      revokeAvatarUrl: (url) => {
+        if (url) {
+          URL.revokeObjectURL(url);
+        }
+      },
     }), 
     {
       name: 'user-storage', // unique name for the storage
