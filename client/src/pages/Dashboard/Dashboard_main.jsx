@@ -37,17 +37,6 @@ function Dashboard_main() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [search, setSearch] = useState("");
 
-
-  // Dummy global user list (replace with API or actual list later)
-  // const allUsers = [
-  //   { id: 1, name: "Alice Smith" },
-  //   { id: 2, name: "Bob Johnson" },
-  //   { id: 3, name: "Charlie Brown" },
-  //   { id: 4, name: "John Smith" },
-  //   { id: 5, name: "Mickel Jackon" },
-  //   { id: 6, name: "Booby Dry" },
-  // ];
-
   
   const handleSearch = () => {
     setLoading(true); // Hiển thị trạng thái loading

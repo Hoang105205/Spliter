@@ -4,7 +4,7 @@ const { Op } = require('sequelize');
 
 
 async function createFriendRequest(senderId, receiverId) {
-  // Kiểm tra tồn tại theo cả chiều ngược lại
+  // Kiểm tra tồn tại theo cả hai chiều
   const existing = await Friends.findOne({
     where: {
       [Op.or]: [
@@ -15,17 +15,27 @@ async function createFriendRequest(senderId, receiverId) {
   });
 
   if (existing) {
-    // Có rồi, trả về bản ghi đó và đánh dấu là "đã tồn tại"
-    return { exists: true, record: existing };
+    if (existing.status === 'pending' || existing.status === 'accepted') {
+      // Nếu đang chờ hoặc đã là bạn thì không gửi lại
+      return { exists: true, record: existing };
+    } else if (existing.status === 'rejected') {
+      // Cho phép gửi lại bằng cách cập nhật bản ghi
+      existing.requesterId = senderId;
+      existing.addresseeId = receiverId;
+      existing.status = 'pending';
+      await existing.save();
+      return { exists: false, record: existing, resent: true };
+    }
   }
 
+  // Nếu chưa có gì thì tạo mới
   const newRequest = await Friends.create({
     requesterId: senderId,
     addresseeId: receiverId,
     status: 'pending',
   });
 
-  return { exists: false, record: newRequest };
+  return { exists: false, record: newRequest, resent: false };
 }
 
 module.exports = {

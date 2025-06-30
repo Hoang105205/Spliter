@@ -5,6 +5,7 @@ import { Button } from "../../components/ui/button.jsx";
 import { Separator } from "../../components/ui/seperator.jsx";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import Report from "../../components/popup/report.jsx";
 
 // API
 import { useUser } from '../../hooks/useUser.js';
@@ -36,7 +37,9 @@ function Head_bar(){
 
   // Active Notification
   const [activeRequestId, setActiveRequestId] = useState(null);
-  
+
+  // Report popup
+  const [showReportPopup, setShowReportPopup] = useState(false);
   
 
   // User data
@@ -127,8 +130,6 @@ function Head_bar(){
       console.error("Decline failed:", err);
     }
   };
-
-
 
 
   useEffect(() => {
@@ -234,7 +235,7 @@ function Head_bar(){
                         if (accScr.title === "Account") {
                           navigate(`/dashboard/${userData.id}/account`);
                         } else if (accScr.title === "Report") {
-                          navigate(`/dashboard/${userData.id}/report`);
+                          setShowReportPopup(true);
                         } else if (accScr.title === "Logout") {
                           setShowLogoutModal(true);
                           setShowAccountScrolldown(false);
@@ -339,6 +340,9 @@ function Head_bar(){
           })()
         )}
       </AnimatePresence>
+
+      {/* Report Modal */}
+      <Report show={showReportPopup} onClose={() => setShowReportPopup(false)} ws={ws} />
 
     </>
   );
