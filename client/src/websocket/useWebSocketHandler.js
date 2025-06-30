@@ -78,8 +78,7 @@ export const useWebSocketHandler = (ws) => {
 
   // Xử lý yêu cầu kết bạn
   const handleFriendRequest = ({ senderId, senderUsername, status }) => {
-    console.log(`👤 Yêu cầu kết bạn từ ${senderUsername} (${senderId}) - Trạng thái: ${status}`);
-    // Bạn có thể thêm hiển thị popup hoặc badge ở đây
+    toast.info("👤 You have a new friend request. Please check notifications!");
   };
 
   // Xử lý đã chấp nhận kết bạn
@@ -87,9 +86,10 @@ export const useWebSocketHandler = (ws) => {
     if (userData.id === senderId || userData.id === accepterId) {
       console.log("🔄 Cập nhật danh sách bạn bè sau khi accept.");
       fetchFriends(userData.id);
-      toast.success("🎉 Bạn đã có một người bạn mới!");
+      toast.success("🎉 You have a new friend!");
     }
   };
+  
 };
 
 
