@@ -22,6 +22,7 @@ app.use(express.json());
 ///////// Import routes
 const UsersRoute = require('./routes/UsersRoute');
 const FriendsRoute = require('./routes/FriendsRoute');
+const NotificationsRoute = require('./routes/NotificationsRoute');
 const authRouter = require('./routes/auth');
 /////////
 
@@ -76,6 +77,7 @@ createWebSocketServer(server);
 app.use('/auth', authRouter);
 app.use('/api/users', UsersRoute);
 app.use('/api/friends', FriendsRoute);
+app.use('/api/notifications', NotificationsRoute);
 
 // ngoai login va signup, cac route khac can phai xac thuc (vd: req.isAuthenticated()) thi moi direct, phai dat truoc app.get('*') de khong bi ghi de
 app.use(express.static(path.join(__dirname, '../client/dist')));

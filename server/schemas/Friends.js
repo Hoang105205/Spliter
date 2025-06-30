@@ -19,9 +19,9 @@ const Friends = sequelize.define('Friend', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-        model: 'users',
-        key: 'id'
-        }
+      model: 'users',
+      key: 'id'
+    }
   },
   status: {
     type: DataTypes.ENUM('pending', 'accepted', 'rejected'),
