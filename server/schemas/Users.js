@@ -45,6 +45,16 @@ const Users = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
       defaultValue: null,
+    },
+    avatar: {
+      type: DataTypes.BLOB,
+      allowNull: true,
+      defaultValue: null,
+    },
+    avatar_mimetype: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
     }
   }, 
   {

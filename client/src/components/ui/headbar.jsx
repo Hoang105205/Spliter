@@ -1,6 +1,6 @@
 import { BellIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
 import { useState, useRef, useEffect, useContext } from "react";
-import { Avatar, AvatarFallback } from "../../components/ui/avatar.jsx";
+import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar.jsx";
 import { Button } from "../../components/ui/button.jsx";
 import { Separator } from "../../components/ui/seperator.jsx";
 import { useNavigate } from "react-router-dom";
@@ -200,6 +200,9 @@ function Head_bar(){
           {/* Avatar & Dropdown */}
           <div className="flex items-center" ref={accountRef}>
             <Avatar className="w-[34px] h-[33px] bg-[#d9d9d9]">
+              <AvatarImage
+                src={userData.avatarURL}
+              />
               <AvatarFallback />
             </Avatar>
             {/*Username*/}

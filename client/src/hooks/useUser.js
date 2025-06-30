@@ -16,7 +16,8 @@ export const useUser = create(
         createdAt: '',
         updatedAt: '',
         bio: '',
-        phone_number: ''
+        phone_number: '',
+        avatarURL: ''
       },
 
       setUserData: (newUserData) => set({ userData: newUserData }),
@@ -51,7 +52,8 @@ export const useUser = create(
               createdAt: '',
               updatedAt: '',
               bio: '',
-              phone_number: ''
+              phone_number: '',
+              avatarURL: ''
             }
           });
           localStorage.removeItem('user-storage'); // Clear Zustand persisted storage
@@ -91,7 +93,45 @@ export const useUser = create(
           set({ error: error.response ? error.response.data : error.message });
           throw error; // Re-throw the error to handle it in the component
         }
-      }
+      },
+
+      setAvatar: async (file) => {
+        try {
+          const formData = new FormData();
+          formData.append('avatar', file);
+          const userID = get().userData.id;
+          const response = await api.put(`/api/users/${userID}/avatar`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          set({ userData: { ...get().userData, avatarURL: response.data.avatarURL } });
+          return response.data.avatarURL; // Return the avatar URL
+        } catch (error) {
+          set({ error: error.response ? error.response.data : error.message });
+          throw error; // Re-throw the error to handle it in the component
+        }
+      },
+
+      getAvatar: async (userId) => {
+        try {
+          const response = await api.get(`/api/users/${userId}/avatar`, {
+            responseType: 'blob' // Ensure the response is treated as a blob
+          });
+          const imageUrl = URL.createObjectURL(response.data); // Create a local URL for the image blob
+          return imageUrl; // Return the image URL
+        } catch (error) {
+          set({ error: error.response ? error.response.data : error.message });
+          throw error; // Re-throw the error to handle it in the component
+        }
+      },
+
+      // Giải phóng object URL khi không dùng nữa để tránh memory leak
+      revokeAvatarUrl: (url) => {
+        if (url) {
+          URL.revokeObjectURL(url);
+        }
+      },
     }), 
     {
       name: 'user-storage', // unique name for the storage
