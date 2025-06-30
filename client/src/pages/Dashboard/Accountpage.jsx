@@ -1,6 +1,7 @@
-import { BellIcon, ChevronDownIcon, PencilIcon } from "lucide-react"
+import { Camera, BellIcon, ChevronDownIcon, PencilIcon } from "lucide-react"
+import InputFile from "../../components/ui/inputfile.jsx"
 import React, { useEffect, useState } from "react"
-import { Avatar, AvatarFallback } from "../../components/ui/avatar.jsx"
+import { Avatar, AvatarImage, AvatarFallback } from "../../components/ui/avatar.jsx"
 import { Button } from "../../components/ui/button.jsx"
 import { Card, CardContent } from "../../components/ui/card.jsx"
 import { Select, SelectTrigger, SelectValue } from "../../components/ui/select.jsx"
@@ -62,8 +63,19 @@ function AccountPage() {
       }
     }
     else {
-      setEditText("Comfirm")
+      setEditText("Confirm")
       setEditState(true)
+    }
+  }
+
+  const [showPopup, setShowPopup] = useState(false)
+  const [imageUrl, setImageUrl] = useState("")
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const url = URL.createObjectURL(file)
+      setImageUrl(url)
     }
   }
 
@@ -78,6 +90,7 @@ function AccountPage() {
           setWarningCurrentPass("Current password cannot be empty")
         }
         else {
+          setEC(false)
           setWarningCurrentPass("")
         }
 
@@ -87,6 +100,7 @@ function AccountPage() {
           return
         }
         else {
+          setEN(false)
           setWarningNewPass("")
         }
         const result = await handleChangePassword(currentPass, newPass)
@@ -136,7 +150,7 @@ function AccountPage() {
       setEditIState(true) // enter edit mode
     }
   }
-  
+
   const setBio = (event) => {
     setLocalData({
       ...localData,
@@ -175,7 +189,7 @@ function AccountPage() {
 
   if (!userData) {
     // Đợi dữ liệu, render loading
-    return <div>Đang tải dữ liệu tài khoản...</div>
+    return <div>Loading account's information...</div>
   }
 
   return (
@@ -189,13 +203,48 @@ function AccountPage() {
           <div className="flex mt-8">
             {/* Left section */}
             <div className="flex flex-col items-center w-[400px]">
-              <h1 className="[font-family:'Roboto_Slab',Helvetica] font-bold text-black text-[35px] text-center mb-4">
+              <h1 className="username-header">
                 Your Account
               </h1>
 
-              <Avatar className="w-[216px] h-[216px] bg-[#d9d9d9] rounded-[108px]">
-                <AvatarFallback></AvatarFallback>
-              </Avatar>
+              <div className="relative w-[216px] h-[216px]">
+                <Avatar className="w-full h-full bg-[#d9d9d9]">
+                  <AvatarImage src={imageUrl} />
+                  <AvatarFallback></AvatarFallback>
+                </Avatar>
+
+                <button
+                  onClick={() => setShowPopup(true)}
+                  className="absolute bottom-2 right-2 bg-white hover:bg-gray-100 
+                            border border-gray-300 rounded-full p-2 shadow-md">
+                  <Camera className="w-5 h-5 text-gray-600" />
+                </button>
+
+                {showPopup && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 shadow-xl space-y-5 w-[400px] h-[160px] flex flex-col">
+                      <h2 className="font-bold normal-header text-center">Change Avatar</h2>
+                      <div className="flex flex-row items-center gap-4">
+                        <InputFile
+                          onChange={(e) => {
+                            handleImageChange(e);
+                            setShowPopup(false);
+                          }}
+                          label="Upload image"
+                        />
+                        <button
+                          onClick={() => setShowPopup(false)}
+                          className="mx-auto w-[110px] h-12 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors 
+                                    duration-200 border border-transparent hover:border-white">
+                          <span className="button-blue-data">
+                            Cancel
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <Button onClick={onEditBioClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors duration-200 border border-transparent hover:border-white">
                 <span className="button-blue-data">
@@ -303,7 +352,7 @@ function AccountPage() {
                       {!editIState && editPassword &&
                       <p className="normal-input-header"> New password </p>}
                       {!editIState && editPassword &&
-                      <input onChange={setNewPassword} className={errorCurrent ? "error-input" : "normal-input"} value = {newPass}></input>}
+                      <input onChange={setNewPassword} className={errorNew ? "error-input" : "normal-input"} value = {newPass}></input>}
                       {!editIState && editPassword &&
                       <p className="error-text min-h-[20px]"> {warningNewPass} </p>}
                     </div>
@@ -345,16 +394,6 @@ function AccountPage() {
                   className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-[#4285f4] text-[25px] text-right underline mt-8">
                   Add payment method
                 </a>
-              </div>
-              <div className="space-y-2">
-                <label className="normal-header">
-                  Language
-                </label>
-                <Select defaultValue={localData.language}>
-                  <SelectTrigger className="w-[350px] [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                </Select>
               </div>
             </div>
           </div>
