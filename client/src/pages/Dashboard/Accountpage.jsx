@@ -20,6 +20,7 @@ function AccountPage() {
     updatedAt: '',
     bio: '',
     phone_number: '',
+    avatarURL: ''
   })
 
   useEffect(() => {
@@ -32,7 +33,8 @@ function AccountPage() {
       createdAt: userData.createdAt || '',
       updatedAt: userData.updatedAt || '',
       bio: userData.bio || '',
-      phone_number: userData.phone_number || ''
+      phone_number: userData.phone_number || '',
+      avatarURL: userData.avatarURL || ''
     })
   }, [userData])
 

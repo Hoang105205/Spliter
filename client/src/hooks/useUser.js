@@ -16,7 +16,8 @@ export const useUser = create(
         createdAt: '',
         updatedAt: '',
         bio: '',
-        phone_number: ''
+        phone_number: '',
+        avatarURL: ''
       },
 
       setUserData: (newUserData) => set({ userData: newUserData }),
@@ -51,7 +52,8 @@ export const useUser = create(
               createdAt: '',
               updatedAt: '',
               bio: '',
-              phone_number: ''
+              phone_number: '',
+              avatarURL: ''
             }
           });
           localStorage.removeItem('user-storage'); // Clear Zustand persisted storage
@@ -87,6 +89,24 @@ export const useUser = create(
           const userData = response.data;
           set({ userData });
           return userData;
+        } catch (error) {
+          set({ error: error.response ? error.response.data : error.message });
+          throw error; // Re-throw the error to handle it in the component
+        }
+      },
+
+      setAvatar: async (file) => {
+        try {
+          const formData = new FormData();
+          formData.append('avatar', file);
+          const userID = get().userData.id;
+          const response = await api.put(`/api/users/${userID}/avatar`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          set({ userData: { ...get().userData, avatarURL: response.data.avatarURL } });
+          return response.data.avatarURL; // Return the avatar URL
         } catch (error) {
           set({ error: error.response ? error.response.data : error.message });
           throw error; // Re-throw the error to handle it in the component

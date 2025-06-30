@@ -4,9 +4,14 @@ const Users = require('../schemas/Users');
 const getUsers = async (req, res) => {
     try {
         const user = await Users.findAll({ 
-            attributes: { exclude: ['password'] } 
+            attributes: { exclude: ['password', 'avatar', 'avatar_mimetype'] } 
         });
-        res.status(200).json(user);
+        const result = user.map(u => {
+            const data = u.toJSON();
+            data.avatarURL = `${req.protocol}://${req.get('host')}/users/${data.id}/avatar`;
+            return data;
+        });
+        res.status(200).json(result);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -16,12 +21,14 @@ const getSingleUser = async (req, res) => {
     try {
         const user = await Users.findOne({ 
             where: { username: req.params.username },
-            attributes: { exclude: ['password'] } 
+            attributes: { exclude: ['password', 'avatar', 'avatar_mimetype'] } 
         });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        res.status(200).json(user);
+        const data = user.toJSON();
+        data.avatarURL = `${req.protocol}://${req.get('host')}/users/${data.id}/avatar`;
+        res.status(200).json(data);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -114,6 +121,43 @@ const loginUser = async (req, res) => {
     }
 }
 
+const getAvatar = async (req, res) => {
+    try {
+        const user = await Users.findbyPk(req.params.id, {
+            attributes: ['avatar', 'avatar_mimetype']
+        });
+        if (!user || !user.avatar) {
+            return res.status(404).json({ message: 'Avatar not found' });
+        }
+        res.set('Content-Type', user.avatar_mimetype);
+        res.send(user.avatar);
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+const updateAvatar = async (req, res) => {
+    try {
+        const user = await Users.findByPk(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        if (req.file) {
+            user.avatar = req.file.buffer;
+            user.avatar_mimetype = req.file.mimetype;
+        } else {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+        await user.save();
+        const avatarURL = `${req.protocol}://${req.get('host')}/users/${user.id}/avatar`;
+
+        res.status(200).json({ message: 'Avatar updated successfully', avatarURL });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
 module.exports = {
     getUsers,
     getSingleUser,
@@ -121,5 +165,7 @@ module.exports = {
     updateUser,
     deleteUser,
     changePassword,
-    loginUser
+    loginUser,
+    getAvatar,
+    updateAvatar
 }
