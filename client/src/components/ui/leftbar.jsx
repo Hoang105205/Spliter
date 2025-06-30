@@ -58,15 +58,15 @@ function Left_bar({ activeTab, setActiveTab }) {
         {/* Recently */}
         <div
           className={`${
-            activeTab === "recently"
+            activeTab === "activities"
               ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
               : ""
           } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
-            activeTab === "recently" ? "text-[#5a96f0]" : "text-[#193865]"
+            activeTab === "activities" ? "text-[#5a96f0]" : "text-[#193865]"
           }`}
-          onClick={() => handleClick("recently", `/dashboard/${userData.id}/recently`)}
+          onClick={() => handleClick("activities", `/dashboard/${userData.id}/activities`)}
         >
-          Recently
+          Activities
         </div>
 
         {/* Statistics */}

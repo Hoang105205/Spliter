@@ -8,7 +8,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import AccountPage from './pages/Dashboard/Accountpage';
 import Dashboard_main from './pages/Dashboard/Dashboard_main';
-import Dashboard_recently from './pages/Dashboard/Dashboard_recently';
+import Dashboard_activities from './pages/Dashboard/Dashboard_activities';
 import Dashboard_group from './pages/Dashboard/Dashboard_group';
 import Dashboard_statistics from './pages/Dashboard/Dashboard_statistics';
 
@@ -39,9 +39,9 @@ function App() {
             </ProtectedLayout>             
             } 
           />
-          <Route path="/dashboard/:id/recently" element={
+          <Route path="/dashboard/:id/activities" element={
             <ProtectedLayout> 
-              <Dashboard_recently />
+              <Dashboard_activities />
             </ProtectedLayout>
             }
           />

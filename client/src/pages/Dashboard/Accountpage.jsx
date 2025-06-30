@@ -175,7 +175,7 @@ function AccountPage() {
 
   if (!userData) {
     // Đợi dữ liệu, render loading
-    return <div>Đang tải dữ liệu tài khoản...</div>
+    return <div>Loading account's information...</div>
   }
 
   return (
