@@ -1,9 +1,6 @@
-import { useState, useRef, useEffect, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Button } from "../../components/ui/button.jsx";
-import { Separator } from "../../components/ui/seperator.jsx";
 import { useNavigate } from "react-router-dom";
-import { useParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,7 +16,7 @@ import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
 import CreateGroupPopup from "../popup/CreateGroupPopup.jsx";
 
 
-function Left_bar({ activeTab, setActiveTab }) {
+function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
   const navigate = useNavigate();
 
   // User data 
@@ -31,6 +28,9 @@ function Left_bar({ activeTab, setActiveTab }) {
   // Create Group Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  // State to track the selected group ID
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
+
   // WebSocket context
   const ws = useContext(WebSocketContext);
 
@@ -38,12 +38,21 @@ function Left_bar({ activeTab, setActiveTab }) {
   useEffect(() => {
     if (activeTab === 'group') {
       fetchGroups(userData.id);
+      // Reset selected group when switching away from or back to 'group' tab
+      setSelectedGroupId(null);
     }
   }, [activeTab, userData.id]);
 
   const handleClick = (tabName, path) => {
     setActiveTab(tabName);
     navigate(path);
+  };
+
+  const handleGroupClick = (group) => {
+    if (activeTab === 'group') {
+      onGroupSelect(group);
+      setSelectedGroupId(group.id); 
+    }
   };
 
 
@@ -68,6 +77,7 @@ function Left_bar({ activeTab, setActiveTab }) {
       console.error("WebSocket is not connected.");
     }
   };
+
 
   return (
     <aside className="w-[342px] h-screen pr-4 border-r-4 border-[#4A73A8]">
@@ -154,10 +164,14 @@ function Left_bar({ activeTab, setActiveTab }) {
             {groups.map((group) => (
               <div
                 key={group.id}
-                className="flex items-center gap-2 px-2 py-2 rounded cursor-pointer hover:bg-[#f0f8ff]"
-                // onClick={() => handleClick(`group-${group.id}`, `/dashboard/${userData.id}/group/${group.id}`)}
+                className={`flex items-center gap-2 px-2 py-2 rounded cursor-pointer ${
+                  selectedGroupId === group.id
+                    ? "bg-[#83abe7] text-white font-bold" // Hiệu ứng khi được chọn: nền xanh đậm, chữ trắng, đậm
+                    : "hover:bg-[#f0f8ff]"
+                }`}
+                onClick={() => handleGroupClick(group)}
               >
-                <span className="[font-family:'Roboto_Condensed',Helvetica] font-medium text-lg">
+                <span className="[font-family:'Roboto_Condensed',Helvetica] text-lg">
                   {group.name}
                 </span>
               </div>

@@ -11,6 +11,7 @@ import Report from "../../components/popup/report.jsx";
 import { useUser } from '../../hooks/useUser.js';
 import { useFriend } from '../../hooks/useFriend.js';
 import { useActivity } from '../../hooks/useActivity.js';
+import { useGroupMember } from '../../hooks/useGroupMember.js';
 
 // WebSocket context
 import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
@@ -19,7 +20,6 @@ import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
 const notifications = [
   
 ];
-
 
 
 
@@ -53,7 +53,10 @@ function Head_bar(){
   const { clearActivityData } = useActivity();
 
   // Friend requests
-  const { fetchPendingRequests, requests, acceptFriendRequest, denyFriendRequest } = useFriend();
+  const { fetchPendingRequests, requests, acceptFriendRequest, denyFriendRequest, clearFriendData } = useFriend();
+
+  // Group data
+  const { clearGroups } = useGroupMember();
 
 
   // Websocket context to handle real-time updates
@@ -63,6 +66,39 @@ function Head_bar(){
   const notifRef = useRef(null);
   const accountRef = useRef(null);
   const friendRequestPopupRef = useRef(null);
+
+  // Handle Log out
+  const handleLogout = async () => {
+    setShowLogoutModal(false);
+
+    // Clear all user-related data
+    await clearUserData();
+    await clearActivityData();
+    await clearFriendData();
+    await clearGroups();
+
+    // clear localStorage 
+    localStorage.removeItem("token");
+    
+    // fetch data after clearing
+    const clearedData = useUser.getState().userData;
+    const clearedActivityData = useActivity.getState().activities;
+    const clearedFriendData = useFriend.getState().requests;
+    const clearedGroupData = useGroupMember.getState().groups;
+
+    // Check if all data is cleared
+    const isUserCleared = Object.values(clearedData).every(v => !v);
+    const isActivityCleared = Object.keys(clearedActivityData).length === 0;
+    const isFriendCleared = clearedFriendData.length === 0;
+    const isGroupCleared = clearedGroupData.length === 0;
+
+    // If all data is cleared, navigate to login
+    if (isUserCleared && isActivityCleared && isFriendCleared && isGroupCleared) {
+      navigate("/login");
+    } else {
+      console.error("Failed to clear userData completely!");
+    }
+  };
 
   const handleBellClick = () => {
     setShowNotifications((prev) => {
@@ -291,24 +327,7 @@ function Head_bar(){
               <div className="flex justify-around">
                 <Button
                   className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors"
-                  onClick={async () => {
-                    setShowLogoutModal(false);
-
-                    await clearUserData();
-                    await clearActivityData();
-
-
-                    localStorage.removeItem("token");
-                    
-                    const clearedData = useUser.getState().userData;
-                    const clearedActivityData = useActivity.getState().activities;
-
-                    if (!clearedData.id && !clearedData.username && !clearedData.email && !Object.keys(clearedActivityData).length) {
-                      navigate("/login");
-                    } else {
-                      console.error("Failed to clear userData completely!");
-                    }
-                  }}
+                  onClick={handleLogout}
                 >
                   Log out
                 </Button>
