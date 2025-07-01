@@ -2,6 +2,8 @@ const { Friends } = require('../schemas');
 
 const { Op } = require('sequelize');
 
+const { Users } = require('../schemas');
+
 
 async function createFriendRequest(senderId, receiverId) {
   // Kiểm tra tồn tại theo cả hai chiều
@@ -33,6 +35,17 @@ async function createFriendRequest(senderId, receiverId) {
     requesterId: senderId,
     addresseeId: receiverId,
     status: 'pending',
+  });
+
+  // Ghi nhận activity: sender gửi lời mời kết bạn cho receiver
+  const receiver = await Users.findByPk(receiverId);
+  const receiverName = receiver ? receiver.username : 'Unknown User';
+  await Activities.create({
+    userId: senderId,
+    groupId: null,
+    title: 'Send Friend Request',
+    activityType: 'relationship',
+    description: `Sent a friend request to ${receiverName}.`,
   });
 
   return { exists: false, record: newRequest, resent: false };

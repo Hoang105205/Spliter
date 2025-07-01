@@ -15,7 +15,19 @@ const BlockText = ({ title, description, timestamp, icon }) => {
       <div style={styles.textBlock}>
         <div style={styles.title}>{title}</div>
         <div style={styles.description}>{description}</div>
-        {timestamp && <div style={styles.timestamp}>{timestamp}</div>}
+        {timestamp && <div style={styles.timestamp}>
+          {new Date(timestamp).toLocaleDateString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+          })}{" at "}
+          {new Date(timestamp).toLocaleTimeString("vi-VN", {
+            timeZone: "Asia/Ho_Chi_Minh",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          })}
+          </div>}
       </div>
     </div>
   );
