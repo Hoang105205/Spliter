@@ -1,5 +1,5 @@
+const { Groups, Users, groupMembers } = require('../schemas');
 
-const { Groups, Users } = require('../schemas');
 
 const createGroup = async ({ name, ownerId }) => {
   if (!name || !ownerId) {
@@ -14,6 +14,13 @@ const createGroup = async ({ name, ownerId }) => {
 
   // Tạo nhóm
   const group = await Groups.create({ name, ownerId });
+
+  // Thêm owner vào group_members với status là 'accepted'
+  await groupMembers.create({
+    groupId: group.id,
+    userId: ownerId,
+    status: 'accepted'
+  });
   
   return group;
 };

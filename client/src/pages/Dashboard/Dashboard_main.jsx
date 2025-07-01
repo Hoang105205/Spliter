@@ -54,7 +54,7 @@ function Dashboard_main() {
             const avatarURL = await getAvatar(friend.id);
             urlsToRevoke.push(avatarURL);
             return { ...friend, avatarURL };
-          } catch {
+          } catch (_err) {
             return { ...friend, avatarURL: null };
           }
         })
