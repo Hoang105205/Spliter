@@ -26,6 +26,7 @@ const NotificationsRoute = require('./routes/NotificationsRoute');
 const groupMembersRoute = require('./routes/groupMembersRoute');
 const GroupsRoute = require('./routes/GroupsRoute');
 const authRouter = require('./routes/auth');
+const ActivitiesRoute = require('./routes/ActivitiesRoute');
 /////////
 
 
@@ -82,8 +83,9 @@ app.use('/api/friends', FriendsRoute);
 app.use('/api/notifications', NotificationsRoute);
 app.use('/api/group-members', groupMembersRoute);
 app.use('/api/groups', GroupsRoute);
+app.use('/api/activities', ActivitiesRoute);
 
-// ngoai login va signup, cac route khac can phai xac thuc (vd: req.isAuthenticated()) thi moi direct, phai dat truoc app.get('*') de khong bi ghi de
+// Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../client/dist')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));

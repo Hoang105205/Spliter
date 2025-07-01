@@ -1,36 +1,38 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Sort from "./sort";
 import BlockText from "./block_text";
-
-const initialActivities = [
-  { title: "Add friend", group: "Social", description: "Kết bạn mới.", timestamp: "2025-06-25 08:00" },
-  { title: "Create expense", group: "Finance", description: "Tạo khoản chi.", timestamp: "2025-06-24 09:30" },
-  { title: "Pay expense", group: "Finance", description: "Thanh toán.", timestamp: "2025-06-20 10:10" },
-  { title: "Join event", group: "Social", description: "Tham gia sự kiện.", timestamp: "2025-06-15 14:20" },
-];
+import { useActivity } from "../../hooks/useActivity";
+import { useUser } from "../../hooks/useUser";
 
 const ActivityList = () => {
-  const [sortType, setSortType] = useState("newest");
-  const [activities] = useState(initialActivities);
+  const [sortType, setSortType] = React.useState("newest");
+  const { activities, loading, fetchActivities } = useActivity();
+  const { userData, findUser } = useUser();
+
+  useEffect(() => {
+    if (userData.id) {
+    fetchActivities(userData.id);
+    }
+  }, [userData.id]);
 
   const getSortedActivities = () => {
     const arr = [...activities];
     switch (sortType) {
       case "newest":
-        return arr.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+        return arr.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       case "oldest":
-        return arr.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+        return arr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       case "az":
         return arr.sort((a, b) => a.title.localeCompare(b.title));
       case "za":
         return arr.sort((a, b) => b.title.localeCompare(a.title));
       case "group":
-        return arr.sort((a, b) => {
-          if ((a.group || "") === (b.group || "")) {
-            return b.timestamp.localeCompare(a.timestamp);
-          }
-          return (a.group || "").localeCompare(b.group || "");
-        });
+        const groupA = (a.group || a.groupId || "").toString();
+        const groupB = (b.group || b.groupId || "").toString();
+        if (groupA === groupB) {
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        }
+        return groupA.localeCompare(groupB);
       default:
         return arr;
     }
@@ -44,10 +46,29 @@ const ActivityList = () => {
         </h1>
         <Sort value={sortType} onChange={setSortType} />
       </div>
-      <div className="space-y-6" style={{ marginTop: "45px", display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: "30px" }}>
-        {getSortedActivities().map((act, idx) => (
-          <BlockText key={idx} {...act} />
-        ))}
+      <div
+        className="space-y-6"
+        style={{
+          marginTop: "45px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          width: "100%",
+          gap: "30px"
+        }}
+      >
+        {loading ? (
+          <BlockText title="Loading..." description=""/>
+        ) : (
+          getSortedActivities().map((act, idx) => (
+            <BlockText
+              key={act.id || idx}
+              title={act.title}
+              description={act.description}
+              timestamp={act.createdAt}
+            />
+          ))
+        )}
       </div>
     </div>
   );

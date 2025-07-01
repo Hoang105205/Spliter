@@ -10,6 +10,7 @@ import Report from "../../components/popup/report.jsx";
 // API
 import { useUser } from '../../hooks/useUser.js';
 import { useFriend } from '../../hooks/useFriend.js';
+import { useActivity } from '../../hooks/useActivity.js';
 
 // WebSocket context
 import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
@@ -47,6 +48,9 @@ function Head_bar(){
 
   // User data
   const { clearUserData, userData, getAvatar, revokeAvatarUrl } = useUser();
+
+  //Activities data
+  const { clearActivityData } = useActivity();
 
   // Friend requests
   const { fetchPendingRequests, requests, acceptFriendRequest, denyFriendRequest } = useFriend();
@@ -291,12 +295,15 @@ function Head_bar(){
                     setShowLogoutModal(false);
 
                     await clearUserData();
+                    await clearActivityData();
+
 
                     localStorage.removeItem("token");
                     
                     const clearedData = useUser.getState().userData;
-                    
-                    if (!clearedData.id && !clearedData.username && !clearedData.email) {
+                    const clearedActivityData = useActivity.getState().activities;
+
+                    if (!clearedData.id && !clearedData.username && !clearedData.email && !Object.keys(clearedActivityData).length) {
                       navigate("/login");
                     } else {
                       console.error("Failed to clear userData completely!");

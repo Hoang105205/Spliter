@@ -20,10 +20,10 @@ const Activities = sequelize.define(
         groupId: {
             type: DataTypes.INTEGER,
             allowNull: true,
-            references: {
-                model: 'groups', // refers to table name
-                key: 'id', // refers to column name in Groups table
-            },
+            // references: {
+            //     model: 'groups', // refers to table name
+            //     key: 'id', // refers to column name in Groups table
+            // },
         },
         title: {
             type: DataTypes.STRING,
@@ -36,7 +36,7 @@ const Activities = sequelize.define(
         description: {
             type: DataTypes.STRING,
             allowNull: true,
-        } 
+        }, 
     },
     {
         timestamps: true,
