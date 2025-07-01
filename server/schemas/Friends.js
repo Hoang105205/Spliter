@@ -11,9 +11,9 @@ const Friends = sequelize.define('Friend', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-        model: 'users',
-        key: 'id'
-        }
+      model: 'users',
+      key: 'id'
+    }
   },
   addresseeId: {
     type: DataTypes.INTEGER,

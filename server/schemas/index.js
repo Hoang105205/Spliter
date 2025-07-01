@@ -18,10 +18,11 @@ Activities.belongsTo(Users, { foreignKey: 'userId', as: 'user' });
 
 Users.hasMany(Groups, { foreignKey: 'ownerId', as: 'ownedGroups' });
 Groups.belongsTo(Users, { foreignKey: 'ownerId', as: 'owner' });
-Users.belongsToMany(Groups, { through: groupMembers, foreignKey: 'userId', as: 'groups' });
-Groups.hasMany(groupMembers, { foreignKey: 'groupId', as: 'members' });
-groupMembers.belongsTo(Groups, { foreignKey: 'groupId', as: 'group' });
-groupMembers.belongsTo(Users, { foreignKey: 'userId', as: 'user' });
+Users.belongsToMany(Groups, { through: groupMembers, foreignKey: 'userId', otherKey: 'groupId', as: 'groups' });
+Groups.belongsToMany(Users, { through: groupMembers, foreignKey: 'groupId', otherKey: 'userId', as: 'members' });
+
+groupMembers.belongsTo(Groups, { foreignKey: 'groupId', as: 'group', constraints: false });
+groupMembers.belongsTo(Users, { foreignKey: 'userId', as: 'user', constraints: false });
 
 
 module.exports = {
