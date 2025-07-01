@@ -1,5 +1,7 @@
 const { Groups, Users } = require('../schemas');
 
+
+// Only Admin can access this controller
 const getAllGroups = async (req, res) => {
     try {
         const groups = await Groups.findAll({
@@ -16,6 +18,7 @@ const getAllGroups = async (req, res) => {
     }
 }
 
+// Only Admin can access this controller
 const getGroupById = async (req, res) => {
     try {
         const group = await Groups.findByPk(req.params.id, {
@@ -35,6 +38,8 @@ const getGroupById = async (req, res) => {
     }
 }
 
+
+// Khong can thiet, vi Server tao bang service, client khong duoc phep tao group
 const createGroup = async (req, res) => {
     try {
         const { name, ownerId } = req.body;
@@ -47,6 +52,7 @@ const createGroup = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 }
+
 
 const updateGroup = async (req, res) => {
     try {

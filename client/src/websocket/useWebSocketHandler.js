@@ -1,7 +1,11 @@
+import { toast } from 'sonner';
+import { m } from 'framer-motion';
 import { useEffect } from 'react';
+
+// import hooks
 import { useFriend } from '../hooks/useFriend';
 import { useUser } from '../hooks/useUser';
-import { toast } from 'sonner';
+import { useGroupMember } from '../hooks/useGroupMember';
 
 export const useWebSocketHandler = (ws) => {
   const { fetchFriends } = useFriend();
@@ -71,6 +75,10 @@ export const useWebSocketHandler = (ws) => {
         handleFriendAccepted(jsonData.payload);
         break;
 
+      case 'CREATE_GROUP_SUCCESS':
+        handleCreateGroupSuccess(jsonData);
+        break;
+
       default:
         console.warn(`⚠️ Loại tin nhắn không hỗ trợ: ${type}`);
     }
@@ -89,6 +97,12 @@ export const useWebSocketHandler = (ws) => {
       toast.success("🎉 You have a new friend!");
     }
   };
+
+  const handleCreateGroupSuccess = ({message}) => {
+    const { fetchGroups } = useGroupMember.getState(); // trực tiếp lấy từ store
+    fetchGroups(userData.id)
+    toast.success("🎉 " + message);
+  }
   
 };
 

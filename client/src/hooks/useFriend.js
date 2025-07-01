@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import api from '../axios/api';
 
+
+
+
 export const useFriend = create((set) => ({
   friends: [],
   requests: [],

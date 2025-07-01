@@ -1,13 +1,19 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import { Button } from "../../components/ui/button.jsx";
 import { Separator } from "../../components/ui/seperator.jsx";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PlusIcon } from "lucide-react";
+import { toast } from "sonner";
 
+// Import custom hooks
 import { useUser } from '../../hooks/useUser.js';
+import { useGroupMember } from '../../hooks/useGroupMember.js';
 
+
+// WebSocket context
+import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
 
 // Import Modals 
 import CreateGroupPopup from "../popup/CreateGroupPopup.jsx";
@@ -15,27 +21,52 @@ import CreateGroupPopup from "../popup/CreateGroupPopup.jsx";
 
 function Left_bar({ activeTab, setActiveTab }) {
   const navigate = useNavigate();
+
+  // User data 
   const { userData } = useUser();
+
+  // Group data
+  const { groups, loading, error, fetchGroups } = useGroupMember();
 
   // Create Group Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // WebSocket context
+  const ws = useContext(WebSocketContext);
+
+  // Fetch groups when the component mounts or when the active tab changes
+  useEffect(() => {
+    if (activeTab === 'group') {
+      fetchGroups(userData.id);
+    }
+  }, [activeTab, userData.id]);
 
   const handleClick = (tabName, path) => {
     setActiveTab(tabName);
     navigate(path);
   };
 
-  // Mock data for groups, replace with actual data fetching logic
-  const mockGroups = [
-    { id: 1, name: "Group name" },
-    { id: 2, name: "Group name" },
-    { id: 3, name: "Group name" }
-  ];
 
   // Handle group creation
   const handleCreateGroup = (newGroup) => {
     console.log("Group created:", newGroup);
-    // Bạn có thể gọi API ở đây
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      const message = {
+        type: 'CREATE_GROUP',
+        payload: {
+          group_name: newGroup.name,
+          creator_id: userData.id, // Gửi thêm ID của người tạo nếu cần
+        }
+      };
+
+      ws.send(JSON.stringify(message));
+
+      toast.success(`Create Group Request sent successfully!`);
+
+    } else {
+      console.error("WebSocket is not connected.");
+    }
   };
 
   return (
@@ -115,13 +146,17 @@ function Left_bar({ activeTab, setActiveTab }) {
 
           {/* Group list */}
           <div className="mt-4 space-y-2">
-            {mockGroups.map((group) => (
+            {loading && <p className="text-center text-sm text-gray-500">Loading groups...</p>}
+            {error && <p className="text-center text-sm text-red-500">Failed to load groups</p>}
+            {!loading && groups.length === 0 && (
+              <p className="text-center text-sm text-gray-500">You have no groups yet.</p>
+            )}
+            {groups.map((group) => (
               <div
                 key={group.id}
                 className="flex items-center gap-2 px-2 py-2 rounded cursor-pointer hover:bg-[#f0f8ff]"
                 // onClick={() => handleClick(`group-${group.id}`, `/dashboard/${userData.id}/group/${group.id}`)}
               >
-                <div className="w-[40px] h-[40px] bg-[#d9d9d9] rounded-full" />
                 <span className="[font-family:'Roboto_Condensed',Helvetica] font-medium text-lg">
                   {group.name}
                 </span>

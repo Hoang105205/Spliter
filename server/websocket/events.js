@@ -1,4 +1,5 @@
 const { createFriendRequest } = require('../services/friendService.js');
+const { createGroup } = require('../services/groupService.js');
 
 module.exports = function(ws, connectedClients) {
   ws.on('message', (message) => {
@@ -18,13 +19,12 @@ module.exports = function(ws, connectedClients) {
           handleAddFriend(ws, connectedClients, jsonData.payload);
           break;
 
-        case 'FRIEND_REQUEST':
-          handleFriendRequest(ws, connectedClients, jsonData.payload);
-          break;
-
-
         case 'ACCEPT_FRIEND_REQUEST':
           handleAcceptFriendRequest(ws, connectedClients, jsonData.payload);
+          break;
+
+        case 'CREATE_GROUP':
+          handleCreateGroup(ws, connectedClients, jsonData.payload);
           break;
 
 
@@ -127,45 +127,6 @@ async function handleAddFriend(ws, connectedClients, payload) {
   }
 }
 
-// Hàm xử lý FRIEND_REQUEST
-function handleFriendRequest(ws, connectedClients, payload) {
-  const { requestId, senderId, status } = payload;
-
-  if (!requestId || !senderId || !status) {
-    console.warn("Thiếu thông tin requestId, senderId, hoặc status.");
-    ws.send(JSON.stringify({
-      type: 'ERROR',
-      message: "Phản hồi kết bạn thất bại: Thiếu thông tin cần thiết." }));
-    return;
-  }
-
-  // Log phản hồi nhận được
-  console.log(`Phản hồi kết bạn nhận được:`);
-  console.log(`Request ID: ${requestId}`);
-  console.log(`Người gửi (senderId): ${senderId}`);
-  console.log(`Trạng thái: ${status}`);
-
-  // // Tìm WebSocket của người gửi trong danh sách đã kết nối
-  // const senderClient = connectedClients[senderId];
-
-  // if (senderClient && senderClient.ws.readyState === ws.OPEN) {
-  //   // Gửi thông báo kết quả tới người gửi
-  //   senderClient.ws.send(
-  //     JSON.stringify({
-  //       type: 'FRIEND_REQUEST_RESULT',
-  //       payload: {
-  //         requestId: requestId,
-  //         status: status,
-  //       },
-  //     })
-  //   );
-
-  //   console.log(`Đã gửi kết quả phản hồi tới ${senderClient.username} (${senderId}).`);
-  // } else {
-  //   console.warn(`Người gửi (${senderId}) không kết nối.`);
-  //   ws.send(JSON.stringify({ message: `Người gửi (${senderId}) không online hoặc không kết nối.` }));
-  // }
-}
 
 
 // Hàm xử lý ACCEPT_FRIEND_REQUEST
@@ -206,6 +167,38 @@ async function handleAcceptFriendRequest(ws, connectedClients, payload) {
 
   } catch (err) {
     console.error("Lỗi khi xử lý ACCEPT_FRIEND_REQUEST:", err);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: err.message
+    }));
+  }
+}
+
+// Hàm xử lý CREATE_GROUP
+async function handleCreateGroup(ws, connectedClients, payload) {
+  const { group_name, creator_id } = payload;
+
+  if (!group_name || !creator_id) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin group_name hoặc creator_id.'
+    }));
+  }
+
+  try {
+    
+    const newGroup = await createGroup({ name: group_name, ownerId: creator_id });
+
+    console.log(`Nhóm mới đã được tạo: ${group_name} bởi người dùng ${creator_id}`);
+
+    ws.send(JSON.stringify({
+      type: 'CREATE_GROUP_SUCCESS',
+      message: `Group ${newGroup.name} is successfully created.`,
+    }));
+
+
+  } catch (err) {
+    console.error("Lỗi khi tạo nhóm:", err);
     ws.send(JSON.stringify({
       type: 'ERROR',
       message: err.message
