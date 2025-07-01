@@ -17,11 +17,17 @@ import { useFriend } from '../../hooks/useFriend.js';
 import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
 
 function Dashboard_main() {
+
+  const navigate = useNavigate();
+
+  // State variables
   const [loading, setLoading] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const { userData, findUser } = useUser(); // Lấy trạng thái người dùng từ hook useUser
+  const [friendsWithAvatars, setFriendsWithAvatars] = useState([]);
+
+  // Custom hooks for user and friend management
+  const { userData, findUser, getAvatar, revokeAvatarUrl } = useUser(); // Lấy trạng thái người dùng từ hook useUser
   const { fetchFriends, friends } = useFriend();
-  const navigate = useNavigate();
 
   
   // Websocket context to handle real-time updates
@@ -32,6 +38,43 @@ function Dashboard_main() {
       fetchFriends(userData.id);
     }
   }, [userData.id]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const urlsToRevoke = [];
+
+    const loadAvatars = async () => {
+      const newFriends = friends.filter(f => !friendsWithAvatars.some(fwa => fwa.id === f.id));
+
+      if (newFriends.length === 0) return; // Không có avatar mới cần tải
+
+      const newAvatars = await Promise.all(
+        newFriends.map(async (friend) => {
+          try {
+            const avatarURL = await getAvatar(friend.id);
+            urlsToRevoke.push(avatarURL);
+            return { ...friend, avatarURL };
+          } catch {
+            return { ...friend, avatarURL: null };
+          }
+        })
+      );
+
+      if (isMounted) {
+        setFriendsWithAvatars(prev => [...prev, ...newAvatars]);
+      }
+    };
+
+    if (friends.length > 0) {
+      loadAvatars();
+    }
+
+    return () => {
+      isMounted = false;
+      // cleanup avatar URLs to avoid memory leak
+      urlsToRevoke.forEach((url) => revokeAvatarUrl(url));
+    };
+  }, [friends]);
 
   
   const [showAddModal, setShowAddModal] = useState(false);
@@ -222,14 +265,22 @@ function Dashboard_main() {
               </div>
 
               <div className="mt-4 space-y-6">
-                {friends.map((friend) => (
+                {friendsWithAvatars.map((friend) => (
                   <div key={friend.id} className="flex items-center">
                     <div className="relative">
                       <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
-                        <AvatarFallback></AvatarFallback>
+                        {friend.avatarURL ? (
+                          <img
+                            src={friend.avatarURL}
+                            alt={friend.username}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <AvatarFallback>
+                            {friend.username?.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        )}
                       </Avatar>
-                      <div className="absolute bottom-0 right-0 w-[18px] h-[18px]">
-                      </div>
                     </div>
                     <div className="ml-2 [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg">
                       {friend.username}

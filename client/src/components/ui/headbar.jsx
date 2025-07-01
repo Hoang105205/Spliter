@@ -31,9 +31,12 @@ const accountScroll = [
 function Head_bar(){
 
   const navigate = useNavigate();
+
+  // State management
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAccountScrolldown, setShowAccountScrolldown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   // Active Notification
   const [activeRequestId, setActiveRequestId] = useState(null);
@@ -43,7 +46,7 @@ function Head_bar(){
   
 
   // User data
-  const { clearUserData, userData } = useUser();
+  const { clearUserData, userData, getAvatar, revokeAvatarUrl } = useUser();
 
   // Friend requests
   const { fetchPendingRequests, requests, acceptFriendRequest, denyFriendRequest } = useFriend();
@@ -154,6 +157,25 @@ function Head_bar(){
   }, []);
 
 
+  useEffect(() => {
+    let isMounted = true;
+    let oldUrl = avatarUrl;
+
+    if (userData.id) {
+      getAvatar(userData.id).then((url) => {
+        if (isMounted) {
+          setAvatarUrl(url);
+          if (oldUrl) revokeAvatarUrl(oldUrl);
+        }
+      });
+    }
+
+    return () => {
+      isMounted = false;
+      if (avatarUrl) revokeAvatarUrl(avatarUrl);
+    };
+  }, [userData.id]);
+
   return(
     <>
       {/* Header */}
@@ -201,9 +223,7 @@ function Head_bar(){
           {/* Avatar & Dropdown */}
           <div className="flex items-center" ref={accountRef}>
             <Avatar className="w-[34px] h-[33px] bg-[#d9d9d9]">
-              <AvatarImage
-                src={userData.avatarURL}
-              />
+              <AvatarImage src={avatarUrl || userData.avatarURL} />
               <AvatarFallback />
             </Avatar>
             {/*Username*/}
