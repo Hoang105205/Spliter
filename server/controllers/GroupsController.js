@@ -89,7 +89,11 @@ const getGroupMembers = async (req, res) => {
             include: [{
                 model: Users,
                 as: 'members',
-                attributes: ['id', 'username', 'email']
+                attributes: ['id', 'username', 'email'],
+                through: {
+                    where: { status: 'accepted' }, 
+                    attributes: []
+                }
             }]
         });
         if (!group) {

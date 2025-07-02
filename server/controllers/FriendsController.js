@@ -24,8 +24,11 @@ const getFriendsOfUser = async (req, res) => {
     }
 
     const result = friends.map(f => {
-      // chính xác vì cả requesterId và userid đều là số
-      return f.requesterId === userid ? f.addressee : f.requester;
+      const friendUser = f.requesterId === userid ? f.addressee : f.requester;
+      return {
+        ...friendUser.dataValues, // thông tin user
+        friendshipId: f.id // chỉ trả về id của relationship
+      };
     });
 
     res.status(200).json(result);

@@ -27,8 +27,15 @@ function Dashboard_main() {
 
   // Custom hooks for user and friend management
   const { userData, findUser, getAvatar, revokeAvatarUrl } = useUser(); // Lấy trạng thái người dùng từ hook useUser
-  const { fetchFriends, friends } = useFriend();
+  const { fetchFriends, friends, deleteFriend } = useFriend();
 
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    friendId: null,
+    friendshipId: null,
+  });
   
   // Websocket context to handle real-time updates
   const ws = useContext(WebSocketContext);
@@ -68,7 +75,7 @@ function Dashboard_main() {
     if (friends.length > 0) {
       loadAvatars();
     }
-
+    
     return () => {
       isMounted = false;
       // cleanup avatar URLs to avoid memory leak
@@ -124,7 +131,8 @@ function Dashboard_main() {
       console.error('WebSocket connection is not open.');
       alert('WebSocket connection is not open. Please try again later.');
     }
-};
+  };
+  
 
   // Lock background scroll when modal is open
   useEffect(() => {
@@ -138,6 +146,54 @@ function Dashboard_main() {
       document.body.style.overflow = "";
     };
   }, [showAddModal]);
+
+  const handleContextMenu = (e, friendId, friendshipId) => {
+    e.preventDefault();
+    const menuWidth = 140; // Minimum width for the context menu
+    const menuHeight = 40; // Minimum height for the context menu
+    let x = e.clientX;
+    let y = e.clientY;
+    const padding = 8; // Padding from the edges of the viewport
+
+    if (x + menuWidth > window.innerWidth) {
+      x = window.innerWidth - menuWidth - padding; // Adjust x position if it exceeds
+    }
+    if (y + menuHeight > window.innerHeight) {
+      y = window.innerHeight - menuHeight - padding; // Adjust y position if it exceeds
+    }
+
+    setContextMenu({
+      visible: true,
+      x,
+      y,
+      friendId: friendId,
+      friendshipId: friendshipId
+    });
+  };
+
+  useEffect(() => {
+    const handleClick = () => setContextMenu({ ...contextMenu, visible: false });
+    if (contextMenu.visible) {
+      window.addEventListener("click", handleClick);
+      return () => window.removeEventListener("click", handleClick);
+    }
+  }, [contextMenu.visible]);
+
+  const handleUnfriend = async () => {
+    if (contextMenu.friendId) {
+      try {
+        await deleteFriend(contextMenu.friendshipId);
+        console.log(`Unfriended user with ID: ${contextMenu.friendId}`);
+        setContextMenu({ ...contextMenu, visible: false });
+      } catch (error) {
+        console.error('Error unfriending user:', error);
+        alert('Failed to unfriend user. Please try again later.');
+      }
+    } else {
+      console.error('No friend ID available for unfriend action.');
+      alert('No friend selected to unfriend.');
+    }
+  };
 
   // Data for people you owe
   const youOweList = [
@@ -266,8 +322,9 @@ function Dashboard_main() {
 
               <div className="mt-4 space-y-6">
                 {friendsWithAvatars.map((friend) => (
-                  <div key={friend.id} className="flex items-center">
-                    <div className="relative">
+                  <div key={friend.id} className="relative flex items-center group" onContextMenu={(e) => handleContextMenu(e, friend.id, friend.friendshipId)}>
+                    <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[10px] z-10"></div>
+                    <div className="relative flex items-center z-20 px-1 py-1">
                       <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
                         {friend.avatarURL ? (
                           <img
@@ -287,6 +344,23 @@ function Dashboard_main() {
                     </div>
                   </div>
                 ))}
+
+                {contextMenu.visible && (
+                  <div
+                    className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg py-2 px-4"
+                    style={{ top: contextMenu.y, left: contextMenu.x, minWidth: 120, maxWidth: '90wh', maxHeight: '90vh', overflow: 'auto' }}
+                  >
+                    <button
+                      className="w-full text-left text-red-600 hover:bg-red-50 hover:text-red-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
+                      onClick={() => {
+                        // Handle remove friend action
+                        handleUnfriend();
+                      }}
+                    >
+                      Unfriend
+                    </button> 
+                  </div>
+                )}
               </div>
             </aside>
             
