@@ -1,5 +1,5 @@
 const { createFriendRequest } = require('../services/friendService.js');
-const { createGroup } = require('../services/groupService.js');
+const { createGroup, createGroupMemberRequest } = require('../services/groupService.js');
 
 module.exports = function(ws, connectedClients) {
   ws.on('message', (message) => {
@@ -27,6 +27,13 @@ module.exports = function(ws, connectedClients) {
           handleCreateGroup(ws, connectedClients, jsonData.payload);
           break;
 
+        case 'ADD_GROUP_MEMBER':
+          handleAddGroupMember(ws, connectedClients, jsonData.payload);
+          break;
+    
+        case 'ACCEPT_JOIN_GROUP_REQUEST':
+          handleAcceptJoinGroupRequest(ws, connectedClients, jsonData.payload);
+          break;
 
         default:
           ws.send(JSON.stringify({ 
@@ -88,7 +95,6 @@ async function handleAddFriend(ws, connectedClients, payload) {
       return ws.send(JSON.stringify({
         type: 'ERROR',
         message: 'Yêu cầu kết bạn đã tồn tại.',
-        data: record
       }));
     }
 
@@ -206,3 +212,93 @@ async function handleCreateGroup(ws, connectedClients, payload) {
   }
 }
 
+<<<<<<< HEAD
+=======
+// Hàm xử lý ADD_GROUP_MEMBER
+async function handleAddGroupMember(ws, connectedClients, payload) {
+  const { senderId, groupId, memberId, groupName } = payload;
+
+  if (!groupId || !memberId) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin groupId hoặc memberId.'
+    }));
+  }
+
+  try {
+    const { exists, record } = await createGroupMemberRequest({senderId, groupId, memberId });
+
+    if (exists) {
+      return ws.send(JSON.stringify({
+        type: 'ERROR',
+        message: 'This Request already exists.',
+      }));
+    }
+
+    const memberClient = connectedClients[memberId];
+
+    if (memberClient && memberClient.ws.readyState === ws.OPEN) {
+      memberClient.ws.send(JSON.stringify({
+        type: 'GROUP_MEMBER_REQUEST',
+        payload: {
+          groupId,
+          groupName,
+        }})
+      )
+    }
+    
+
+  } catch (err) {
+    console.error("Lỗi khi thêm thành viên vào nhóm:", err);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: err.message
+    }));
+  }
+}
+
+// Hàm xử lý ACCEPT_JOIN_GROUP_REQUEST
+async function handleAcceptJoinGroupRequest(ws, connectedClients, payload) {
+  const { groupId, accepterId, ownerId } = payload;
+
+  if (!groupId || !accepterId || !ownerId) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin groupId, accepterId hoặc ownerId.'
+    }));
+  }
+
+  try {
+
+    const accepterClient = connectedClients[accepterId];
+    const ownerClient = connectedClients[ownerId];
+
+    const message = {
+      type: 'JOIN_GROUP_REQUEST_ACCEPTED',
+      payload: {
+        groupId,
+        ownerId,
+        accepterId,
+        status: 'accepted'
+      }
+    };
+
+    if (accepterClient?.ws?.readyState === ws.OPEN) {
+      accepterClient.ws.send(JSON.stringify(message));
+    }
+
+    if (ownerClient?.ws?.readyState === ws.OPEN) {
+      ownerClient.ws.send(JSON.stringify(message));
+    }
+
+    console.log(`Đã gửi tín hiệu JOIN_GROUP_REQUEST_ACCEPTED cho ${ownerId} và ${accepterId}`);
+
+  } catch (err) {
+    console.error("Lỗi khi xử lý ACCEPT_FRIEND_REQUEST:", err);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: err.message
+    }));
+  }
+}
+>>>>>>> master

@@ -21,10 +21,83 @@ const createGroup = async ({ name, ownerId }) => {
     userId: ownerId,
     status: 'accepted'
   });
+
+
+  // Xử lý activity: Tạo activity cho việc tạo nhóm
   
+
+
+
+
+
+
+
+
+
   return group;
+};
+
+const createGroupMemberRequest = async ({senderID, groupId, memberId}) => {
+ if (!groupId || !memberId) {
+    throw new Error('groupId and memberId are required');
+  }
+
+  // Kiểm tra xem group và member có tồn tại không
+  const group = await Groups.findByPk(groupId);
+  const member = await Users.findByPk(memberId);
+
+
+  if (!group) {
+    throw new Error('Group does not exist');
+  }
+  if (!member) {
+    throw new Error('Member does not exist');
+  }
+
+  // Kiểm tra tồn tại theo cặp groupId và memberId
+  const existing = await groupMembers.findOne({
+    where: {
+      groupId: groupId,
+      userId: memberId
+    }
+  });
+
+  if (existing) {
+    if (existing.status === 'pending' || existing.status === 'accepted') {
+      // Nếu đang chờ hoặc đã là thành viên, không gửi lại
+      return { exists: true, record: existing };
+    } else if (existing.status === 'rejected') {
+      // Nếu đã bị từ chối, cho phép gửi lại bằng cách cập nhật
+      existing.status = 'pending';
+      await existing.save();
+      return { exists: false, record: existing, resent: true };
+    }
+  }
+
+  // Nếu chưa có gì, tạo mới request
+  const newRequest = await groupMembers.create({
+    groupId: groupId,
+    userId: memberId,
+    status: 'pending',
+  });
+
+
+
+  // XỬ LÍ ACTIVITY: 
+
+
+
+
+
+
+  
+
+
+  return { exists: false, record: newRequest, resent: false };
+
 };
 
 module.exports = {
   createGroup,
+  createGroupMemberRequest
 };

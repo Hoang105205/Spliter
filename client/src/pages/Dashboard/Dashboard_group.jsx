@@ -1,14 +1,21 @@
 import { PlusIcon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Button } from "../../components/ui/button.jsx";
 import { useNavigate } from "react-router-dom";
 import Head_bar from "../../components/ui/headbar.jsx";
 import Left_bar from "../../components/ui/leftbar.jsx";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar.jsx";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 // Import custom hooks
 import { useUser } from '../../hooks/useUser.js';
 import { useGroupMember } from '../../hooks/useGroupMember.js';
+import { useGroup } from "../../hooks/useGroup.js";
+import { useFriend } from "../../hooks/useFriend.js";
+
+// Import WebSocket context
+import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
 
 function Dashboard_group() {
   const navigate = useNavigate();
@@ -19,11 +26,30 @@ function Dashboard_group() {
   // State to hold selected group
   const [selectedGroup, setSelectedGroup] = useState(null);
 
+  // State to store avatar URLs for each member
+  const [memberAvatars, setMemberAvatars] = useState({});
+
+  // State to control the visibility of the add group member modal
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+
   // Fetch user data
-  const { userData } = useUser();
+  const { userData, getAvatar, revokeAvatarUrl } = useUser();
 
   // Fetch groups that the user is a member of
   const { groups, loading, error, fetchGroups } = useGroupMember();
+
+  // Fetch group details
+  const { members: groupMembers, loading: membersLoading, error: membersError, getGroupmember } = useGroup();
+
+  // Use friend hook
+  const { friends, loading: friendsLoading, error: friendsError, fetchFriends } = useFriend();
+
+  /// Websocket context to handle real-time updates
+  const ws = useContext(WebSocketContext);
+  
+
+  // Check if current user is the group owner
+  const isOwner = userData.id === selectedGroup?.ownerId;
 
   useEffect(() => {
     if (activeTab === 'group') {
@@ -34,24 +60,107 @@ function Dashboard_group() {
   }, [activeTab, userData.id]);
 
 
-  // Mock data for group members
-  const groupmembers = [
-    {
-      id: 1,
-      username: "Alice",
-      
-    },
-    {
-      id: 2,
-      username: "Bob",
-      
-    },
-    {
-      id: 3,
-      username: "Charlie",
-      
+  useEffect(() => {
+    if (selectedGroup && activeTab === 'group') {
+      getGroupmember(selectedGroup.id);
+    } 
+  }, [selectedGroup, activeTab, getGroupmember]);
+
+
+  // Fetch avatars for group members
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchMemberAvatars = async () => {
+      if (groupMembers.length > 0 && activeTab === "group") {
+        const avatarPromises = groupMembers.map(async (member) => {
+          try {
+            const avatarUrl = await getAvatar(member.id);
+            return { memberId: member.id, avatarUrl };
+          } catch (error) {
+            console.error(`Failed to fetch avatar for member ${member.id}:`, error);
+            return { memberId: member.id, avatarUrl: null };
+          }
+        });
+
+        const avatars = await Promise.all(avatarPromises);
+        if (isMounted) {
+          const newAvatars = avatars.reduce((acc, { memberId, avatarUrl }) => {
+            acc[memberId] = avatarUrl;
+            return acc;
+          }, {});
+          setMemberAvatars(newAvatars);
+        }
+      } else {
+        if (isMounted) setMemberAvatars({});
+      }
+    };
+
+    fetchMemberAvatars();
+
+    // Cleanup avatar URLs when unmount or members change
+    return () => {
+      isMounted = false;
+      Object.values(memberAvatars).forEach((url) => revokeAvatarUrl(url));
+    };
+  }, [groupMembers, activeTab, getAvatar, revokeAvatarUrl]);
+
+
+
+
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (showAddMemberModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
     }
-  ];
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showAddMemberModal]);
+
+
+  useEffect(() => {
+    if (userData.id) {
+      fetchFriends(userData.id);
+    }
+  }, [userData.id]);
+
+  // Handle adding a member to the group
+  const handleAddMember = async (friendId) => {
+    if (!selectedGroup || !isOwner) {
+      toast.error("You are not authorized to add members.");
+      return;
+    }
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      toast.error("WebSocket is not connected. Please try again later.");
+      return;
+    }
+
+    try {
+      const message = {
+        type: "ADD_GROUP_MEMBER",
+        payload: {
+          senderId: userData.id,
+          groupId: selectedGroup.id,
+          memberId: friendId,
+          groupName: selectedGroup.name,
+        },
+      };
+      ws.send(JSON.stringify(message));
+
+      // Làm mới danh sách thành viên sau khi gửi request (tùy thuộc vào WebSocket response)
+      await getGroupmember(selectedGroup.id);
+      setShowAddMemberModal(false);
+      toast.success("Member add request has been sent!");
+    } catch (error) {
+      console.error("Failed to send WebSocket message:", error);
+      toast.error("Failed to add member. Please try again.");
+    }
+  };
 
   return (
     <div className="bg-white flex flex-row justify-center w-full">
@@ -88,39 +197,97 @@ function Dashboard_group() {
                   <span className="[font-family:'Roboto',Helvetica] text-[#666666] text-xl">
                     Group Members
                   </span>
-                  <Button variant="ghost" size="icon" className="p-0">
+                  { isOwner && (
+                  <Button variant="ghost" size="icon" className="p-0" onClick={() => setShowAddMemberModal(true)}>
                     <PlusIcon className="w-6 h-6" />
                   </Button>
+                  )}
                 </div>
 
                 <div className="mt-4 space-y-6">
-                  {groupmembers.map((member) => (
-                    <div key={member.id} className="flex items-center">
-                      <div className="relative">
-                        <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
-                          {member.avatarURL ? (
-                            <img
-                              src={member.avatarURL}
-                              alt={member.username}
-                              className="w-full h-full rounded-full object-cover"
-                            />
-                          ) : (
-                            <AvatarFallback>
-                              {member.username?.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
+                  {membersLoading ? (
+                    <p className="text-center text-gray-500">Loading...</p>
+                  ) : membersError ? (
+                    <p className="text-center text-red-500">Error: {membersError}</p>
+                  ) : groupMembers.length > 0 ? (
+                    groupMembers.map((member) => (
+                      <div key={member.id} className="flex items-center">
+                        <div className="relative">
+                          <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
+                            {memberAvatars[member.id] ? (
+                              <img
+                                src={memberAvatars[member.id]}
+                                alt={member.username}
+                                className="w-full h-full rounded-full object-cover"
+                              />
+                            ) : (
+                              <AvatarFallback>
+                                {member.username?.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                        </div>
+                        <div className="ml-2 [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg">
+                          {member.username}
+                        </div>
                       </div>
-                      <div className="ml-2 [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg">
-                        {member.username}
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-center text-gray-500">No members found.</p>
+                  )}
                 </div>
               </aside>
             )}
 
-
+            <AnimatePresence>
+              {showAddMemberModal && activeTab === "group" && selectedGroup && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[999]"
+                >
+                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[700px] h-[500px] flex flex-col">
+                    <h2 className="text-xl font-bold mb-2">Add a Friend</h2>
+                    {/* Display friend list from useFriend */}
+                    <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "350px" }}>
+                      {friendsLoading ? (
+                        <p className="text-gray-500">Loading friends...</p>
+                      ) : friendsError ? (
+                        <p className="text-red-500">Error: {friendsError}</p>
+                      ) : friends.length > 0 ? (
+                        friends.map((friend) => (
+                          <div
+                            key={friend.id}
+                            className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
+                          >
+                            <span>{friend.username}</span>
+                            <Button
+                              size="sm"
+                              className="bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded-[20px]"
+                              onClick={() => handleAddMember(friend.id)}
+                              disabled={groupMembers.some((member) => member.id === friend.id)} // Disable if already a member
+                            >
+                              + Member
+                            </Button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500">No friends available.</p>
+                      )}
+                    </div>
+                    <div className="mt-auto pt-2">
+                      <Button
+                        className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
+                        onClick={() => setShowAddMemberModal(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
           </div>
         </div>

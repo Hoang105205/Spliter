@@ -16,12 +16,6 @@ import { useGroupMember } from '../../hooks/useGroupMember.js';
 // WebSocket context
 import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
 
-// Button data
-const notifications = [
-  
-];
-
-
 
 const accountScroll = [
   { title: "Account" },
@@ -56,7 +50,7 @@ function Head_bar(){
   const { fetchPendingRequests, requests, acceptFriendRequest, denyFriendRequest, clearFriendData } = useFriend();
 
   // Group data
-  const { clearGroups } = useGroupMember();
+  const { fetchPendingInvites, pendingInvites, clearGroups, acceptInvite, declineInvite } = useGroupMember();
 
 
   // Websocket context to handle real-time updates
@@ -104,7 +98,8 @@ function Head_bar(){
     setShowNotifications((prev) => {
       const next = !prev;
       if (next && userData.id) {
-        fetchPendingRequests(userData.id); // ✅ GỌI MỖI LẦN MỞ
+        fetchPendingRequests(userData.id); // Fetch pending friend requests
+        fetchPendingInvites(userData.id); // Fetch pending group invites
       }
       return next;
     });
@@ -123,51 +118,84 @@ function Head_bar(){
   // Fetch friend requests when userData.id changes
   useEffect(() => {
     if (userData.id) {
-      fetchPendingRequests(userData.id);
+      fetchPendingRequests(userData.id); // Fetch pending friend requests
+      fetchPendingInvites(userData.id); // Fetch pending group invites
     }
   }, [userData.id]);
 
   // Format friend requests into notifications
   const friendRequestNotifs = requests.map((r) => ({
-    title: `Friend request from Username: ${r.requester.username}`,
-    time: '', // có thể format thời gian nếu cần
+    id: r.id,
+    title: `Friend request from ${r.requester.username}`,
+    type: "friend",
+  }))
+
+  
+  // Format group invites into notifications
+  const groupRequestNotifs = pendingInvites.map((invite) => ({
+    id: invite.id,
+    title: `Join group invite: ${invite.name}`,
+    type: "group",
   }));
 
-  const combinedNotifs = [...friendRequestNotifs, ...notifications];
-
-
+  const combinedNotifs = [...friendRequestNotifs, ...groupRequestNotifs]
+  
   //Handle accept friend request
-  const handleAccept = async (requestId) => {
+  const handleAccept = async (requestId, type) => {
     try {
-      const request = requests.find(r => r.id === Number(requestId));
+      if (type === "friend") {
+        const request = requests.find(r => r.id === Number(requestId));
 
-      await acceptFriendRequest(requestId);
+        await acceptFriendRequest(requestId);
 
-      // Gửi socket thông báo cho cả requester và accepter
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-          type: "ACCEPT_FRIEND_REQUEST",
-          payload: {
-            requestId,
-            accepterId: userData.id,
-            requesterId: request?.requester?.id // có thể giúp server nhẹ hơn
-          }
-        }));
+        // Gửi socket thông báo cho cả requester và accepter
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: "ACCEPT_FRIEND_REQUEST",
+            payload: {
+              requestId,
+              accepterId: userData.id,
+              requesterId: request?.requester?.id // có thể giúp server nhẹ hơn
+            }
+          }));
+        }
       }
+      else if (type === "group") {
+        const invite = pendingInvites.find(i => i.id === Number(requestId));
+        
+        await acceptInvite(invite.id, userData.id);
 
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: "ACCEPT_JOIN_GROUP_REQUEST",
+            payload: {
+              groupId: invite.id,
+              accepterId: userData.id,
+              ownerId: invite.ownerId,
+            }
+          }));
+        }
+      }
       setActiveRequestId(null);
-      // Có thể bỏ dòng sau nếu server gửi lại 'FRIEND_ACCEPTED' rồi client xử lý realtime
       await fetchPendingRequests(userData.id);
+      await fetchPendingInvites(userData.id);
     } catch (err) {
       console.error("Accept failed:", err);
     }
   };
 
   //Handle decline friend request
-  const handleDecline = async (requestId) => {
+  const handleDecline = async (requestId, type) => {
     try {
-      await denyFriendRequest(requestId);
+      if (type === "friend") {
+        await denyFriendRequest(requestId);
+      }
+      else if (type === "group") {
+        const invite = pendingInvites.find(i => i.id === Number(requestId));
+        await declineInvite(invite.id, userData.id);
+      }
       await fetchPendingRequests(userData.id);
+      await fetchPendingInvites(userData.id);
       setActiveRequestId(null);
     } catch (err) {
       console.error("Decline failed:", err);
@@ -242,13 +270,13 @@ function Head_bar(){
                   <div className="p-4 border-b font-bold text-gray-800">What's new?</div>
                   
                   {/* On-click notifications */}
-                  {requests.map((r, index) => (
+                  {combinedNotifs.map((notif, index) => (
                     <div
-                      key={r.id}
-                      onClick={() => setActiveRequestId(r.id)}
+                      key={notif.id}
+                      onClick={() => setActiveRequestId({ id: notif.id, type: notif.type })}
                       className="px-4 py-2 border-b hover:bg-gray-100 text-sm text-gray-800 cursor-pointer"
                     >
-                      <div>Friend request from: {r.requester.username}</div>
+                      <div>{notif.title}</div>
                     </div>
                   ))}
 
@@ -347,16 +375,12 @@ function Head_bar(){
       <AnimatePresence>
         {activeRequestId && (
           (() => {
-            const activeRequest = requests.find((r) => r.id === activeRequestId);
-            return (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.2 }}
-                className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50"
-                onClick={() => setActiveRequestId(null)}
-              >
+            const { id: requestId, type } = activeRequestId;
+            let content;
+
+            if (type === "friend") {
+              const activeRequest = requests.find((r) => r.id === requestId);
+              content = (
                 <div
                   ref={friendRequestPopupRef}
                   className="bg-white rounded-lg shadow-lg p-6 w-[300px] text-center"
@@ -369,18 +393,59 @@ function Head_bar(){
                   <div className="flex justify-between">
                     <Button
                       className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-                      onClick={() => handleAccept(activeRequestId)}
+                      onClick={() => handleAccept(requestId, type)}
                     >
                       Accept
                     </Button>
                     <Button
                       className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
-                      onClick={() => handleDecline(activeRequestId)}
+                      onClick={() => handleDecline(requestId, type)}
                     >
                       Decline
                     </Button>
                   </div>
                 </div>
+              );
+            } else if (type === "group") {
+              const activeInvite = pendingInvites.find((i) => i.id === requestId);
+              content = (
+                <div
+                  ref={friendRequestPopupRef}
+                  className="bg-white rounded-lg shadow-lg p-6 w-[300px] text-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h2 className="text-lg font-bold mb-4">
+                    Join Group Invite: {activeInvite?.name || "Unknown Group"}
+                  </h2>
+                  <p className="mb-4">Do you want to accept this invite?</p>
+                  <div className="flex justify-between">
+                    <Button
+                      className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                      onClick={() => handleAccept(requestId, type)}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+                      onClick={() => handleDecline(requestId, type)}
+                    >
+                      Decline
+                    </Button>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50"
+                onClick={() => setActiveRequestId(null)}
+              >
+                {content}
               </motion.div>
             );
           })()

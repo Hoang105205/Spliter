@@ -91,8 +91,8 @@ const getGroupMembers = async (req, res) => {
                 as: 'members',
                 attributes: ['id', 'username', 'email'],
                 through: {
-                    where: { status: 'accepted' }, 
-                    attributes: []
+                    where : { status: 'accepted' },
+                    attributes: [] 
                 }
             }]
         });

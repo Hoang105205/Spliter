@@ -79,6 +79,14 @@ export const useWebSocketHandler = (ws) => {
         handleCreateGroupSuccess(jsonData);
         break;
 
+      case 'GROUP_MEMBER_REQUEST':
+        handleGroupMemberRequest(jsonData.payload);
+        break;
+
+      case 'JOIN_GROUP_REQUEST_ACCEPTED':
+        handleJoinGroupRequestAccepted(jsonData.payload);
+        break;
+
       default:
         console.warn(`⚠️ Loại tin nhắn không hỗ trợ: ${type}`);
     }
@@ -104,6 +112,22 @@ export const useWebSocketHandler = (ws) => {
     toast.success("🎉 " + message);
   }
   
+
+  const handleGroupMemberRequest = ({ groupId, groupName }) => {
+    toast.info("👤 You have a new join group request. Please check notifications!");
+  }
+
+
+  const handleJoinGroupRequestAccepted = ({ groupId, accepterId, ownerId }) => {
+    if (userData.id === accepterId ) {
+      toast.success("🎉 You have joined a new group!");
+    }
+    else if (userData.id === ownerId) {
+      toast.success("🎉 A user has joined your group!");
+    }
+    const { fetchGroups } = useGroupMember.getState(); // trực tiếp lấy từ store
+    fetchGroups(userData.id);
+  }
 };
 
 
