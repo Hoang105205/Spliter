@@ -1,4 +1,4 @@
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, CrownIcon } from "lucide-react";
 import { useState, useEffect, useContext } from "react";
 import { Button } from "../../components/ui/button.jsx";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +32,14 @@ function Dashboard_group() {
   // State to control the visibility of the add group member modal
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
 
+  // State for context menu
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    memberId: null,
+  });
+  
   // Fetch user data
   const { userData, getAvatar, revokeAvatarUrl } = useUser();
 
@@ -162,6 +170,92 @@ function Dashboard_group() {
     }
   };
 
+
+  // Handle kick member
+  const handleKickMember = async () => {
+    if (!contextMenu.memberId || !isOwner) {
+      toast.error("You are not authorized to kick members.");
+      return;
+    }
+
+    // API here
+
+
+
+
+
+    // Tìm username của member bị kick từ groupMembers
+    const memberToKick = groupMembers.find(member => member.id === contextMenu.memberId);
+    const memberUsername = memberToKick ? memberToKick.username : "Unknown User";
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      toast.error("WebSocket is not connected. Please try again later.");
+      setContextMenu({ ...contextMenu, visible: false }); // Ẩn menu sau khi kick
+      return;
+    }
+
+    try {
+      const message = {
+        type: "KICK_GROUP_MEMBER",
+        payload: {
+          ownerId: userData.id,
+          groupId: selectedGroup.id,
+          memberId: contextMenu.memberId,
+          groupName: selectedGroup.name,
+        },
+      };
+      ws.send(JSON.stringify(message));
+
+      
+    } catch (error) {
+      console.error("Failed to send to server:", error);
+      toast.error("Failed to send to server. Please try again.");
+    }
+
+
+    await getGroupmember(selectedGroup.id); // Làm mới danh sách thành viên
+    setContextMenu({ ...contextMenu, visible: false }); // Ẩn menu sau khi kick
+    toast.info(`Member ${memberUsername} has been kicked!`);
+  };
+
+  // Handle context menu click
+  const handleContextMenu = (e, memberId) => {
+    e.preventDefault();
+    if (!isOwner || memberId === userData.id) {
+      setContextMenu({ ...contextMenu, visible: false }); // Đảm bảo tắt menu nếu không hợp lệ
+      return;
+    }
+
+    const menuWidth = 140;
+    const menuHeight = 40;
+    let x = e.clientX;
+    let y = e.clientY;
+    const padding = 8;
+
+    if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - padding;
+    if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - padding;
+
+    setContextMenu({
+      visible: true,
+      x,
+      y,
+      memberId,
+    });
+  };
+
+  // Hide context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (contextMenu.visible && !e.target.closest('.context-menu')) {
+        setContextMenu({ ...contextMenu, visible: false });
+      }
+    };
+    if (contextMenu.visible) {
+      window.addEventListener("click", handleClickOutside);
+    }
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, [contextMenu.visible]);
+
   return (
     <div className="bg-white flex flex-row justify-center w-full">
       <div className="bg-white w-full max-w-[1500px] min-h-[1000px] p-5">
@@ -197,10 +291,10 @@ function Dashboard_group() {
                   <span className="[font-family:'Roboto',Helvetica] text-[#666666] text-xl">
                     Group Members
                   </span>
-                  { isOwner && (
-                  <Button variant="ghost" size="icon" className="p-0" onClick={() => setShowAddMemberModal(true)}>
-                    <PlusIcon className="w-6 h-6" />
-                  </Button>
+                  {isOwner && (
+                    <Button variant="ghost" size="icon" className="p-0" onClick={() => setShowAddMemberModal(true)}>
+                      <PlusIcon className="w-6 h-6" />
+                    </Button>
                   )}
                 </div>
 
@@ -211,8 +305,13 @@ function Dashboard_group() {
                     <p className="text-center text-red-500">Error: {membersError}</p>
                   ) : groupMembers.length > 0 ? (
                     groupMembers.map((member) => (
-                      <div key={member.id} className="flex items-center">
-                        <div className="relative">
+                      <div
+                        key={member.id}
+                        className="flex items-center relative group"
+                        onContextMenu={(e) => handleContextMenu(e, member.id)}
+                      >
+                        <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[10px] z-10"></div>
+                        <div className="relative flex items-center z-20 px-1 py-1">
                           <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
                             {memberAvatars[member.id] ? (
                               <img
@@ -230,6 +329,9 @@ function Dashboard_group() {
                         <div className="ml-2 [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg">
                           {member.username}
                         </div>
+                        {member.id === selectedGroup?.ownerId && (
+                          <CrownIcon className="w-5 h-5 text-yellow-500 ml-2" /> // Biểu tượng vương miện
+                        )}
                       </div>
                     ))
                   ) : (
@@ -238,6 +340,22 @@ function Dashboard_group() {
                 </div>
               </aside>
             )}
+
+            {/* Context Menu for Kick Member */}
+            {contextMenu.visible && isOwner && (
+              <div
+                className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg py-2 px-4 context-menu"
+                style={{ top: contextMenu.y, left: contextMenu.x, minWidth: 120, maxWidth: '90vw', maxHeight: '90vh', overflow: 'auto' }}
+              >
+                <button
+                  className="w-full text-left text-red-600 hover:bg-red-50 hover:text-red-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
+                  onClick={handleKickMember}
+                >
+                  Kick Member
+                </button>
+              </div>
+            )}
+
 
             <AnimatePresence>
               {showAddMemberModal && activeTab === "group" && selectedGroup && (

@@ -11,30 +11,47 @@ module.exports = function(ws, connectedClients) {
 
       switch (jsonData.type) {
         
+        // login message
         case 'login':
           handleLogin(ws, connectedClients, jsonData.payload);
           break;
 
+        // friend request
         case 'ADD_FRIEND':
           handleAddFriend(ws, connectedClients, jsonData.payload);
           break;
 
+        //  accept friend request
         case 'ACCEPT_FRIEND_REQUEST':
           handleAcceptFriendRequest(ws, connectedClients, jsonData.payload);
           break;
 
+        // create group
         case 'CREATE_GROUP':
           handleCreateGroup(ws, connectedClients, jsonData.payload);
           break;
 
+        // add group member
         case 'ADD_GROUP_MEMBER':
           handleAddGroupMember(ws, connectedClients, jsonData.payload);
           break;
     
+        // accept join group request
         case 'ACCEPT_JOIN_GROUP_REQUEST':
           handleAcceptJoinGroupRequest(ws, connectedClients, jsonData.payload);
           break;
 
+        // unfriend
+        case 'UNFRIEND':
+          handleUnfriend(ws, connectedClients, jsonData.payload);
+          break;
+        
+        // kick group member
+        case 'KICK_GROUP_MEMBER':
+          handleKickGroupMember(ws, connectedClients, jsonData.payload);
+          break;
+
+      
         default:
           ws.send(JSON.stringify({ 
             type: 'ERROR',
@@ -223,6 +240,7 @@ async function handleAddGroupMember(ws, connectedClients, payload) {
     }));
   }
 
+
   try {
     const { exists, record } = await createGroupMemberRequest({senderId, groupId, memberId });
 
@@ -289,7 +307,6 @@ async function handleAcceptJoinGroupRequest(ws, connectedClients, payload) {
       ownerClient.ws.send(JSON.stringify(message));
     }
 
-    console.log(`Đã gửi tín hiệu JOIN_GROUP_REQUEST_ACCEPTED cho ${ownerId} và ${accepterId}`);
 
   } catch (err) {
     console.error("Lỗi khi xử lý ACCEPT_FRIEND_REQUEST:", err);
@@ -298,4 +315,99 @@ async function handleAcceptJoinGroupRequest(ws, connectedClients, payload) {
       message: err.message
     }));
   }
+}
+
+// Hàm xử lý UNFRIEND
+async function handleUnfriend(ws, connectedClients, payload) {
+  const { userId, friendId } = payload;
+
+  if (!userId || !friendId) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin userId hoặc friendId.'
+    }));
+  }
+
+  // Xử lí Activity ở đây (Unfriend)
+
+
+
+
+
+  try {
+    const userClient = connectedClients[userId];
+    const friendClient = connectedClients[friendId];
+
+    if (userClient && userClient.ws.readyState === ws.OPEN) {
+      userClient.ws.send(JSON.stringify({
+        type: 'UNFRIEND_ANNOUNCEMENT',
+        payload: {
+          userId: userId,
+          friendId: friendId,
+        }
+      }));
+    }
+
+    if (friendClient && friendClient.ws.readyState === ws.OPEN) {
+      friendClient.ws.send(JSON.stringify({
+        type: 'UNFRIEND_ANNOUNCEMENT',
+        payload: {
+          userId: userId,
+          friendId: friendId,
+        }
+      }));
+    }
+
+  } catch (err) {
+    console.error("Lỗi khi hủy kết bạn:", err);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: err.message
+    }));
+  }
+}
+
+// Hàm xử lý KICK_GROUP_MEMBER
+async function handleKickGroupMember(ws, connectedClients, payload) {
+  const {ownerId, groupId, memberId, groupName} = payload;
+  if (!ownerId || !groupId || !memberId || !groupName) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin ownerId, groupId, groupName hoặc memberId.'
+    }));
+  }
+
+  // Xử lí Activity ở đây (Kick Group Member)
+
+
+
+
+
+
+  
+
+
+  try {
+    memberClient = connectedClients[memberId];
+
+
+    if (memberClient && memberClient.ws.readyState === ws.OPEN) {
+      memberClient.ws.send(JSON.stringify({
+        type: 'KICKED_ANNOUNCEMENT',
+        payload: {
+          groupId,
+          groupName,
+          memberId,
+        }
+      }));
+    }
+  
+  } catch (err) {
+    console.error("Lỗi khi xử lý KICK_GROUP_MEMBER:", err);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: err.message
+    }));
+  }
+
 }
