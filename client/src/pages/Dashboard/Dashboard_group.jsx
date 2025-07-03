@@ -16,6 +16,7 @@ import { useFriend } from "../../hooks/useFriend.js";
 
 // Import WebSocket context
 import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
+import { useWebSocketHandler } from '../../websocket/useWebSocketHandler.js';
 
 function Dashboard_group() {
   const navigate = useNavigate();
@@ -73,6 +74,19 @@ function Dashboard_group() {
       getGroupmember(selectedGroup.id);
     } 
   }, [selectedGroup, activeTab, getGroupmember]);
+
+  // Handle group new member acceptance
+  const [updateTrigger, setUpdateTrigger] = useState(0);
+  useWebSocketHandler(ws, setUpdateTrigger); // Custom hook to handle WebSocket messages
+
+  useEffect(() => {
+    if (userData.id) {
+      fetchGroups(userData.id);
+      if (selectedGroup) {
+        getGroupmember(selectedGroup.id);
+      }
+    }
+  }, [userData.id, updateTrigger, selectedGroup]);
 
 
   // Fetch avatars for group members

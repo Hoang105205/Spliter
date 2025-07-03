@@ -255,9 +255,18 @@ function Head_bar(){
         <div className="flex items-center gap-4 relative z-50">
           {/* Notification Bell */}
           <div ref={notifRef}>
-            <Button variant="ghost" size="icon" className="text-white" onClick={handleBellClick}>
-              <BellIcon className="w-[30px] h-[30px]" />
-            </Button>
+            <div className="relative" ref={notifRef}>
+              <Button variant="ghost" size="icon" className="text-white" onClick={handleBellClick}>
+                <BellIcon className="w-[30px] h-[30px]" />
+
+                {/* Notification Badge */}
+                {combinedNotifs.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold px-[6px] py-[1px] rounded-full border border-white shadow-md">
+                    {combinedNotifs.length > 99 ? '99+' : combinedNotifs.length}
+                  </span>
+                )}
+              </Button>
+            </div>
             <AnimatePresence>
               {showNotifications && (
                 <motion.div

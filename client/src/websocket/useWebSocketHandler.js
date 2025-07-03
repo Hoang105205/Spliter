@@ -7,7 +7,7 @@ import { useFriend } from '../hooks/useFriend';
 import { useUser } from '../hooks/useUser';
 import { useGroupMember } from '../hooks/useGroupMember';
 
-export const useWebSocketHandler = (ws) => {
+export const useWebSocketHandler = (ws, setUpdateTrigger) => {
   const { fetchFriends } = useFriend();
   const { userData } = useUser();
 
@@ -86,8 +86,10 @@ export const useWebSocketHandler = (ws) => {
         handleGroupMemberRequest(jsonData.payload);
         break;
 
-      case 'JOIN_GROUP_REQUEST_ACCEPTED':
-        handleJoinGroupRequestAccepted(jsonData.payload);
+      case "JOIN_GROUP_REQUEST_ACCEPTED":
+        toast.success("Your request to join the group has been accepted!");
+        useGroupMember.getState().fetchGroups(userData.id); // trực tiếp lấy từ store
+        setUpdateTrigger((prev) => prev + 1);
         break;
 
       case 'KICKED_ANNOUNCEMENT':
