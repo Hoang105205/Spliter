@@ -44,7 +44,7 @@ function Dashboard_main() {
     if (userData.id) {
       fetchFriends(userData.id);
     }
-  }, [userData.id]);
+  }, [userData.id, fetchFriends]);
 
   useEffect(() => {
     let isMounted = true;
@@ -68,7 +68,11 @@ function Dashboard_main() {
       );
 
       if (isMounted) {
-        setFriendsWithAvatars(prev => [...prev, ...newAvatars]);
+        const updatedFriendsWithAvatars = [
+          ...friendsWithAvatars.filter((fwa) => friends.some((f) => f.id === fwa.id)), // Giữ avatar của bạn còn lại
+          ...newAvatars,
+        ];
+        setFriendsWithAvatars(updatedFriendsWithAvatars);
       }
     };
 
@@ -81,7 +85,7 @@ function Dashboard_main() {
       // cleanup avatar URLs to avoid memory leak
       urlsToRevoke.forEach((url) => revokeAvatarUrl(url));
     };
-  }, [friends]);
+  }, [friends, friendsWithAvatars, setFriendsWithAvatars]);
 
   
   const [showAddModal, setShowAddModal] = useState(false);
@@ -183,7 +187,27 @@ function Dashboard_main() {
     if (contextMenu.friendId) {
       try {
         await deleteFriend(contextMenu.friendshipId);
-        console.log(`Unfriended user with ID: ${contextMenu.friendId}`);
+
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: 'UNFRIEND',
+              payload: {
+                userId: userData.id, // ID of the current user
+                friendId: contextMenu.friendId, // ID of the friend to unfriend
+              },
+            })
+          );
+          
+          // Làm mới danh sách bạn bè sau khi xóa
+          await fetchFriends(userData.id);
+
+        } else {
+          console.error('WebSocket connection is not open.');
+          alert('WebSocket connection is not open. Please try again later.');
+        }
+
+        
         setContextMenu({ ...contextMenu, visible: false });
       } catch (error) {
         console.error('Error unfriending user:', error);
