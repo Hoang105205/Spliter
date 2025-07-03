@@ -37,7 +37,7 @@ const createGroup = async ({ name, ownerId }) => {
   return group;
 };
 
-const createGroupMemberRequest = async ({senderID, groupId, memberId}) => {
+const createGroupMemberRequest = async ({senderId, groupId, memberId}) => {
  if (!groupId || !memberId) {
     throw new Error('groupId and memberId are required');
   }

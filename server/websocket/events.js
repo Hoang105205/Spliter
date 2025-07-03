@@ -367,6 +367,8 @@ async function handleUnfriend(ws, connectedClients, payload) {
   }
 }
 
+
+
 // Hàm xử lý KICK_GROUP_MEMBER
 async function handleKickGroupMember(ws, connectedClients, payload) {
   const {ownerId, groupId, memberId, groupName} = payload;
