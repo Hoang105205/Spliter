@@ -212,8 +212,6 @@ async function handleCreateGroup(ws, connectedClients, payload) {
   }
 }
 
-<<<<<<< HEAD
-=======
 // Hàm xử lý ADD_GROUP_MEMBER
 async function handleAddGroupMember(ws, connectedClients, payload) {
   const { senderId, groupId, memberId, groupName } = payload;
@@ -301,4 +299,3 @@ async function handleAcceptJoinGroupRequest(ws, connectedClients, payload) {
     }));
   }
 }
->>>>>>> master
