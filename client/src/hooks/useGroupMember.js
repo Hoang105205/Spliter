@@ -86,6 +86,25 @@ export const useGroupMember = create((set, get) => ({
   },
 
 
+  // Remove a member from a group
+  removeMember: async (groupId, userId) => {
+    if (!groupId || !userId) return;
+      set({ loading: true, error: null });
+    try {
+      await api.delete(`/api/group-members/remove-member`, { 
+        data: { groupId, userId }
+      });
+    } catch (err) {
+      set({
+        error: err.response ? err.response.data.message : err.message,
+        loading: false,
+      });
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+
   clearGroups: () => {
     set({ groups: [],  pendingInvites: []});
   }

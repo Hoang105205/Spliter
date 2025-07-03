@@ -44,7 +44,7 @@ function Dashboard_group() {
   const { userData, getAvatar, revokeAvatarUrl } = useUser();
 
   // Fetch groups that the user is a member of
-  const { groups, loading, error, fetchGroups } = useGroupMember();
+  const { groups, loading, error, fetchGroups, removeMember } = useGroupMember();
 
   // Fetch group details
   const { members: groupMembers, loading: membersLoading, error: membersError, getGroupmember } = useGroup();
@@ -179,7 +179,7 @@ function Dashboard_group() {
     }
 
     // API here
-
+    await removeMember(selectedGroup.id, contextMenu.memberId);
 
 
 
