@@ -87,8 +87,7 @@ export const useWebSocketHandler = (ws, setUpdateTrigger) => {
         break;
 
       case "JOIN_GROUP_REQUEST_ACCEPTED":
-        toast.success("Your request to join the group has been accepted!");
-        useGroupMember.getState().fetchGroups(userData.id); // trực tiếp lấy từ store
+        handleJoinGroupRequestAccepted(jsonData.payload);
         setUpdateTrigger((prev) => prev + 1);
         break;
 

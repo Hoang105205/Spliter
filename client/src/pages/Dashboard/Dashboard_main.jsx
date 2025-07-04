@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Head_bar from "../../components/ui/headbar.jsx";
 import { use } from "react";
 import Left_bar from "../../components/ui/leftbar.jsx";
+import { toast } from "sonner"
 
 // API
 import { useUser } from '../../hooks/useUser.js';
@@ -115,8 +116,7 @@ function Dashboard_main() {
 
   const handleAddFriend = (user) => {
     if (!ws) {
-      console.error('WebSocket instance is not available.');
-      alert('WebSocket connection is not available. Please try again later.');
+      toast.error('There is a problem. Please refresh the page.');
       return;
     }
 

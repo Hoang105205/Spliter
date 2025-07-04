@@ -158,7 +158,7 @@ function Dashboard_group() {
     }
 
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      toast.error("WebSocket is not connected. Please try again later.");
+      toast.error("There is a problem. Please refresh the page.");
       return;
     }
 
@@ -203,7 +203,7 @@ function Dashboard_group() {
     const memberUsername = memberToKick ? memberToKick.username : "Unknown User";
 
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      toast.error("WebSocket is not connected. Please try again later.");
+      toast.error("There is a problem. Please refresh the page.");
       setContextMenu({ ...contextMenu, visible: false }); // Ẩn menu sau khi kick
       return;
     }
