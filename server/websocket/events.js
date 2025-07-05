@@ -1,5 +1,7 @@
 const { createFriendRequest } = require('../services/friendService.js');
 const { createGroup, createGroupMemberRequest } = require('../services/groupService.js');
+const { logActivity } = require('../services/activityService.js');
+const { Users, Groups } = require('../schemas');
 
 module.exports = function(ws, connectedClients) {
   ws.on('message', (message) => {
@@ -136,12 +138,13 @@ async function handleAddFriend(ws, connectedClients, payload) {
           status: 'pending'
         }
       }));
+
       ws.send(JSON.stringify({
         type: 'SUCCESS',
         message: `Đã gửi lời mời kết bạn.`,
         data: record
       }));
-      
+
     } 
     else {
       ws.send(JSON.stringify({
@@ -149,6 +152,15 @@ async function handleAddFriend(ws, connectedClients, payload) {
         message: `Người nhận không online hoặc không kết nối.`
       }));
     }
+
+  // Ghi nhận Activity: gửi lời mời kết bạn
+  ReceiverName = await Users.findOne({ where: { id: receiverId } });
+  await logActivity({
+    userId: senderId,
+    title: 'Send Friend Request',
+    activityType: 'relationship',
+    description: `Sent a friend request to ${ReceiverName.username}.`
+  });
 
   } catch (err) {
     console.error("Lỗi tạo lời mời kết bạn:", err);
@@ -196,7 +208,14 @@ async function handleAcceptFriendRequest(ws, connectedClients, payload) {
     }
 
     console.log(`Đã gửi tín hiệu FRIEND_ACCEPTED cho ${requesterId} và ${accepterId}`);
-
+    // Ghi nhận Activity: chấp nhận lời mời kết bạn
+    const requesterName = await Users.findOne({ where: { id: requesterId } });
+    await logActivity({
+      userId: accepterId,
+      title: 'Accept Friend Request',
+      activityType: 'relationship',
+      description: `Accepted friend request from ${requesterName.username}.`
+    });
   } catch (err) {
     console.error("Lỗi khi xử lý ACCEPT_FRIEND_REQUEST:", err);
     ws.send(JSON.stringify({
@@ -218,17 +237,14 @@ async function handleDeclineFriendRequest(ws, connectedClients, payload) {
   }
 
   console.log(`Người dùng ${declinerId} đã từ chối yêu cầu kết bạn từ ${requesterId}`);
-
-
-  // Xu ly Activity ở đây (Decline Friend Request)
-
-
-
-
-
-
-
-
+  // Ghi nhận Activity: từ chối lời mời kết bạn
+  const requesterName = await Users.findOne({ where: { id: requesterId } });
+  await logActivity({
+    userId: declinerId,
+    title: 'Decline Friend Request',
+    activityType: 'relationship',
+    description: `Declined friend request from ${requesterName.username}.`
+  });
 }
 
 
@@ -254,7 +270,13 @@ async function handleCreateGroup(ws, connectedClients, payload) {
       type: 'CREATE_GROUP_SUCCESS',
       message: `Group ${newGroup.name} is successfully created.`,
     }));
-
+    // Ghi nhận Activity: tạo nhóm mới
+    await logActivity({
+      userId: creator_id,
+      title: 'Create Group',
+      activityType: 'relationship',
+      description: `Created a new group: ${group_name}.`
+    });
 
   } catch (err) {
     console.error("Lỗi khi tạo nhóm:", err);
@@ -298,8 +320,16 @@ async function handleAddGroupMember(ws, connectedClients, payload) {
         }})
       )
     }
+    // Ghi nhận Activity: gửi yêu cầu thêm thành viên vào nhóm
+    MemberName = await Users.findOne({ where: { id: memberId } });
+    await logActivity({
+      userId: senderId,
+      groupId: groupId,
+      title: 'Invite Friend to Group',
+      activityType: 'relationship',
+      description: `Invited ${MemberName.username} to join the group ${groupName}.`,
+    });
     
-
   } catch (err) {
     console.error("Lỗi khi thêm thành viên vào nhóm:", err);
     ws.send(JSON.stringify({
@@ -342,7 +372,15 @@ async function handleAcceptJoinGroupRequest(ws, connectedClients, payload) {
     if (ownerClient?.ws?.readyState === ws.OPEN) {
       ownerClient.ws.send(JSON.stringify(message));
     }
-
+    // Ghi nhận Activity: chấp nhận yêu cầu tham gia nhóm
+    GroupName = await Groups.findOne({ where: { id: groupId } });
+    await logActivity({
+      userId: accepterId,
+      groupId: groupId,
+      title: 'Accept Join Group Request',
+      activityType: 'relationship',
+      description: `Accepted join request for group ${GroupName.name}.`
+    });
 
   } catch (err) {
     console.error("Lỗi khi xử lý ACCEPT_FRIEND_REQUEST:", err);
@@ -364,18 +402,14 @@ async function handleDeclineJoinGroupRequest(ws, connectedClients, payload) {
   }
 
   console.log(`Người dùng ${declinerId} đã từ chối yêu cầu tham gia nhóm từ ${ownerId}`);
-
-  // Xử lí Activity ở đây (Decline Join Group Request)
-
-
-
-
-
-
-
-
-
-
+  // Ghi nhận Activity: từ chối yêu cầu tham gia nhóm
+  const ownerName = await Users.findOne({ where: { id: ownerId } });
+  await logActivity({
+    userId: declinerId,
+    title: 'Decline Join Group Request',
+    activityType: 'relationship',
+    description: `Declined join group request from ${ownerName.username}.`
+  });
 }
 
 
@@ -391,12 +425,6 @@ async function handleUnfriend(ws, connectedClients, payload) {
       message: 'Thiếu thông tin userId hoặc friendId.'
     }));
   }
-
-  // Xử lí Activity ở đây (Unfriend)
-  
-
-
-
 
   try {
     const userClient = connectedClients[userId];
@@ -422,6 +450,16 @@ async function handleUnfriend(ws, connectedClients, payload) {
       }));
     }
 
+    // Ghi nhận Activity: hủy kết bạn
+    const FriendName = await Users.findOne({ where: { id: friendId } });
+    await logActivity({
+      userId: userId,
+      friendId: friendId,
+      title: 'Unfriend',
+      activityType: 'relationship',
+      description: `Deleted ${FriendName.username} from friend list.`
+    });
+
   } catch (err) {
     console.error("Lỗi khi hủy kết bạn:", err);
     ws.send(JSON.stringify({
@@ -443,19 +481,8 @@ async function handleKickGroupMember(ws, connectedClients, payload) {
     }));
   }
 
-  // Xử lí Activity ở đây (Kick Group Member)
-
-
-
-
-
-
-  
-
-
   try {
     memberClient = connectedClients[memberId];
-
 
     if (memberClient && memberClient.ws.readyState === ws.OPEN) {
       memberClient.ws.send(JSON.stringify({
@@ -467,7 +494,16 @@ async function handleKickGroupMember(ws, connectedClients, payload) {
         }
       }));
     }
-  
+    // Ghi nhận Activity: kick thành viên khỏi nhóm
+    memberName = await Users.findOne({ where: { id: memberId } });
+    await logActivity({
+      userId: ownerId,
+      groupId: groupId,
+      title: 'Kick Group Member',
+      activityType: 'relationship',
+      description: `Kicked ${memberName.username} from group ${groupName}.`
+    });
+
   } catch (err) {
     console.error("Lỗi khi xử lý KICK_GROUP_MEMBER:", err);
     ws.send(JSON.stringify({

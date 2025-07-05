@@ -1,4 +1,4 @@
-const { Groups, Users, groupMembers } = require('../schemas');
+const { Groups, Users, groupMembers, Activities } = require('../schemas');
 
 
 const createGroup = async ({ name, ownerId }) => {
@@ -22,17 +22,14 @@ const createGroup = async ({ name, ownerId }) => {
     status: 'accepted'
   });
 
-
   // Xử lý activity: Tạo activity cho việc tạo nhóm
-  
-
-
-
-
-
-
-
-
+  await Activities.create({
+    userId: ownerId,
+    groupId: group.id,
+    title: 'Create Group',
+    activityType: 'relationship',
+    description: `Created a new group: ${name}.`,
+  });
 
   return group;
 };
@@ -80,18 +77,6 @@ const createGroupMemberRequest = async ({senderId, groupId, memberId}) => {
     userId: memberId,
     status: 'pending',
   });
-
-
-
-  // XỬ LÍ ACTIVITY: 
-
-
-
-
-
-
-  
-
 
   return { exists: false, record: newRequest, resent: false };
 

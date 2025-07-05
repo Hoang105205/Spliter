@@ -1,15 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
 
 const SORT_OPTIONS = [
-  { label: "Newest", value: "newest" },
-  { label: "Lastest", value: "oldest" },
+  { label: "Latest", value: "latest" },
+  { label: "Oldest", value: "oldest" },
   { label: "A-Z", value: "az" },
   { label: "Z-A", value: "za" },
-  { label: "Group", value: "group" }
+  { 
+    label: "Relationship",
+    value: "relationship",
+    children: [
+      { label: "Friend", value: "relationship-friend" },
+      { label: "Group", value: "relationship-group" }
+    ]
+  }
 ];
 
 const Sort = ({ value, onChange }) => {
   const [open, setOpen] = useState(false);
+  const [subOpen, setSubOpen] = useState(false);
   const ref = useRef(null);
 
   // Đóng dropdown khi click ngoài
@@ -17,19 +25,27 @@ const Sort = ({ value, onChange }) => {
     const handleClickOutside = (event) => {
       if (ref.current && !ref.current.contains(event.target)) {
         setOpen(false);
+        setSubOpen(false);
       }
     };
     if (open) {
       document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [open]);
 
-  const selected = SORT_OPTIONS.find(opt => opt.value === value);
+  const selected = (() => {
+    for (const opt of SORT_OPTIONS) {
+      if (opt.value === value) return opt;
+      if (opt.children) {
+        const found = opt.children.find(child => child.value === value);
+        if (found) return found;
+      }
+    }
+    return null;
+  })();
 
   return (
     <div ref={ref} style={{ position: "relative", display: "inline-block", minWidth: 120 }}>
@@ -46,7 +62,7 @@ const Sort = ({ value, onChange }) => {
         }}
         onClick={() => setOpen((o) => !o)}
       >
-        {selected ? selected.label : "Sắp xếp"}
+        {selected ? (typeof selected.label === "string" ? selected.label : selected.label) : "Sort"}
         <span style={{ float: "right", fontSize: 14 }}>{open ? "▲" : "▼"}</span>
       </button>
       {/* Dropdown với hiệu ứng */}
@@ -64,26 +80,80 @@ const Sort = ({ value, onChange }) => {
           border: "1px solid #d1d5db",
           borderRadius: "8px",
           boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-          marginTop: 6
+          marginTop: 6,
+          minWidth: 140,
         }}
       >
         {SORT_OPTIONS.map(opt => (
-          <div
-            key={opt.value}
-            style={{
-              padding: "12px 18px",
-              cursor: "pointer",
-              background: value === opt.value ? "#f0f4ff" : "#fff",
-              fontWeight: value === opt.value ? 600 : 400,
-              transition: "background 0.15s"
-            }}
-            onClick={() => {
-              onChange(opt.value);
-              setOpen(false);
-            }}
-          >
-            {opt.label}
-          </div>
+          !opt.children ? (
+            <div
+              key={opt.value}
+              style={{
+                padding: "12px 18px",
+                cursor: "pointer",
+                background: value === opt.value ? "#f0f4ff" : "#fff",
+                fontWeight: value === opt.value ? 600 : 400,
+                transition: "background 0.15s"
+              }}
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
+            >
+              {opt.label}
+            </div>
+          ) : (
+            <div
+              key={opt.value}
+              style={{
+                position: "relative",
+                padding: "12px 18px",
+                cursor: "pointer",
+                background: value === opt.value || opt.children.some(child => child.value === value) ? "#f0f4ff" : "#fff",
+                fontWeight: value === opt.value || opt.children.some(child => child.value === value) ? 600 : 400,
+                transition: "background 0.15s"
+              }}
+              onMouseEnter={() => setSubOpen(true)}
+              onMouseLeave={() => setSubOpen(false)}
+            >
+              {opt.label}
+              {/* Submenu */}
+              <div
+                style={{
+                  display: subOpen ? "block" : "none",
+                  position: "absolute",
+                  top: 0,
+                  left: "100%",
+                  minWidth: 120,
+                  background: "#fff",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                  zIndex: 20,
+                }}
+              >
+                {opt.children.map(child => (
+                  <div
+                    key={child.value}
+                    style={{
+                      padding: "12px 18px",
+                      cursor: "pointer",
+                      background: value === child.value ? "#e6f0ff" : "#fff",
+                      fontWeight: value === child.value ? 600 : 400,
+                      transition: "background 0.15s"
+                    }}
+                    onClick={() => {
+                      onChange(child.value);
+                      setOpen(false);
+                      setSubOpen(false);
+                    }}
+                  >
+                    {child.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
         ))}
       </div>
     </div>

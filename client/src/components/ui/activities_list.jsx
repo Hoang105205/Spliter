@@ -5,20 +5,20 @@ import { useActivity } from "../../hooks/useActivity";
 import { useUser } from "../../hooks/useUser";
 
 const ActivityList = () => {
-  const [sortType, setSortType] = React.useState("newest");
+  const [sortType, setSortType] = React.useState("latest");
   const { activities, loading, fetchActivities } = useActivity();
-  const { userData, findUser } = useUser();
+  const { userData } = useUser();
 
   useEffect(() => {
     if (userData.id) {
-    fetchActivities(userData.id);
+      fetchActivities(userData.id);
     }
-  }, [userData.id]);
+  }, [userData.id, fetchActivities]);
 
   const getSortedActivities = () => {
     const arr = [...activities];
     switch (sortType) {
-      case "newest":
+      case "latest":
         return arr.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       case "oldest":
         return arr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
@@ -26,13 +26,14 @@ const ActivityList = () => {
         return arr.sort((a, b) => a.title.localeCompare(b.title));
       case "za":
         return arr.sort((a, b) => b.title.localeCompare(a.title));
-      case "group":
-        const groupA = (a.group || a.groupId || "").toString();
-        const groupB = (b.group || b.groupId || "").toString();
-        if (groupA === groupB) {
-          return new Date(b.createdAt) - new Date(a.createdAt);
-        }
-        return groupA.localeCompare(groupB);
+      case "relationship-friend":
+        return arr
+          .filter(act => act.description && /friend/i.test(act.description))
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      case "relationship-group":
+        return arr
+          .filter(act => act.description && /group/i.test(act.description))
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       default:
         return arr;
     }
@@ -46,29 +47,39 @@ const ActivityList = () => {
         </h1>
         <Sort value={sortType} onChange={setSortType} />
       </div>
+      {/* Scrollable container for activities */}
       <div
-        className="space-y-6"
+        className="activities-scroll"
         style={{
-          marginTop: "45px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
+          maxHeight: "500px",
+          overflowY: "auto",
           width: "100%",
-          gap: "30px"
+          marginTop: "45px",
         }}
       >
-        {loading ? (
-          <BlockText title="Loading..." description=""/>
-        ) : (
-          getSortedActivities().map((act, idx) => (
-            <BlockText
-              key={act.id || idx}
-              title={act.title}
-              description={act.description}
-              timestamp={act.createdAt}
-            />
-          ))
-        )}
+        <div
+          className="space-y-6"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: "100%",
+            gap: "30px"
+          }}
+        >
+          {loading ? (
+            <BlockText title="Loading..." description="" />
+          ) : (
+            getSortedActivities().map((act, idx) => (
+              <BlockText
+                key={act.id || idx}
+                title={act.title}
+                description={act.description}
+                timestamp={act.createdAt}
+              />
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
