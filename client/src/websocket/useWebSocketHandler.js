@@ -6,10 +6,13 @@ import { useEffect } from 'react';
 import { useFriend } from '../hooks/useFriend';
 import { useUser } from '../hooks/useUser';
 import { useGroupMember } from '../hooks/useGroupMember';
+import { useGroup } from '../hooks/useGroup';
 
-export const useWebSocketHandler = (ws, setUpdateTrigger) => {
+export const useWebSocketHandler = (ws) => {
   const { fetchFriends } = useFriend();
   const { userData } = useUser();
+  const { fetchGroups, refreshGroups } = useGroupMember();
+  const { getGroupmember } = useGroup();
 
   useEffect(() => {
     if (!ws || !userData?.id) return;
@@ -88,7 +91,6 @@ export const useWebSocketHandler = (ws, setUpdateTrigger) => {
 
       case "JOIN_GROUP_REQUEST_ACCEPTED":
         handleJoinGroupRequestAccepted(jsonData.payload);
-        setUpdateTrigger((prev) => prev + 1);
         break;
 
       case 'KICKED_ANNOUNCEMENT':
@@ -131,7 +133,6 @@ export const useWebSocketHandler = (ws, setUpdateTrigger) => {
   
   // Xử lý thành công tạo nhóm
   const handleCreateGroupSuccess = ({message}) => {
-    const { fetchGroups } = useGroupMember.getState(); // trực tiếp lấy từ store
     fetchGroups(userData.id)
     toast.success("🎉 " + message);
   }
@@ -143,23 +144,24 @@ export const useWebSocketHandler = (ws, setUpdateTrigger) => {
 
 
   // Xử lý khi yêu cầu tham gia nhóm được chấp nhận
-  const handleJoinGroupRequestAccepted = ({ groupId, accepterId, ownerId }) => {
-    if (userData.id === accepterId ) {
+  const handleJoinGroupRequestAccepted = async ({ groupId, accepterId, ownerId }) => {
+    if (userData.id === accepterId) {
       toast.success("🎉 You have joined a new group!");
-    }
-    else if (userData.id === ownerId) {
+    } else if (userData.id === ownerId) {
       toast.success("🎉 A user has joined your group!");
     }
-    const { fetchGroups} = useGroupMember.getState(); // trực tiếp lấy từ store
-    fetchGroups(userData.id);
-  }
+
+    refreshGroups(); // Làm mới danh sách nhóm
+
+    await fetchGroups(userData.id); // Cập nhật danh sách nhóm
+    await getGroupmember(groupId); // Cập nhật danh sách thành viên
+  };
 
   // Xử lý thông báo bị kick khỏi nhóm
   const handleKickedAnnouncement = ({ groupId, groupName, memberId }) => {
     if (userData.id === memberId) {
       toast.error(`🚫 You have been kicked from the group: ${groupName}`);
     }
-    const { fetchGroups } = useGroupMember.getState(); // trực tiếp lấy từ store
     fetchGroups(userData.id);
   }
 

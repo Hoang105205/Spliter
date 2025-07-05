@@ -16,7 +16,6 @@ import { useFriend } from "../../hooks/useFriend.js";
 
 // Import WebSocket context
 import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
-import { useWebSocketHandler } from '../../websocket/useWebSocketHandler.js';
 
 function Dashboard_group() {
   const navigate = useNavigate();
@@ -45,7 +44,7 @@ function Dashboard_group() {
   const { userData, getAvatar, revokeAvatarUrl } = useUser();
 
   // Fetch groups that the user is a member of
-  const { groups, loading, error, fetchGroups, removeMember } = useGroupMember();
+  const { groups, loading, error, fetchGroups, removeMember, trigger, refreshGroups } = useGroupMember();
 
   // Fetch group details
   const { members: groupMembers, loading: membersLoading, error: membersError, getGroupmember } = useGroup();
@@ -60,33 +59,15 @@ function Dashboard_group() {
   // Check if current user is the group owner
   const isOwner = userData.id === selectedGroup?.ownerId;
 
-  useEffect(() => {
-    if (activeTab === 'group') {
-      fetchGroups(userData.id);
-    } else {
-      setSelectedGroup(null); // Reset selected group when tab changes away from "group"
-    }
-  }, [activeTab, userData.id]);
-
-
-  useEffect(() => {
-    if (selectedGroup && activeTab === 'group') {
-      getGroupmember(selectedGroup.id);
-    } 
-  }, [selectedGroup, activeTab, getGroupmember]);
-
-  // Handle group new member acceptance
-  const [updateTrigger, setUpdateTrigger] = useState(0);
-  useWebSocketHandler(ws, setUpdateTrigger); // Custom hook to handle WebSocket messages
-
+  // Hợp nhất useEffect
   useEffect(() => {
     if (userData.id) {
       fetchGroups(userData.id);
-      if (selectedGroup) {
+      if (selectedGroup && activeTab === 'group') {
         getGroupmember(selectedGroup.id);
       }
     }
-  }, [userData.id, updateTrigger, selectedGroup]);
+  }, [userData.id, selectedGroup, activeTab, trigger]);
 
 
   // Fetch avatars for group members
@@ -174,8 +155,6 @@ function Dashboard_group() {
       };
       ws.send(JSON.stringify(message));
 
-      // Làm mới danh sách thành viên sau khi gửi request (tùy thuộc vào WebSocket response)
-      await getGroupmember(selectedGroup.id);
       setShowAddMemberModal(false);
       toast.success("Member add request has been sent!");
     } catch (error) {
@@ -228,6 +207,8 @@ function Dashboard_group() {
 
 
     await getGroupmember(selectedGroup.id); // Làm mới danh sách thành viên
+
+    
     setContextMenu({ ...contextMenu, visible: false }); // Ẩn menu sau khi kick
     toast.info(`Member ${memberUsername} has been kicked!`);
   };

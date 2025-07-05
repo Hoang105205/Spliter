@@ -26,6 +26,10 @@ module.exports = function(ws, connectedClients) {
           handleAcceptFriendRequest(ws, connectedClients, jsonData.payload);
           break;
 
+        case 'DECLINE_FRIEND_REQUEST':
+          handleDeclineFriendRequest(ws, connectedClients, jsonData.payload);
+          break;
+
         // create group
         case 'CREATE_GROUP':
           handleCreateGroup(ws, connectedClients, jsonData.payload);
@@ -39,6 +43,11 @@ module.exports = function(ws, connectedClients) {
         // accept join group request
         case 'ACCEPT_JOIN_GROUP_REQUEST':
           handleAcceptJoinGroupRequest(ws, connectedClients, jsonData.payload);
+          break;
+
+        // decline join group request
+        case 'DECLINE_JOIN_GROUP_REQUEST':
+          handleDeclineJoinGroupRequest(ws, connectedClients, jsonData.payload);
           break;
 
         // unfriend
@@ -197,6 +206,33 @@ async function handleAcceptFriendRequest(ws, connectedClients, payload) {
   }
 }
 
+// Hàm xử lý DECLINE_FRIEND_REQUEST
+async function handleDeclineFriendRequest(ws, connectedClients, payload) {
+  const { declinerId, requesterId } = payload;
+
+  if (!declinerId || !requesterId) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin declienerId hoặc requesterId.'
+    }));
+  }
+
+  console.log(`Người dùng ${declinerId} đã từ chối yêu cầu kết bạn từ ${requesterId}`);
+
+
+  // Xu ly Activity ở đây (Decline Friend Request)
+
+
+
+
+
+
+
+
+}
+
+
+
 // Hàm xử lý CREATE_GROUP
 async function handleCreateGroup(ws, connectedClients, payload) {
   const { group_name, creator_id } = payload;
@@ -316,6 +352,34 @@ async function handleAcceptJoinGroupRequest(ws, connectedClients, payload) {
     }));
   }
 }
+
+// Hàm xử lý DECLINE_JOIN_GROUP_REQUEST
+async function handleDeclineJoinGroupRequest(ws, connectedClients, payload) {
+  const { declinerId, ownerId } = payload;
+  if (!declinerId || !ownerId) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin declinerId hoặc ownerId.'
+    }));
+  }
+
+  console.log(`Người dùng ${declinerId} đã từ chối yêu cầu tham gia nhóm từ ${ownerId}`);
+
+  // Xử lí Activity ở đây (Decline Join Group Request)
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
 
 // Hàm xử lý UNFRIEND
 async function handleUnfriend(ws, connectedClients, payload) {

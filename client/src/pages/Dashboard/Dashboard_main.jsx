@@ -52,41 +52,36 @@ function Dashboard_main() {
     const urlsToRevoke = [];
 
     const loadAvatars = async () => {
-      const newFriends = friends.filter(f => !friendsWithAvatars.some(fwa => fwa.id === f.id));
+      // Lấy tất cả friends hiện tại, không chỉ newFriends
+      const avatarPromises = friends.map(async (friend) => {
+        try {
+          const avatarURL = await getAvatar(friend.id);
+          urlsToRevoke.push(avatarURL);
+          return { ...friend, avatarURL };
+        } catch (_err) {
+          return { ...friend, avatarURL: null };
+        }
+      });
 
-      if (newFriends.length === 0) return; // Không có avatar mới cần tải
-
-      const newAvatars = await Promise.all(
-        newFriends.map(async (friend) => {
-          try {
-            const avatarURL = await getAvatar(friend.id);
-            urlsToRevoke.push(avatarURL);
-            return { ...friend, avatarURL };
-          } catch (_err) {
-            return { ...friend, avatarURL: null };
-          }
-        })
-      );
-
+      const newAvatars = await Promise.all(avatarPromises);
       if (isMounted) {
-        const updatedFriendsWithAvatars = [
-          ...friendsWithAvatars.filter((fwa) => friends.some((f) => f.id === fwa.id)), // Giữ avatar của bạn còn lại
-          ...newAvatars,
-        ];
-        setFriendsWithAvatars(updatedFriendsWithAvatars);
+        setFriendsWithAvatars(newAvatars); // Gán toàn bộ danh sách mới
       }
     };
 
     if (friends.length > 0) {
       loadAvatars();
+    } else {
+      if (isMounted) {
+        setFriendsWithAvatars([]); // Reset khi không có bạn
+      }
     }
-    
+
     return () => {
       isMounted = false;
-      // cleanup avatar URLs to avoid memory leak
       urlsToRevoke.forEach((url) => revokeAvatarUrl(url));
     };
-  }, [friends, friendsWithAvatars, setFriendsWithAvatars]);
+  }, [friends, getAvatar, revokeAvatarUrl]); // Chỉ phụ thuộc vào friends
 
   
   const [showAddModal, setShowAddModal] = useState(false);
@@ -199,14 +194,19 @@ function Dashboard_main() {
             })
           );
           
-          // Làm mới danh sách bạn bè sau khi xóa
-          await fetchFriends(userData.id);
-
         } else {
           console.error('WebSocket connection is not open.');
           alert('WebSocket connection is not open. Please try again later.');
         }
+        
+        // Loại bỏ bạn khỏi friendsWithAvatars ngay lập tức
+        setFriendsWithAvatars((prev) =>
+          prev.filter((friend) => friend.id !== contextMenu.friendId)
+        );
 
+        // Làm mới danh sách bạn bè sau khi xóa
+        await fetchFriends(userData.id);
+        
         
         setContextMenu({ ...contextMenu, visible: false });
       } catch (error) {

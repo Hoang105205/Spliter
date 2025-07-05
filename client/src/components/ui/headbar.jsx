@@ -188,11 +188,36 @@ function Head_bar(){
   const handleDecline = async (requestId, type) => {
     try {
       if (type === "friend") {
+        const request = requests.find(r => r.id === Number(requestId));
         await denyFriendRequest(requestId);
+
+
+        // Gửi socket thông báo cho cả requester và accepter
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: "DECLINE_FRIEND_REQUEST",
+            payload: {
+              declinerId: userData.id,
+              requesterId: request?.requester?.id // có thể giúp server nhẹ hơn
+            }
+          }));
+        }
+
       }
       else if (type === "group") {
         const invite = pendingInvites.find(i => i.id === Number(requestId));
         await declineInvite(invite.id, userData.id);
+
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: "DECLINE_JOIN_GROUP_REQUEST",
+            payload: {
+              declinerId: userData.id,
+              ownerId: invite.ownerId,
+            }
+          }));
+        }
       }
       await fetchPendingRequests(userData.id);
       await fetchPendingInvites(userData.id);

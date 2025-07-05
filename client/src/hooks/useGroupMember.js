@@ -10,6 +10,7 @@ export const useGroupMember = create((set, get) => ({
   loading: false,
   error: null,
   pendingInvites: [],
+  trigger: 0, // ✅ Thêm biến trigger
 
   // Fetch danh sách group mà user đã tham gia
   fetchGroups: async (userId) => {
@@ -26,6 +27,9 @@ export const useGroupMember = create((set, get) => ({
       });
     }
   },
+
+
+  refreshGroups: () => set((state) => ({ trigger: state.trigger + 1 })),
 
   // Fetch danh sách lời mời nhóm đang chờ (pending invites)
   fetchPendingInvites: async (userId) => {
