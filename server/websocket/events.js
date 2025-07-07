@@ -270,6 +270,8 @@ async function handleCreateGroup(ws, connectedClients, payload) {
       type: 'CREATE_GROUP_SUCCESS',
       message: `Group ${newGroup.name} is successfully created.`,
     }));
+
+    
     // Ghi nhận Activity: tạo nhóm mới
     await logActivity({
       userId: creator_id,
