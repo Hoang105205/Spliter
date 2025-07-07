@@ -22,15 +22,6 @@ const createGroup = async ({ name, ownerId }) => {
     status: 'accepted'
   });
 
-  // Xử lý activity: Tạo activity cho việc tạo nhóm
-  await Activities.create({
-    userId: ownerId,
-    groupId: group.id,
-    title: 'Create Group',
-    activityType: 'relationship',
-    description: `Created a new group: ${name}.`,
-  });
-
   return group;
 };
 

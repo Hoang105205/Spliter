@@ -22,10 +22,6 @@ const ActivityList = () => {
         return arr.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       case "oldest":
         return arr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-      case "az":
-        return arr.sort((a, b) => a.title.localeCompare(b.title));
-      case "za":
-        return arr.sort((a, b) => b.title.localeCompare(a.title));
       case "relationship-friend":
         return arr
           .filter(act => act.description && /friend/i.test(act.description))
