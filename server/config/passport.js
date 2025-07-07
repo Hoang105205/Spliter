@@ -2,6 +2,9 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const Users = require('../schemas/Users');
 
+// Mail Service
+const { sendEmail } = require('../services/mailService');
+
 function getUsernameFromEmail(email) {
   if (!email) return '';
   return email.split('@')[0];
@@ -19,8 +22,8 @@ passport.use(new GoogleStrategy({
   async (accessToken, refreshToken, profile, done) => {
     try {
       // Tìm user theo googleId hoặc email
-      
-      let user = await Users.findOne({ where: { email: profile.emails[0].value } });
+      const email = profile.emails[0].value;
+      let user = await Users.findOne({ where: { email } });
 
       if ( !user) {
         // Nếu chưa có, tạo mới (default password là "abc123", default username là phần trước @ trong email)
@@ -31,6 +34,20 @@ passport.use(new GoogleStrategy({
             password: "abc123",
             role: "user"
           });
+
+          // ✅ Send welcome email
+          await sendEmail(
+            email,
+            'Welcome to Spliter!',
+            `
+              <p>Hi ${getUsernameFromEmail(email)},</p>
+              <p>You have just signed up using your Google account.</p>
+              <p><strong>Your default username is: ${getUsernameFromEmail(email)}</strong></p>
+              <p><strong>Your default password is: abc123</strong></p>
+              <br><p>Best regards,<br>The Spliter Support Team</p>
+            `
+          );
+
         } catch (err) {
           console.error('Lỗi khi tạo user:', err); // Log đầy đủ error object
           return done(err, null);
@@ -44,19 +61,6 @@ passport.use(new GoogleStrategy({
   }
 
   
-
-  // // Hàm callback khi người dùng đăng nhập thành công (chua thao tac voi database)
-  // async (accessToken, refreshToken, profile, done) => {
-  //   // Tạo một object user đơn giản từ profile Google
-  //   const user = {
-  //     googleId: profile.id,
-  //     username: profile.displayName,
-  //     email: profile.emails[0].value,
-  //     avatar: profile.photos?.[0]?.value // nếu muốn lấy avatar
-  //   };
-  //   // Gán vào req.user thông qua done
-  //   return done(null, user);
-  //}
 ));
 
 
