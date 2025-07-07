@@ -67,7 +67,18 @@ function Dashboard_group() {
         getGroupmember(selectedGroup.id);
       }
     }
-  }, [userData.id, selectedGroup, activeTab, trigger]);
+  }, [userData.id, selectedGroup, activeTab, trigger]); 
+
+  
+  // ✅ Clear selectedGroup if it no longer exists (e.g., user was kicked)
+  useEffect(() => {
+    if (selectedGroup && groups.length > 0) {
+      const exists = groups.some(group => group.id === selectedGroup.id);
+      if (!exists) {
+        setSelectedGroup(null);
+      }
+    }
+  }, [groups, selectedGroup]);
 
 
   // Fetch avatars for group members

@@ -115,20 +115,40 @@ function Dashboard_main() {
       return;
     }
 
+    // if (ws.readyState === WebSocket.OPEN) {
+    //   ws.send(
+    //     JSON.stringify({
+    //       type: 'ADD_FRIEND',
+    //       payload: {
+    //         senderId: userData.id, // ID of the current user
+    //         receiverId: user.id,  // ID of the user to be added as a friend
+    //       },
+    //     })
+    //   );
+    //   console.log(`Sent friend request to user ${user.username}`);
+    // } else {
+    //   console.error('WebSocket connection is not open.');
+    //   alert('WebSocket connection is not open. Please try again later.');
+    // }
     if (ws.readyState === WebSocket.OPEN) {
-      ws.send(
-        JSON.stringify({
-          type: 'ADD_FRIEND',
-          payload: {
-            senderId: userData.id, // ID of the current user
-            receiverId: user.id,  // ID of the user to be added as a friend
-          },
-        })
-      );
-      console.log(`Sent friend request to user ${user.username}`);
+      try {
+        ws.send(
+          JSON.stringify({
+            type: "ADD_FRIEND",
+            payload: {
+              senderId: userData.id,
+              receiverId: user.id,
+            },
+          })
+        );
+        toast.success(`Friend request sent to ${user.username}!`);
+        setShowAddModal(false); // Close the modal after sending request
+      } catch (err) {
+        console.error("Failed to send friend request:", err);
+        toast.error("Failed to send friend request. Please try again.");
+      }
     } else {
-      console.error('WebSocket connection is not open.');
-      alert('WebSocket connection is not open. Please try again later.');
+      toast.error("WebSocket connection is not open.");
     }
   };
   

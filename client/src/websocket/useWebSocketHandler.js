@@ -7,12 +7,14 @@ import { useFriend } from '../hooks/useFriend';
 import { useUser } from '../hooks/useUser';
 import { useGroupMember } from '../hooks/useGroupMember';
 import { useGroup } from '../hooks/useGroup';
+import { useNotification } from '../hooks/useNotification'; // ✅ Thêm useNotification
 
 export const useWebSocketHandler = (ws) => {
   const { fetchFriends } = useFriend();
   const { userData } = useUser();
   const { fetchGroups, refreshGroups } = useGroupMember();
   const { getGroupmember } = useGroup();
+  const { incrementNotificationTrigger } = useNotification.getState(); // ✅ Thêm useNotification
 
   useEffect(() => {
     if (!ws || !userData?.id) return;
@@ -71,6 +73,7 @@ export const useWebSocketHandler = (ws) => {
 
       case 'FRIEND_REQUEST':
         handleFriendRequest(jsonData.payload);
+        incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
         break;
 
       case 'FRIEND_ACCEPTED':
@@ -87,6 +90,7 @@ export const useWebSocketHandler = (ws) => {
 
       case 'GROUP_MEMBER_REQUEST':
         handleGroupMemberRequest(jsonData.payload);
+        incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
         break;
 
       case "JOIN_GROUP_REQUEST_ACCEPTED":

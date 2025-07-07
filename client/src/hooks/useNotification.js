@@ -5,6 +5,14 @@ export const useNotification = create((set) => ({
     notifications: [],
     loading: false,
     error: null,
+    notificationTrigger: 0, // ✅ Thêm biến trigger
+
+    // ✅ Trigger tăng để báo UI cập nhật
+    incrementNotificationTrigger: () => {
+        set((state) => ({
+        notificationTrigger: state.notificationTrigger + 1,
+        }));
+    },
 
     // Fetch notifications for the logged-in user
     fetchNotifications: async () => {
