@@ -763,7 +763,7 @@ function Dashboard_group() {
                           {splitMode === "%" && <input
                             size="sm"
                             value={member.percentRaw ?? member.percent?.toString() ?? ""}
-                            className="text-black [font-family:'Roboto_Condensed',Helvetica] text-sm px-3 py-1 w-[46px] text-right rounded-[20px]"
+                            className="text-black [font-family:'Roboto_Condensed',Helvetica] text-sm px-3 py-1 w-[48px] text-right rounded-[20px]"
                             onChange={(e) => {
                               if (splitMode !== "equally") {
                                 const value = e.target.value;
@@ -925,13 +925,13 @@ function Dashboard_group() {
                         `${splitMode === "%"
                           ? `Percentages don't add up correctly, ${
                               moneyExpense < 0
-                                ? `missing ${(moneyRemainder).toFixed(1)}%`
-                                : `excess ${(moneyRemainder).toFixed(1)}%`
+                                ? `missing ${(Math.abs(moneyRemainder)).toFixed(1)} %`
+                                : `excess ${(Math.abs(moneyRemainder)).toFixed(1)} %`
                             }`
                           : `Amounts don't add up correctly, ${
                               moneyRemainder < 0
-                                ? `missing ${(moneyRemainder)}₫`
-                                : `excess ${(moneyRemainder)}₫`
+                                ? `missing ${(Math.abs(moneyRemainder))} ₫`
+                                : `excess ${(Math.abs(moneyRemainder))} ₫`
                             }`}` 
                         : ""}
                     </div>
