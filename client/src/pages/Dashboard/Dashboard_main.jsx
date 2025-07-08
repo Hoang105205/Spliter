@@ -23,6 +23,7 @@ function Dashboard_main() {
   // State variables
   const [loading, setLoading] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState([]);
+  const [expenseUsers, setExpenseUsers] = useState([]);
   const [friendsWithAvatars, setFriendsWithAvatars] = useState([]);
 
   // Custom hooks for user and friend management
@@ -87,10 +88,9 @@ function Dashboard_main() {
     };
   }, [friends, friendsWithAvatars, setFriendsWithAvatars]);
 
-  
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showExpenseModal, setShowExpenseModal] = useState(false)
   const [search, setSearch] = useState("");
-
   
   const handleSearch = () => {
     setLoading(true); // Hiển thị trạng thái loading
@@ -110,7 +110,26 @@ function Dashboard_main() {
 
       setLoading(false); // Tắt trạng thái loading
     }, 500); // Giả lập độ trễ của API (500ms)
+  };
 
+  const handleExpenseUserSearch = () => {
+    setLoading(true); // Hiển thị trạng thái loading
+    setTimeout(async() => {
+      try {
+        const user = await findUser(search);
+        if (user && user.username !== userData.username) {
+          setExpenseUsers([{ id: user.id, username: user.username }]);
+        } else {
+          setExpenseUsers([]); // No matching user
+        }
+        console.log('User found:', user.username);
+      } catch (error) {
+        console.error('Error finding user:', error);
+        setExpenseUsers([]); // Reset results
+      }
+
+      setLoading(false); // Tắt trạng thái loading
+    }, 500); // Giả lập độ trễ của API (500ms)
   };
 
   const handleAddFriend = (user) => {
@@ -136,11 +155,36 @@ function Dashboard_main() {
       alert('WebSocket connection is not open. Please try again later.');
     }
   };
+
+  const handleAddExpenseFriends = (users) => {
+    if (!ws) {
+      console.error('WebSocket instance is not available.');
+      alert('WebSocket connection is not available. Please try again later.');
+      return;
+    }
+
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        // chua co api (chac z, ehehehhe)
+        JSON.stringify({
+          type: 'ADD_DEBT',
+          payload: {
+            senderId: userData.id, // ID of the current user
+            receiverId: user.id,  // ID of the user to be added expense
+          },
+        })
+      );
+      console.log(`Sent friend request to user ${user.username}`);
+    } else {
+      console.error('WebSocket connection is not open.');
+      alert('WebSocket connection is not open. Please try again later.');
+    }
+  }
   
 
   // Lock background scroll when modal is open
   useEffect(() => {
-    if (showAddModal) {
+    if (showAddModal || showExpenseModal) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -149,7 +193,7 @@ function Dashboard_main() {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [showAddModal]);
+  }, [showAddModal, showExpenseModal]);
 
   const handleContextMenu = (e, friendId, friendshipId) => {
     e.preventDefault();
@@ -260,7 +304,8 @@ function Dashboard_main() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-4">
-                  <Button className="h-[57px] bg-[#ed5050] hover:bg-[#ed5050]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-3xl">
+                  <Button className="h-[57px] bg-[#ed5050] hover:bg-[#ed5050]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-3xl"
+                          onClick={() => setShowExpenseModal(true)}>
                     New expense
                   </Button>
                   <Button className="h-[57px] bg-[#3acd5a] hover:bg-[#3acd5a]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-3xl">
@@ -410,6 +455,12 @@ function Dashboard_main() {
                       }
                     }}
                   />
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[998]"
+                  ></motion.div>
                   <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
                         style={{ maxHeight: "250px" }}>
                     {filteredUsers.length === 0 && (
@@ -448,8 +499,129 @@ function Dashboard_main() {
             )}
           </AnimatePresence>
 
-          </div>
+          <AnimatePresence>
+            {showExpenseModal && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[999]"
+              >
+                {<div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] h-[500px] -translate-x-5 flex flex-col">
+                </div>}
+                <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[600px] h-[500px] gap-4 flex flex-col">
+                  <h2 className="big-header">Add a new Expense</h2>
 
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col w-full">
+                      <input
+                        type="text"
+                        placeholder="Enter a title"
+                        className="border-b border-gray-300 focus:outline-none text-center mb-2"
+                      />
+                      <div className="flex items-center justify-center text-lg font-medium border-b border-dotted border-gray-400 pb-1">
+                        <input
+                          type="number"
+                          placeholder="0"
+                          className="text-right w-24 focus:outline-none"
+                        />
+                        <span className="ml-1">đ</span>
+                      </div>
+                      <textarea className="resize-none w-[300px] h-[150px] focus:border-0 focus:outline-none
+                                    [font-family:'Roboto_Condensed',Helvetica] font-normal text-[#b3b3b3] text-base" 
+                            placeholder = {"There is still nothing here, how about you spice something up?"}>
+                      </textarea>
+                    </div>
+                  </div>
+
+                  {/* Paid by and split */}
+                  <div className="text-sm text-gray-700">
+                    Paid by <span className="inline-block bg-gray-200 px-2 py-1 rounded-full min-w-[50px]"></span>
+                    and split <span className="inline-block bg-gray-200 px-2 py-1 rounded-full min-w-[50px]"></span>
+                    <div className="text-xs text-gray-500 mt-1">(0.00đ/person)</div>
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex justify-between gap-2">
+                    <button className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-full">Date</button>
+                    <button className="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded-full">Group of individual</button>
+                  </div>
+
+                  <Button
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full  transition-colors"
+                    onClick={() => { 
+
+                    }}
+                  >
+                    Accept
+                  </Button>
+                  <Button
+                    className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded-full transition-colors"
+                    onClick={() => { 
+                      setSearch("");
+                      setExpenseUsers([]);
+                      setShowExpenseModal(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+                <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] h-[500px] translate-x-5 flex flex-col">
+                  <h2 className="text-xl font-bold mb-2">Add expense with Friend(s)</h2>
+                  <input
+                    type="text"
+                    placeholder="Enter friend's name"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={search}
+                    onClick={() => setAddExpenseFriends(true)}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleExpenseUserSearch();
+                      }
+                    }}
+                  />
+                  <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
+                        style={{ maxHeight: "250px" }}>
+                    {search === "" && (friendsWithAvatars.map((friend) => (
+                      <div
+                        key={friend.id}
+                        className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
+                      >
+                        <span>{friend.username}</span>
+                        <Button
+                          size="sm"
+                          className="bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded-[20px]"
+                          onClick={() => handleAddExpenseFriends(friend)}
+                          >
+                          + Add
+                        </Button>
+                      </div>
+                    )))}
+                    {search !== "" && expenseUsers.length === 0 && (
+                      <p className="text-gray-500">No matching users</p>
+                    )}
+                    {search !== "" && (expenseUsers.map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
+                      >
+                        <span>{user.username}</span>
+                        <Button
+                          size="sm"
+                          className="bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded-[20px]"
+                          onClick={() => handleAddExpenseFriends(user)}
+                          >
+                          + Add
+                        </Button>
+                      </div>
+                    )))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>

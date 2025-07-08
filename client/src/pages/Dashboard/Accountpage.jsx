@@ -45,7 +45,7 @@ function AccountPage() {
   if (localData.bio !== "") {
     defaultBio = localData.bio
   }
-
+  
   const [editState, setEditState] = useState(false)
   const [editIState, setEditIState] = useState(false)
   const [editPassword, setEditPassword] = useState(false)
@@ -281,7 +281,8 @@ function AccountPage() {
                 )}
               </div>
 
-              <Button onClick={onEditBioClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors duration-200 border border-transparent hover:border-white">
+              <Button onClick={onEditBioClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
+                                                        transition-colors duration-200 border border-transparent hover:border-white">
                 <span className="button-blue-data">
                   {editText}
                 </span>
@@ -295,7 +296,11 @@ function AccountPage() {
                   </p>}
 
                   {editState &&
-                  <textarea onChange={setBio} className="resize-none w-[300px] h-[150px] focus:border-0 focus:outline-none [font-family:'Roboto_Condensed',Helvetica] font-normal text-[#b3b3b3] text-base" value = {localData.bio}></textarea>}
+                  <textarea onChange={setBio} className="resize-none w-[300px] h-[150px] focus:border-0 focus:outline-none
+                                                      [font-family:'Roboto_Condensed',Helvetica] font-normal text-[#b3b3b3] text-base" 
+                                              value = {localData.bio}
+                                              placeholder = {"There is still nothing here, how about you spice something up?"}>
+                  </textarea>}
                 </CardContent>
               </Card>
             </div>
@@ -344,7 +349,8 @@ function AccountPage() {
                   {!editIState && !editPassword &&
                   <PencilIcon onClick={onEditIClick} className="w-6 h-6 ml-2" />}
                   {editIState &&
-                  <Button onClick={onEditIClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors duration-200 border border-transparent hover:border-white">
+                  <Button onClick={onEditIClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
+                                                          transition-colors duration-200 border border-transparent hover:border-white">
                     <span className="button-blue-data">
                       Confirm
                     </span>
@@ -394,13 +400,15 @@ function AccountPage() {
 
                     <div className="flex gap-x-6">
                       {editPassword &&
-                      <Button onClick={onEditPasswordClick} className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors duration-200 border border-transparent hover:border-white">
+                      <Button onClick={onEditPasswordClick} className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
+                                                                    transition-colors duration-200 border border-transparent hover:border-white">
                         <span className="button-blue-data">
                           Confirm
                         </span>
                       </Button>}
                       {editPassword &&
-                      <Button onClick={() => {setEditPassword(false)}} className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors duration-200 border border-transparent hover:border-white">
+                      <Button onClick={() => {setEditPassword(false)}} className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
+                                                                    transition-colors duration-200 border border-transparent hover:border-white">
                         <span className="button-blue-data">
                           Cancel
                         </span>
