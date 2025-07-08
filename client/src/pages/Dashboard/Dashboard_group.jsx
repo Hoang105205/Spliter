@@ -173,7 +173,7 @@ function Dashboard_group() {
   useEffect(() => {
     if (prevSplitMode === splitMode) return;
     if (prevSplitMode === "%" || splitMode === "%") {
-      const selected = groupExpenseMembers.map(member => ({
+      const selected = selectedMember.map(member => ({
         ...member,
         percent: 0,
         percentRaw: "",
@@ -807,6 +807,7 @@ function Dashboard_group() {
                             size="sm"
                             value={member.debt}
                             className="text-black [font-family:'Roboto_Condensed',Helvetica] text-sm px-3 py-1 w-[105px] text-right rounded-[20px]"
+                            disabled={splitMode !== "d"}
                             onChange={(e) => {
                               const newDebt = parseFloat(e.target.value) || 0;
                               setSelectedMember((prev) =>
@@ -924,7 +925,7 @@ function Dashboard_group() {
                       {!expenseValid ? 
                         `${splitMode === "%"
                           ? `Percentages don't add up correctly, ${
-                              moneyExpense < 0
+                              moneyRemainder < 0
                                 ? `missing ${(Math.abs(moneyRemainder)).toFixed(1)} %`
                                 : `excess ${(Math.abs(moneyRemainder)).toFixed(1)} %`
                             }`
