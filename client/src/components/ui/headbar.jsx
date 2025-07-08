@@ -12,6 +12,7 @@ import { useUser } from '../../hooks/useUser.js';
 import { useFriend } from '../../hooks/useFriend.js';
 import { useActivity } from '../../hooks/useActivity.js';
 import { useGroupMember } from '../../hooks/useGroupMember.js';
+import { useNotification } from '../../hooks/useNotification.js'; // ✅ Thêm useNotification
 
 // WebSocket context
 import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
@@ -26,6 +27,7 @@ const accountScroll = [
 function Head_bar(){
 
   const navigate = useNavigate();
+  
 
   // State management
   const [showNotifications, setShowNotifications] = useState(false);
@@ -60,6 +62,15 @@ function Head_bar(){
   const notifRef = useRef(null);
   const accountRef = useRef(null);
   const friendRequestPopupRef = useRef(null);
+
+  // Trigger to re-fetch notifications
+  const { notificationTrigger } = useNotification(); // ✅ Thêm useNotification
+  useEffect(() => {
+    if (userData.id) {
+      fetchPendingRequests(userData.id); // friend
+      fetchPendingInvites(userData.id);  // group
+    }
+  }, [userData.id, notificationTrigger]); // ✅ thêm notificationTrigger
 
   // Handle Log out
   const handleLogout = async () => {
