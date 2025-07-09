@@ -236,7 +236,6 @@ async function handleDeclineFriendRequest(ws, connectedClients, payload) {
     }));
   }
 
-  console.log(`Người dùng ${declinerId} đã từ chối yêu cầu kết bạn từ ${requesterId}`);
   // Ghi nhận Activity: từ chối lời mời kết bạn
   const requesterName = await Users.findOne({ where: { id: requesterId } });
   await logActivity({
@@ -403,7 +402,7 @@ async function handleDeclineJoinGroupRequest(ws, connectedClients, payload) {
     }));
   }
 
-  console.log(`Người dùng ${declinerId} đã từ chối yêu cầu tham gia nhóm từ ${ownerId}`);
+  
   // Ghi nhận Activity: từ chối yêu cầu tham gia nhóm
   const ownerName = await Users.findOne({ where: { id: ownerId } });
   await logActivity({

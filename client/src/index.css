@@ -27,6 +27,10 @@
         @apply [font-family:'Roboto_Condensed',Helvetica] font-normal text-black text-[25px]
     }
 
+    .big-header {
+        @apply [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[25px]
+    }
+
     .data {
         @apply [font-family:'Roboto_Condensed',Helvetica] font-normal text-center text-[23.5px]
     }
