@@ -28,7 +28,7 @@ export const useFriend = create((set) => ({
   fetchPendingRequests: async (userId) => {
     set({ loading: true, error: null });
     try {
-      const res = await api.get(`/api/friends/${userId}/pending`);
+    const res = await api.get(`/api/friends/${userId}/pending`);
       set({ requests: res.data, loading: false });
     } catch (err) {
       set({

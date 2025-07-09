@@ -4,6 +4,8 @@ const Notifications = require('./Notifications');
 const Activities = require('./Activities');
 const Groups = require('./Groups');
 const groupMembers = require('./groupMembers');
+const Expenses = require('./Expenses');
+const expenseItems = require('./expenseItems');
 
 // Associations
 Users.hasMany(Friends, { foreignKey: 'requesterId', as: 'sentRequests' });
@@ -24,6 +26,16 @@ Groups.belongsToMany(Users, { through: groupMembers, foreignKey: 'groupId', othe
 groupMembers.belongsTo(Groups, { foreignKey: 'groupId', as: 'group', constraints: false });
 groupMembers.belongsTo(Users, { foreignKey: 'userId', as: 'user', constraints: false });
 
+Groups.hasMany(Expenses, { foreignKey: 'groupId', as: 'expenses' });
+Expenses.belongsTo(Groups, { foreignKey: 'groupId', as: 'group' });
+
+Expenses.hasMany(expenseItems, { foreignKey: 'expenseId', as: 'items' });
+expenseItems.belongsTo(Expenses, { foreignKey: 'expenseId', as: 'expense', constraints: false });
+
+
+expenseItems.belongsTo(Groups, { foreignKey: 'groupId', as: 'group', constraints: false });
+expenseItems.belongsTo(Users, { foreignKey: 'userId', as: 'user', constraints: false });
+
 
 module.exports = {
   Users,
@@ -32,4 +44,6 @@ module.exports = {
   Activities,
   Groups,
   groupMembers,
+  Expenses,
+  expenseItems
 };

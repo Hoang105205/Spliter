@@ -14,6 +14,7 @@ import { useUser } from '../../hooks/useUser.js';
 import { useGroupMember } from '../../hooks/useGroupMember.js';
 import { useGroup } from "../../hooks/useGroup.js";
 import { useFriend } from "../../hooks/useFriend.js";
+import { useExpense } from '../../hooks/useExpense.js';
 
 // Import WebSocket context
 import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
@@ -52,6 +53,9 @@ function Dashboard_group() {
 
   // Use friend hook
   const { friends, loading: friendsLoading, error: friendsError, fetchFriends } = useFriend();
+
+  // Use expense hook
+  const { createExpense } = useExpense();
 
   /// Websocket context to handle real-time updates
   const ws = useContext(WebSocketContext);
@@ -452,73 +456,26 @@ function Dashboard_group() {
   };
 
   // Handle accept action in "new expense"
-  const handleAddExpense = (users) => {
+  const handleAddExpense = async () => {
     try {
-      // Tổng bill
-      const totalBill = moneyExpense;
-      console.log('Total Bill:', totalBill);
-
-      // Ai đứng trả
-      const payer = paidMember;
-      console.log('Payer:', payer?.username || 'Unknown');
-
-      // Split rate (equally, theo %, theo đ)
-      let splitModeDetail;
-      if (checkedEqually) {
-        splitModeDetail = 'equally';
-      } else if (splitMode === '%') {
-        splitModeDetail = 'percent';
-      } else if (splitMode === 'd') {
-        splitModeDetail = 'custom amount (đ)';
-      }
-      console.log('Split Rate:', splitModeDetail);
-
-      // Danh sách các người liên quan và số tiền của họ tương ứng
-      const involvedMembers = selectedMember.map(member => ({
-        username: member.username,
-        amount: member.debt || 0,
-      }));
-      console.log('Involved Members and Amounts:', involvedMembers);
-
-
-      // Title
-      const expenseTitle = titleExpense;
-      console.log('Title:', expenseTitle);
-
-      // Description
-      const expenseDescription = descriptionExpense;
-      console.log('Description:', expenseDescription);
-
-      // Ngày trả
-      const paymentDate = selectedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-      console.log('Payment Date:', paymentDate);
-      
-      // // Chuẩn bị payload cho WebSocket
-      // const payload = {
-      //   type: 'ADD_EXPENSE',
-      //   payload: {
-      //     senderId: userData.id,
-      //     groupId: selectedGroup.id,
-      //     title: titleExpense,
-      //     totalAmount: totalBill,
-      //     payerId: payer.id,
-      //     splitMode: splitModeDetail,
-      //     members: involvedMembers.map(m => ({ memberId: m.id, amount: m.amount })),
-      //     description: descriptionExpense,
-      //     date: selectedDate.toISOString(),
-      //   },
-      // };
-
-      //ws.send(JSON.stringify(payload));
-
-
+      await createExpense({
+        title: titleExpense,
+        expDate: selectedDate,
+        description: descriptionExpense,
+        amount: moneyExpense,
+        paidbyId: paidMember.id,
+        groupId: selectedGroup.id,
+        members: selectedMember.map(member => ({
+          userId: member.id,
+          shared_amount: member.debt || 0,
+        })),
+      });
 
       toast.success('Expense added successfully!');
     } catch (error) {
-
       toast.error('Failed to add expense. Please try again.');
     }
-  }
+  };
 
   // Handle kick member
   const handleKickMember = async () => {
@@ -975,7 +932,7 @@ function Dashboard_group() {
                           </div>
                         )}
                       </div>
-                      on <span className="inline-block bg-gray-200 px-2 text-sm rounded-full min-w-[25px] min-h-[10px]">{selectedDate.toLocaleDateString()}</span>
+                      due <span className="inline-block bg-gray-200 px-2 text-sm rounded-full min-w-[25px] min-h-[10px]">{selectedDate.toLocaleDateString()}</span>
                       <div className="text-xs text-gray-500 mt-1 w-full">{splitMode === "equally" ? `(${formatWithCommas(eachDebt)} đ / person)` : "Custom by user"}</div>
                     </div>
 
