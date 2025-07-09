@@ -19,7 +19,7 @@ const Expenses = sequelize.define(
         },
         groupId: {
             type: DataTypes.INTEGER,
-            primaryKey: true,
+            allowNull: false,
             references: {
                 model: 'groups', // refers to table name
                 key: 'id', // refers to column name in Groups table
@@ -35,7 +35,7 @@ const Expenses = sequelize.define(
         },
         description: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
         },
         amount: {
             type: DataTypes.FLOAT,
