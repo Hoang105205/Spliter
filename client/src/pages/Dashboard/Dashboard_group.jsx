@@ -72,7 +72,7 @@ function Dashboard_group() {
 
   const [search, setSearch] = useState("");
 
-  const [expenseUsers, setExpenseUsers] = useState([]); // Showing search "users"
+  const [expenseUsers, setExpenseUsers] = useState([]);               // Showing search "users"
   const [groupExpenseMembers, setGroupExpenseMembers] = useState([]); // All group members with new attribute (flag) (dua nao flag = true la co trong expense )
   const [checkedEqually, setCheckedEqually] = useState(true);
   const [splitMode, setSplitMode] = useState("equally");
@@ -115,6 +115,15 @@ function Dashboard_group() {
         item.id === id ? { ...item, flag: !item.flag } : item
       )
     );
+
+    // Make change to members in search array
+    if (expenseUsers.length > 0) {
+      setExpenseUsers((prevItems) =>
+        prevItems.map((item) =>
+          item.id === id ? { ...item, flag: !item.flag } : item
+        )
+      );
+    }
   };
 
   const resetAllFlags = () => {

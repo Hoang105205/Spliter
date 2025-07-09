@@ -22,7 +22,7 @@ function isSameDay(d1, d2) {
   );
 }
 
-const CalendarPopup = ({ value, onChange, open, onClose, position = { top: 0, left: 0 } }) => {
+const CalendarPopup = ({ value, onChange, open, onClose, position = { top: 0, left: 0 }, maxDate }) => {
   const today = new Date();
   const [viewYear, setViewYear] = React.useState(value?.getFullYear() || today.getFullYear());
   const [viewMonth, setViewMonth] = React.useState(value?.getMonth() || today.getMonth());
@@ -138,8 +138,10 @@ const CalendarPopup = ({ value, onChange, open, onClose, position = { top: 0, le
             <div
               key={i}
               onClick={() => {
-                onChange(date);
-                onClose?.();
+                if (!maxDate || date <= maxDate) {
+                  onChange(date);
+                  onClose?.();
+                }
               }}
               onMouseEnter={() => setHoveredIndex(i)}
               onMouseLeave={() => setHoveredIndex(null)}
@@ -147,6 +149,7 @@ const CalendarPopup = ({ value, onChange, open, onClose, position = { top: 0, le
                 ...styles.dayCell,
                 ...(isSelected ? styles.selectedDay : {}),
                 ...(currentMonth ? {} : styles.outsideMonth),
+                ...(maxDate && date > maxDate ? { pointerEvents: "none", opacity: 0.3 } : {}),
                 ...(isHovered ? styles.hoveredDay : {}),
               }}
               className="calendar-day"
@@ -224,7 +227,7 @@ const styles = {
     color: "white",
   },
   outsideMonth: {
-    color: "#ccc",
+    color: "#a8a8a8",
   },
   hoveredDay: {
     backgroundColor: "#e1e6ed",
