@@ -948,6 +948,7 @@ function Dashboard_group() {
                               onChange={setSelectedDate}
                               open={open}
                               onClose={() => setShowDateModal(false)}
+                              minDate ={new Date()}
                             />
                         </div>)}
                     </div>
