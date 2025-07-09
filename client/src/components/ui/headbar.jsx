@@ -65,6 +65,7 @@ function Head_bar(){
 
   // Trigger to re-fetch notifications
   const { notificationTrigger } = useNotification(); // ✅ Thêm useNotification
+
   useEffect(() => {
     if (userData.id) {
       fetchPendingRequests(userData.id); // friend
@@ -148,6 +149,8 @@ function Head_bar(){
     title: `Join group invite: ${invite.name}`,
     type: "group",
   }));
+
+  
 
   const combinedNotifs = [...friendRequestNotifs, ...groupRequestNotifs]
   
