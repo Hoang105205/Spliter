@@ -2,6 +2,7 @@ const { createFriendRequest } = require('../services/friendService.js');
 const { createGroup, createGroupMemberRequest } = require('../services/groupService.js');
 const { logActivity } = require('../services/activityService.js');
 const { Users, Groups } = require('../schemas');
+const { logNotification } = require('../services/notificationService.js');
 
 module.exports = function(ws, connectedClients) {
   ws.on('message', (message) => {
@@ -189,6 +190,17 @@ async function handleAcceptFriendRequest(ws, connectedClients, payload) {
     const accepterClient = connectedClients[accepterId];
     const requesterClient = connectedClients[requesterId];
 
+    
+    // ✅ Tạo Notification cho requester
+    const requesterName = await Users.findOne({ where: { id: requesterId } });
+    const accepterName = await Users.findOne({ where: { id: accepterId } });
+
+    await logNotification({
+      userId: requesterId,
+      description: `${accepterName.username} accepted your friend request.`
+    });
+
+
     const message = {
       type: 'FRIEND_ACCEPTED',
       payload: {
@@ -208,14 +220,15 @@ async function handleAcceptFriendRequest(ws, connectedClients, payload) {
     }
 
     console.log(`Đã gửi tín hiệu FRIEND_ACCEPTED cho ${requesterId} và ${accepterId}`);
+
     // Ghi nhận Activity: chấp nhận lời mời kết bạn
-    const requesterName = await Users.findOne({ where: { id: requesterId } });
     await logActivity({
       userId: accepterId,
       title: 'Accept Friend Request',
       activityType: 'relationship',
       description: `Accepted friend request from ${requesterName.username}.`
     });
+
   } catch (err) {
     console.error("Lỗi khi xử lý ACCEPT_FRIEND_REQUEST:", err);
     ws.send(JSON.stringify({
@@ -236,9 +249,19 @@ async function handleDeclineFriendRequest(ws, connectedClients, payload) {
     }));
   }
 
-  console.log(`Người dùng ${declinerId} đã từ chối yêu cầu kết bạn từ ${requesterId}`);
-  // Ghi nhận Activity: từ chối lời mời kết bạn
   const requesterName = await Users.findOne({ where: { id: requesterId } });
+  const declinerName = await Users.findOne({ where: { id: declinerId } });
+
+  // ✅ Tạo Notification cho requester
+  await logNotification({
+    userId: requesterId,
+    description: `${declinerName.username} rejected your friend request.`
+  });
+
+
+  console.log(`Người dùng ${declinerId} đã từ chối yêu cầu kết bạn từ ${requesterId}`);
+
+  // Ghi nhận Activity: từ chối lời mời kết bạn
   await logActivity({
     userId: declinerId,
     title: 'Decline Friend Request',
@@ -357,6 +380,15 @@ async function handleAcceptJoinGroupRequest(ws, connectedClients, payload) {
     const accepterClient = connectedClients[accepterId];
     const ownerClient = connectedClients[ownerId];
 
+    const GroupName = await Groups.findOne({ where: { id: groupId } });
+    const accepterName = await Users.findOne({ where: { id: accepterId } });
+
+    // ✅ Tạo Notification cho owner
+    await logNotification({
+      userId: ownerId,
+      description: `${accepterName.username} accepted your group joining request.`
+    });
+
     const message = {
       type: 'JOIN_GROUP_REQUEST_ACCEPTED',
       payload: {
@@ -374,8 +406,9 @@ async function handleAcceptJoinGroupRequest(ws, connectedClients, payload) {
     if (ownerClient?.ws?.readyState === ws.OPEN) {
       ownerClient.ws.send(JSON.stringify(message));
     }
+
     // Ghi nhận Activity: chấp nhận yêu cầu tham gia nhóm
-    GroupName = await Groups.findOne({ where: { id: groupId } });
+
     await logActivity({
       userId: accepterId,
       groupId: groupId,
@@ -403,9 +436,18 @@ async function handleDeclineJoinGroupRequest(ws, connectedClients, payload) {
     }));
   }
 
-  console.log(`Người dùng ${declinerId} đã từ chối yêu cầu tham gia nhóm từ ${ownerId}`);
   // Ghi nhận Activity: từ chối yêu cầu tham gia nhóm
   const ownerName = await Users.findOne({ where: { id: ownerId } });
+  const declinerName = await Users.findOne({ where: { id: declinerId } });
+
+  // ✅ Tạo Notification cho owner
+  await logNotification({
+    userId: ownerId,
+    description: `${declinerName.username} rejected your group joining request.`
+  });
+
+  console.log(`Người dùng ${declinerId} đã từ chối yêu cầu tham gia nhóm từ ${ownerId}`);
+
   await logActivity({
     userId: declinerId,
     title: 'Decline Join Group Request',
@@ -432,6 +474,16 @@ async function handleUnfriend(ws, connectedClients, payload) {
     const userClient = connectedClients[userId];
     const friendClient = connectedClients[friendId];
 
+    const FriendName = await Users.findOne({ where: { id: friendId } });
+    const userName = await Users.findOne({ where: { id: userId } });
+
+    // ✅ Tạo Notification cho người bị hủy kết bạn
+    await logNotification({
+      userId: friendId,
+      description: `${userName.username} unfriended you.`
+    });
+
+
     if (userClient && userClient.ws.readyState === ws.OPEN) {
       userClient.ws.send(JSON.stringify({
         type: 'UNFRIEND_ANNOUNCEMENT',
@@ -453,7 +505,7 @@ async function handleUnfriend(ws, connectedClients, payload) {
     }
 
     // Ghi nhận Activity: hủy kết bạn
-    const FriendName = await Users.findOne({ where: { id: friendId } });
+
     await logActivity({
       userId: userId,
       friendId: friendId,
@@ -486,6 +538,15 @@ async function handleKickGroupMember(ws, connectedClients, payload) {
   try {
     memberClient = connectedClients[memberId];
 
+    // Ghi nhận Activity: kick thành viên khỏi nhóm
+    memberName = await Users.findOne({ where: { id: memberId } });
+
+    // ✅ Tạo Notification cho người bị kick
+    await logNotification({
+      userId: memberId,
+      description: `You have been kicked from the group: ${groupName}.`
+    });
+
     if (memberClient && memberClient.ws.readyState === ws.OPEN) {
       memberClient.ws.send(JSON.stringify({
         type: 'KICKED_ANNOUNCEMENT',
@@ -496,8 +557,8 @@ async function handleKickGroupMember(ws, connectedClients, payload) {
         }
       }));
     }
+
     // Ghi nhận Activity: kick thành viên khỏi nhóm
-    memberName = await Users.findOne({ where: { id: memberId } });
     await logActivity({
       userId: ownerId,
       groupId: groupId,
@@ -513,5 +574,4 @@ async function handleKickGroupMember(ws, connectedClients, payload) {
       message: err.message
     }));
   }
-
 }

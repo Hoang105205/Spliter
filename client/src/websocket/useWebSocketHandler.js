@@ -13,8 +13,10 @@ export const useWebSocketHandler = (ws) => {
   const { fetchFriends } = useFriend();
   const { userData } = useUser();
   const { fetchGroups, refreshGroups } = useGroupMember();
-  const { getGroupmember } = useGroup();
+  const { fetchNotifications } = useNotification.getState(); // ✅ Gọi trực tiếp không cần trigger
   const { incrementNotificationTrigger } = useNotification.getState(); // ✅ Thêm useNotification
+
+  const { getGroupmember } = useGroup();
 
   useEffect(() => {
     if (!ws || !userData?.id) return;
@@ -78,10 +80,12 @@ export const useWebSocketHandler = (ws) => {
 
       case 'FRIEND_ACCEPTED':
         handleFriendAccepted(jsonData.payload);
+        incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
         break;
 
       case 'UNFRIEND_ANNOUNCEMENT':
         handleUnfriendAnnouncement(jsonData.payload);
+        incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
         break;
 
       case 'CREATE_GROUP_SUCCESS':
@@ -95,10 +99,12 @@ export const useWebSocketHandler = (ws) => {
 
       case "JOIN_GROUP_REQUEST_ACCEPTED":
         handleJoinGroupRequestAccepted(jsonData.payload);
+        incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
         break;
 
       case 'KICKED_ANNOUNCEMENT':
         handleKickedAnnouncement(jsonData.payload);
+        incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
         break;
       default:
         console.warn(`⚠️ Loại tin nhắn không hỗ trợ: ${type}`);
