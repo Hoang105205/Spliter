@@ -149,10 +149,11 @@ function Dashboard_main() {
         ws.send(
           JSON.stringify({
             type: "ADD_FRIEND",
-            payload: {
-              senderId: userData.id,
-              receiverId: user.id,
-            },
+            payload:
+              {
+                senderId: userData.id,
+                receiverId: user.id,
+              },
           })
         );
         toast.success(`Friend request sent to ${user.username}!`);
@@ -211,6 +212,14 @@ function Dashboard_main() {
       document.body.style.overflow = "";
     };
   }, [showAddModal, showExpenseModal]);
+
+  // Clear search/filter state when Add Friend modal closes
+  useEffect(() => {
+    if (!showAddModal) {
+      setSearch("");
+      setFilteredUsers([]);
+    }
+  }, [showAddModal]);
 
   const handleContextMenu = (e, friendId, friendshipId) => {
     e.preventDefault();

@@ -41,6 +41,8 @@ function Head_bar(){
   // Report popup
   const [showReportPopup, setShowReportPopup] = useState(false);
   
+  // State cho modal xem tất cả notification
+  const [showAllNotiModal, setShowAllNotiModal] = useState(false);
 
   // User data
   const { clearUserData, userData, getAvatar, revokeAvatarUrl } = useUser();
@@ -54,6 +56,8 @@ function Head_bar(){
   // Group data
   const { fetchPendingInvites, pendingInvites, clearGroups, acceptInvite, declineInvite } = useGroupMember();
 
+  // Notifications
+  const { fetchNotifications, notifications, notificationTrigger, markAsRead } = useNotification();
 
   // Websocket context to handle real-time updates
   const ws = useContext(WebSocketContext);
@@ -63,15 +67,13 @@ function Head_bar(){
   const accountRef = useRef(null);
   const friendRequestPopupRef = useRef(null);
 
-  // Trigger to re-fetch notifications
-  const { notificationTrigger } = useNotification(); // ✅ Thêm useNotification
-
   useEffect(() => {
     if (userData.id) {
-      fetchPendingRequests(userData.id); // friend
-      fetchPendingInvites(userData.id);  // group
+      fetchPendingRequests(userData.id);
+      fetchPendingInvites(userData.id);
+      fetchNotifications(userData.id); // Fetch notifications when userData.id changes
     }
-  }, [userData.id, notificationTrigger]); // ✅ thêm notificationTrigger
+  }, [userData.id, notificationTrigger]); // Re-fetch notifications when trigger changes
 
   // Handle Log out
   const handleLogout = async () => {
@@ -106,17 +108,32 @@ function Head_bar(){
     }
   };
 
+  // Khi bấm vào bell icon, chỉ mở/đóng dropdown, KHÔNG markAsRead nữa
   const handleBellClick = () => {
-    setShowNotifications((prev) => {
-      const next = !prev;
-      if (next && userData.id) {
-        fetchPendingRequests(userData.id); // Fetch pending friend requests
-        fetchPendingInvites(userData.id); // Fetch pending group invites
-      }
-      return next;
-    });
+    setShowNotifications((prev) => !prev);
     setShowAccountScrolldown(false);
   };
+
+  // Khi dropdown notification đóng, markAsRead cho các system notification chưa đọc
+  const prevShowNotifications = useRef(false);
+  useEffect(() => {
+    if (prevShowNotifications.current && !showNotifications) {
+      // Dropdown vừa đóng
+      const unreadSystemNotiIds = notifications.filter(n => !n.isRead).map(n => n.id);
+      if (unreadSystemNotiIds.length > 0 && userData.id) {
+        Promise.all(unreadSystemNotiIds.map(id => markAsRead(id))).then(() => {
+          fetchNotifications(userData.id);
+          // Trigger UI update
+          if (typeof window !== 'undefined') {
+            setTimeout(() => {
+              useNotification.getState().incrementNotificationTrigger();
+            }, 100);
+          }
+        });
+      }
+    }
+    prevShowNotifications.current = showNotifications;
+  }, [showNotifications]);
 
   const handleAvatarClick = () => {
     setShowAccountScrolldown((prev) => !prev);
@@ -127,13 +144,6 @@ function Head_bar(){
     navigate(`/dashboard/${userData.id}`);
   };
 
-  // Fetch friend requests when userData.id changes
-  useEffect(() => {
-    if (userData.id) {
-      fetchPendingRequests(userData.id); // Fetch pending friend requests
-      fetchPendingInvites(userData.id); // Fetch pending group invites
-    }
-  }, [userData.id]);
 
   // Format friend requests into notifications
   const friendRequestNotifs = requests.map((r) => ({
@@ -150,9 +160,14 @@ function Head_bar(){
     type: "group",
   }));
 
-  
+  // Format system notifications (chỉ lấy các noti chưa đọc)
+  const systemNotifs = notifications.filter(n => !n.isRead).map((n) => ({
+    id: n.id,
+    title: n.description,
+    type: "system",
+  }));
 
-  const combinedNotifs = [...friendRequestNotifs, ...groupRequestNotifs]
+  const combinedNotifs = [...friendRequestNotifs, ...groupRequestNotifs, ...systemNotifs]
   
   //Handle accept friend request
   const handleAccept = async (requestId, type) => {
@@ -227,8 +242,9 @@ function Head_bar(){
           ws.send(JSON.stringify({
             type: "DECLINE_JOIN_GROUP_REQUEST",
             payload: {
+              groupId: invite.id, // BỔ SUNG groupId
               declinerId: userData.id,
-              ownerId: invite.ownerId,
+              ownerId: invite.ownerId // BỔ SUNG ownerId
             }
           }));
         }
@@ -283,6 +299,18 @@ function Head_bar(){
     };
   }, [userData.id]);
 
+  // Lock scroll khi mở modal See All Notifications
+  useEffect(() => {
+    if (showAllNotiModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showAllNotiModal]);
+
   return(
     <>
       {/* Header */}
@@ -321,14 +349,16 @@ function Head_bar(){
                   {combinedNotifs.map((notif, index) => (
                     <div
                       key={notif.id}
-                      onClick={() => setActiveRequestId({ id: notif.id, type: notif.type })}
-                      className="px-4 py-2 border-b hover:bg-gray-100 text-sm text-gray-800 cursor-pointer"
+                      onClick={notif.type === "system" ? undefined : () => setActiveRequestId({ id: notif.id, type: notif.type })}
+                      className={`px-4 py-2 border-b text-sm text-gray-800 cursor-pointer ${notif.type === "system" ? "opacity-60 cursor-default" : "hover:bg-gray-100"}`}
                     >
                       <div>{notif.title}</div>
                     </div>
                   ))}
 
-                  <div className="text-center py-2 text-green-600 font-medium hover:underline cursor-pointer">
+                  <div className="text-center py-2 text-green-600 font-medium hover:underline cursor-pointer"
+                    onClick={() => setShowAllNotiModal(true)}
+                  >
                     See all
                   </div>
                 </motion.div>
@@ -502,6 +532,46 @@ function Head_bar(){
 
       {/* Report Modal */}
       <Report show={showReportPopup} onClose={() => setShowReportPopup(false)} ws={ws} />
+
+      {/* See All Notifications Modal */}
+      <AnimatePresence>
+        {showAllNotiModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[100]"
+            onClick={() => setShowAllNotiModal(false)}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-[400px] max-w-[95vw] max-h-[70vh] flex flex-col items-center p-0 relative"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-full text-center text-xl font-bold py-4 border-b">All Notifications</div>
+              <div className="w-full flex-1 overflow-y-auto" style={{ maxHeight: '50vh' }}>
+                {notifications.length === 0 ? (
+                  <div className="text-gray-500 text-center py-8">No notifications.</div>
+                ) : (
+                  notifications.map((notif, idx) => (
+                    <div
+                      key={notif.id || idx}
+                      className={`px-6 py-3 border-b text-base text-gray-800 ${notif.isRead ? 'opacity-60' : ''}`}
+                    >
+                      {notif.description}
+                    </div>
+                  )))
+                }
+              </div>
+              <button
+                className="w-32 mx-auto my-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-full text-lg font-semibold text-gray-700"
+                onClick={() => setShowAllNotiModal(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </>
   );
