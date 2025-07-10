@@ -106,6 +106,14 @@ export const useWebSocketHandler = (ws) => {
         handleKickedAnnouncement(jsonData.payload);
         incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
         break;
+      case 'DECLINE_FRIEND_REQUEST':
+        handleDeclineFriendRequest(jsonData.payload);
+        incrementNotificationTrigger();
+        break;
+      case 'DECLINE_JOIN_GROUP_REQUEST':
+        handleDeclineJoinGroupRequest(jsonData.payload);
+        incrementNotificationTrigger();
+        break;
       default:
         console.warn(`⚠️ Loại tin nhắn không hỗ trợ: ${type}`);
     }
@@ -173,6 +181,26 @@ export const useWebSocketHandler = (ws) => {
       toast.error(`🚫 You have been kicked from the group: ${groupName}`);
     }
     fetchGroups(userData.id);
+  }
+
+  // Xử lý từ chối lời mời kết bạn
+  const handleDeclineFriendRequest = ({ declinerId, requesterId, status }) => {
+    if (userData.id === declinerId) {
+      toast.info('❌ You have declined a friend request.');
+    } else if (userData.id === requesterId) {
+      toast.info('❌ Your friend request was declined.');
+    }
+    // Không cần fetchNotifications ở đây vì đã có trigger
+  };
+
+  // Xử lý từ chối lời mời tham gia nhóm
+  const handleDeclineJoinGroupRequest = ({ groupId, ownerId, declinerId, status }) => {
+    if (userData.id === declinerId) {
+      toast.info('❌ You have declined a group join request.');
+    } else if (userData.id === ownerId) {
+      toast.info('❌ Your group join request was declined.');
+    }
+    // Không cần fetchNotifications ở đây vì đã có trigger
   }
 
 };

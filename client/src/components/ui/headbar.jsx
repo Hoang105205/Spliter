@@ -250,8 +250,9 @@ function Head_bar(){
           ws.send(JSON.stringify({
             type: "DECLINE_JOIN_GROUP_REQUEST",
             payload: {
+              groupId: invite.id, // BỔ SUNG groupId
               declinerId: userData.id,
-              ownerId: invite.ownerId,
+              ownerId: invite.ownerId // BỔ SUNG ownerId
             }
           }));
         }
@@ -566,8 +567,8 @@ function Head_bar(){
                     >
                       {notif.description}
                     </div>
-                  ))
-                )}
+                  )))
+                }
               </div>
               <button
                 className="w-32 mx-auto my-4 py-2 bg-gray-300 hover:bg-gray-400 rounded-full text-lg font-semibold text-gray-700"

@@ -115,30 +115,16 @@ function Dashboard_main() {
       return;
     }
 
-    // if (ws.readyState === WebSocket.OPEN) {
-    //   ws.send(
-    //     JSON.stringify({
-    //       type: 'ADD_FRIEND',
-    //       payload: {
-    //         senderId: userData.id, // ID of the current user
-    //         receiverId: user.id,  // ID of the user to be added as a friend
-    //       },
-    //     })
-    //   );
-    //   console.log(`Sent friend request to user ${user.username}`);
-    // } else {
-    //   console.error('WebSocket connection is not open.');
-    //   alert('WebSocket connection is not open. Please try again later.');
-    // }
     if (ws.readyState === WebSocket.OPEN) {
       try {
         ws.send(
           JSON.stringify({
             type: "ADD_FRIEND",
-            payload: {
-              senderId: userData.id,
-              receiverId: user.id,
-            },
+            payload:
+              {
+                senderId: userData.id,
+                receiverId: user.id,
+              },
           })
         );
         toast.success(`Friend request sent to ${user.username}!`);
@@ -164,6 +150,14 @@ function Dashboard_main() {
     return () => {
       document.body.style.overflow = "";
     };
+  }, [showAddModal]);
+
+  // Clear search/filter state when Add Friend modal closes
+  useEffect(() => {
+    if (!showAddModal) {
+      setSearch("");
+      setFilteredUsers([]);
+    }
   }, [showAddModal]);
 
   const handleContextMenu = (e, friendId, friendshipId) => {

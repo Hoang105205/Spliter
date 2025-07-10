@@ -245,32 +245,57 @@ async function handleDeclineFriendRequest(ws, connectedClients, payload) {
   if (!declinerId || !requesterId) {
     return ws.send(JSON.stringify({
       type: 'ERROR',
-      message: 'Thiếu thông tin declienerId hoặc requesterId.'
+      message: 'Thiếu thông tin declinerId hoặc requesterId.'
     }));
   }
 
-  const requesterName = await Users.findOne({ where: { id: requesterId } });
-  const declinerName = await Users.findOne({ where: { id: declinerId } });
+  try {
+    const declinerClient = connectedClients[declinerId];
+    const requesterClient = connectedClients[requesterId];
 
-  // ✅ Tạo Notification cho requester
-  await logNotification({
-    userId: requesterId,
-    description: `${declinerName.username} rejected your friend request.`
-  });
+    const requesterName = await Users.findOne({ where: { id: requesterId } });
+    const declinerName = await Users.findOne({ where: { id: declinerId } });
 
+    // Tạo notification cho requester
+    await logNotification({
+      userId: requesterId,
+      description: `${declinerName.username} rejected your friend request.`
+    });
 
-  console.log(`Người dùng ${declinerId} đã từ chối yêu cầu kết bạn từ ${requesterId}`);
+    // Gửi event về requester để cập nhật notification ngay
+    const message = {
+      type: 'DECLINE_FRIEND_REQUEST',
+      payload: {
+        declinerId,
+        requesterId,
+        status: 'rejected'
+      }
+    };
 
-  // Ghi nhận Activity: từ chối lời mời kết bạn
-  await logActivity({
-    userId: declinerId,
-    title: 'Decline Friend Request',
-    activityType: 'relationship',
-    description: `Declined friend request from ${requesterName.username}.`
-  });
+    if (declinerClient?.ws?.readyState === ws.OPEN) {
+      declinerClient.ws.send(JSON.stringify(message));
+    }
+    if (requesterClient?.ws?.readyState === ws.OPEN) {
+      requesterClient.ws.send(JSON.stringify(message));
+    }
+
+    console.log(`Đã gửi tín hiệu FRIEND_REQUEST_DECLINED cho ${requesterId} và ${declinerId}`);
+
+    // Ghi nhận Activity: từ chối lời mời kết bạn
+    await logActivity({
+      userId: declinerId,
+      title: 'Decline Friend Request',
+      activityType: 'relationship',
+      description: `Declined friend request from ${requesterName.username}.`
+    });
+  } catch (err) {
+    console.error("Lỗi khi xử lý DECLINE_FRIEND_REQUEST:", err);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: err.message
+    }));
+  }
 }
-
-
 
 // Hàm xử lý CREATE_GROUP
 async function handleCreateGroup(ws, connectedClients, payload) {
@@ -428,36 +453,63 @@ async function handleAcceptJoinGroupRequest(ws, connectedClients, payload) {
 
 // Hàm xử lý DECLINE_JOIN_GROUP_REQUEST
 async function handleDeclineJoinGroupRequest(ws, connectedClients, payload) {
-  const { declinerId, ownerId } = payload;
-  if (!declinerId || !ownerId) {
+  const { groupId, declinerId, ownerId } = payload;
+
+  if (!groupId || !declinerId || !ownerId) {
     return ws.send(JSON.stringify({
       type: 'ERROR',
-      message: 'Thiếu thông tin declinerId hoặc ownerId.'
+      message: 'Thiếu thông tin groupId, declinerId hoặc ownerId.'
     }));
   }
 
-  // Ghi nhận Activity: từ chối yêu cầu tham gia nhóm
-  const ownerName = await Users.findOne({ where: { id: ownerId } });
-  const declinerName = await Users.findOne({ where: { id: declinerId } });
+  try {
+    const declinerClient = connectedClients[declinerId];
+    const ownerClient = connectedClients[ownerId];
 
-  // ✅ Tạo Notification cho owner
-  await logNotification({
-    userId: ownerId,
-    description: `${declinerName.username} rejected your group joining request.`
-  });
+    const GroupName = await Groups.findOne({ where: { id: groupId } });
+    const declinerName = await Users.findOne({ where: { id: declinerId } });
 
-  console.log(`Người dùng ${declinerId} đã từ chối yêu cầu tham gia nhóm từ ${ownerId}`);
+    // Tạo notification cho owner
+    await logNotification({
+      userId: ownerId,
+      description: `${declinerName.username} rejected your group joining request.`
+    });
 
-  await logActivity({
-    userId: declinerId,
-    title: 'Decline Join Group Request',
-    activityType: 'relationship',
-    description: `Declined join group request from ${ownerName.username}.`
-  });
+    const message = {
+      type: 'DECLINE_JOIN_GROUP_REQUEST',
+      payload: {
+        groupId,
+        ownerId,
+        declinerId,
+        status: 'rejected'
+      }
+    };
+
+    if (declinerClient?.ws?.readyState === ws.OPEN) {
+      declinerClient.ws.send(JSON.stringify(message));
+    }
+    if (ownerClient?.ws?.readyState === ws.OPEN) {
+      ownerClient.ws.send(JSON.stringify(message));
+    }
+
+    console.log(`Đã gửi tín hiệu JOIN_GROUP_REQUEST_DECLINED cho ${ownerId} và ${declinerId}`);
+
+    // Ghi nhận Activity: từ chối yêu cầu tham gia nhóm
+    await logActivity({
+      userId: declinerId,
+      groupId: groupId,
+      title: 'Decline Join Group Request',
+      activityType: 'relationship',
+      description: `Declined join group request from ${GroupName.name}.`
+    });
+  } catch (err) {
+    console.error("Lỗi khi xử lý DECLINE_JOIN_GROUP_REQUEST:", err);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: err.message
+    }));
+  }
 }
-
-
-
 
 // Hàm xử lý UNFRIEND
 async function handleUnfriend(ws, connectedClients, payload) {

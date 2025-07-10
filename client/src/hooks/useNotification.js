@@ -20,7 +20,6 @@ export const useNotification = create((set) => ({
         try {
             const res = await api.get(`/api/notifications/${userId}`);
             set({ notifications: res.data, loading: false });
-            console.log("📥 Updated notifications in Zustand:", res.data); // ✅ LOG TẠI ĐÂY
         } catch (err) {
             set({
                 error: err.response ? err.response.data.message : err.message,
