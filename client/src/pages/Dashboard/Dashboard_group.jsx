@@ -55,7 +55,7 @@ function Dashboard_group() {
   const { friends, loading: friendsLoading, error: friendsError, fetchFriends } = useFriend();
 
   // Use expense hook
-  const { createExpense } = useExpense();
+  const { createExpense, getExpenses } = useExpense();
 
   /// Websocket context to handle real-time updates
   const ws = useContext(WebSocketContext);
@@ -89,7 +89,35 @@ function Dashboard_group() {
   const [selectedDate, setSelectedDate] = useState(new Date())      // Expense's date
   const [selectedMember, setSelectedMember] = useState([])          // Member in expense
   const [paidMember, setPaidMember] = useState()                // Member - who paid the expense
+
+  // State for Expenses in a specific group
+  const [expenses, setExpenses] = useState([]);
+  const [selectedExpense, setSelectedExpense] = useState(null); // Currently selected expense for details
+
   
+  // Destructuring object 'expense' từ danh sách expenses
+  // - id: ID duy nhất của chi tiêu (số nguyên, auto increment)
+  // - paidbyId: ID của người trả tiền (số nguyên, tham chiếu đến bảng users)
+  // - groupId: ID của nhóm liên quan (số nguyên, tham chiếu đến bảng groups)
+  // - title: Tiêu đề của chi tiêu (chuỗi, không được để trống)
+  // - expDate: Ngày đến hạn của chi tiêu (định dạng DATE, ISO string)
+  // - description: Mô tả chi tiêu (chuỗi, có thể để trống)
+  // - amount: Tổng số tiền của chi tiêu (số thực, không được để trống)
+  // - createdAt: Thời gian tạo chi tiêu (timestamp, tự động bởi Sequelize)
+  // - updatedAt: Thời gian cập nhật gần nhất (timestamp, tự động bởi Sequelize)
+  // - items: Mảng các mục chi tiết liên quan (bao gồm thông tin thành viên và số tiền chia sẻ) ---> có các biến con
+
+    // Destructuring mảng 'items' (nếu cần xử lý chi tiết)
+    // - id: ID duy nhất của mục chi tiết (số nguyên, auto increment) (đây là unique id của expense item trong db expenseItems)
+    // - expenseId: ID của chi tiêu liên quan (số nguyên, tham chiếu đến expenses) (link với id của expense - dòng 1 ở trên)
+    // - groupId: ID của nhóm liên quan (số nguyên, tham chiếu đến groups) 
+    // - userId: ID của thành viên liên quan (số nguyên, tham chiếu đến users)
+    // - shared_amount: Số tiền mà thành viên phải trả (số thực, không được để trống)
+    // - is_paid: Trạng thái đã thanh toán (boolean, mặc định false)
+    // - createdAt: Thời gian tạo mục chi tiết (timestamp, tự động bởi Sequelize)
+    // - updatedAt: Thời gian cập nhật gần nhất (timestamp, tự động bởi Sequelize)
+
+
   const resetAllState = () => {
     setSearch("");
     setTitleExpense("");
@@ -105,6 +133,7 @@ function Dashboard_group() {
     setExpenseValid(true);
     setPaidMember(ownSelf);
     setPrevSplitMode(null);
+    setSelectedDate(new Date());
   }
   
   useEffect(() => {
@@ -208,10 +237,17 @@ function Dashboard_group() {
     if (activeTab === 'group') {
       fetchGroups(userData.id);
       if (selectedGroup && activeTab === 'group') {
-        getGroupmember(selectedGroup.id);
+        const fetchGroupData = async () => {
+          getGroupmember(selectedGroup.id);
+          const expenses = await getExpenses(selectedGroup.id);
+          if (expenses) {
+            setExpenses(expenses);
+          }
+        };
+        fetchGroupData();
       }
     }
-  }, [userData.id, selectedGroup, activeTab, trigger]); 
+  }, [userData.id, selectedGroup, activeTab, trigger]);
 
   
   // ✅ Clear selectedGroup if it no longer exists (e.g., user was kicked)
@@ -331,7 +367,6 @@ function Dashboard_group() {
             const avatarUrl = await getAvatar(member.id);
             return { memberId: member.id, avatarUrl };
           } catch (error) {
-            console.error(`Failed to fetch avatar for member ${member.id}:`, error);
             return { memberId: member.id, avatarUrl: null };
           }
         });
@@ -576,19 +611,64 @@ function Dashboard_group() {
             {/* Main Content Area */}
             <main className="flex-1 px-4">
               {activeTab === 'group' && selectedGroup && (
-                // Hiển thị thông tin nhóm chỉ khi activeTab là "group" và có nhóm được chọn
                 <div className="mt-4">
                   <h2 className="[font-family:'Roboto',Helvetica] text-3xl font-bold text-[#193865]">
                     {selectedGroup.name}
                   </h2>
+                  <Button className="h-[57px] bg-[#ed5050] hover:bg-[#ed5050]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-3xl"
+                          onClick={() => {
+                            setShowExpenseModal(true);
+                            setSelectedDate(new Date());
+                          }}>
+                    New expense
+                  </Button>
+                  {expenses.length > 0 && (
+                    <div className="mt-4">
+                      {expenses.map((expense) => {
+                        const paidByUser = groupMembers.find(member => member.id === expense.paidbyId);
+                        return (
+                          <div
+                            key={expense.id}
+                            className="p-2 mb-2 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer"
+                            onMouseEnter={() => setSelectedExpense(expense)}
+                            onMouseLeave={() => setSelectedExpense(null)}
+                          >
+                            <p>Title: {expense.title}</p>
+                            <p>Amount: {expense.amount} ₫</p>
+                            <p>Paid by: {paidByUser ? paidByUser.username : 'Unknown'}</p>
+                            <p>Due Date: {new Date(expense.expDate).toLocaleDateString()}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {selectedExpense && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="fixed bg-white p-4 rounded shadow-lg z-50"
+                      style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+                      onMouseLeave={() => setSelectedExpense(null)}
+                    >
+                      <h3 className="font-bold">Details</h3>
+                      <p>Description: {selectedExpense.description || 'No description'}</p>
+                      <h4 className="font-semibold mt-2">Members:</h4>
+                      {selectedExpense.items.map((item) => {
+                        const member = groupMembers.find(m => m.id === item.userId);
+                        return (
+                          <p key={item.id}>
+                            {member ? member.username : 'Unknown'}: {item.shared_amount} ₫
+                          </p>
+                        );
+                      })}
+                      <p>Paid by: {groupMembers.find(m => m.id === selectedExpense.paidbyId)?.username || 'Unknown'}</p>
+                      <p>Due Date: {new Date(selectedExpense.expDate).toLocaleDateString()}</p>
+                      <Button className="mt-2 bg-gray-300" onClick={() => setSelectedExpense(null)}>Close</Button>
+                    </motion.div>
+                  )}
                 </div>
               )}
-
-              {activeTab === 'group' && selectedGroup && (    
-              <Button className="h-[57px] bg-[#ed5050] hover:bg-[#ed5050]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-3xl"
-                      onClick={() => setShowExpenseModal(true)}>
-                New expense
-              </Button>)}
 
 
               {/* Hiển thị chung chung ở đây khi không có nhóm được chọn và activeTab là "group" */}
@@ -946,14 +1026,14 @@ function Dashboard_group() {
                             <CalendarPopup
                               value={selectedDate}
                               onChange={setSelectedDate}
-                              open={open}
+                              open={showDateModal}
                               onClose={() => setShowDateModal(false)}
                               minDate ={new Date()}
                             />
                         </div>)}
                     </div>
                     <div className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-red-500 min-h-[18px] text-[12px]">
-                      {!expenseValid ? 
+                      {moneyExpense === 0 ? "Total bill has not been entered!" : (!expenseValid ? 
                         `${splitMode === "%"
                           ? `Percentages don't add up correctly, ${
                               moneyRemainder < 0
@@ -965,7 +1045,10 @@ function Dashboard_group() {
                                 ? `missing ${(Math.abs(moneyRemainder))} ₫`
                                 : `excess ${(Math.abs(moneyRemainder))} ₫`
                             }`}` 
-                        : ""}
+                        : "")}
+                    </div>
+                    <div className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-red-500 min-h-[18px] text-[12px]">
+                      {titleExpense.trim() === "" ? "Title cannot be empty!" : ""}
                     </div>
                     <Button
                       className="bg-blue-500 hover:bg-blue-600 text-white px-4 pb-2 rounded-full transition-colors"
@@ -973,7 +1056,7 @@ function Dashboard_group() {
                         handleAddExpense();
                         resetAllState();
                       }}
-                      disabled={!expenseValid} // expenseValid - False -> Disable, True -> Through
+                      disabled={!expenseValid || titleExpense.trim() === "" || moneyExpense === 0} // expenseValid - False -> Disable, True -> Through
                     >
                       Create
                     </Button>

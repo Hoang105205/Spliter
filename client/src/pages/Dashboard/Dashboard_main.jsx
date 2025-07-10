@@ -53,13 +53,15 @@ function Dashboard_main() {
     const loadAvatars = async () => {
       // Lấy tất cả friends hiện tại, không chỉ newFriends
       const avatarPromises = friends.map(async (friend) => {
+        let avatarURL = null;
         try {
-          const avatarURL = await getAvatar(friend.id);
-          urlsToRevoke.push(avatarURL);
-          return { ...friend, avatarURL };
-        } catch (_err) {
-          return { ...friend, avatarURL: null };
+          avatarURL = await getAvatar(friend.id); // Sẽ trả về null nếu 404
+        } catch (err) {
+          // Im lặng các lỗi, chỉ log nếu cần debug
+          // console.log('Error loading avatar:', err); // Bỏ comment nếu cần debug
         }
+        if (avatarURL) urlsToRevoke.push(avatarURL);
+        return { ...friend, avatarURL };
       });
 
       const newAvatars = await Promise.all(avatarPromises);
