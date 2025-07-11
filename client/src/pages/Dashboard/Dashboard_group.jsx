@@ -1004,7 +1004,7 @@ function Dashboard_group() {
 
                     {/* Paid by and split */}
                     <div className="flex flex-wrap justify-center	text-sm text-gray-700 gap-x-1">
-                      Paid by <span onClick={() => setShowPaidMemberModal(!showAddMemberModal)} className="inline-block bg-gray-200 px-2 text-sm rounded-full min-w-[50px] min-h-[10px]">{paidMember?.username || "null"}</span>
+                      Paid by <span onClick={() => setShowPaidMemberModal(!showAddMemberModal)} className="inline-block bg-gray-200 hover:bg-gray-300 px-2 text-sm rounded-full min-w-[50px] min-h-[10px]">{paidMember?.username || "null"}</span>
                       and splited by
                       <div className="relative inline-block">
                         <span className="inline-block bg-gray-200 px-2 text-sm rounded-full min-w-[25px] min-h-[10px]">{selectedMember.length}</span>
@@ -1048,7 +1048,7 @@ function Dashboard_group() {
                           </div>
                         )}
                       </div>
-                      due <span className="inline-block bg-gray-200 px-2 text-sm rounded-full min-w-[25px] min-h-[10px]">{selectedDate.toLocaleDateString()}</span>
+                      due <span onClick={() => setShowDateModal(true)} className="inline-block bg-gray-200 hover:bg-gray-300 px-2 text-sm rounded-full min-w-[25px] min-h-[10px]">{selectedDate.toLocaleDateString()}</span>
                       <div className="text-xs text-gray-500 mt-1 w-full">{splitMode === "equally" ? `(${formatWithCommas(eachDebt)} đ / person)` : "Custom by user"}</div>
                     </div>
 
@@ -1058,7 +1058,7 @@ function Dashboard_group() {
                         Calendar
                       </Button>
                       {showDateModal && (
-                        <div className="absolute bottom-full left-0 mb-10">
+                        <div className="absolute bottom-full left-1/2 ml-8 mb-8">
                             <CalendarPopup
                               value={selectedDate}
                               onChange={setSelectedDate}
