@@ -106,14 +106,21 @@ export const useWebSocketHandler = (ws) => {
         handleKickedAnnouncement(jsonData.payload);
         incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
         break;
+
       case 'DECLINE_FRIEND_REQUEST':
         handleDeclineFriendRequest(jsonData.payload);
         incrementNotificationTrigger();
         break;
+
       case 'DECLINE_JOIN_GROUP_REQUEST':
         handleDeclineJoinGroupRequest(jsonData.payload);
         incrementNotificationTrigger();
         break;
+
+      case 'EXPENSE_CREATED':
+        handleExpenseCreated(jsonData.payload);
+        break;
+
       default:
         console.warn(`⚠️ Loại tin nhắn không hỗ trợ: ${type}`);
     }
@@ -202,6 +209,14 @@ export const useWebSocketHandler = (ws) => {
     }
     // Không cần fetchNotifications ở đây vì đã có trigger
   }
+
+};
+
+// Handle expense created
+export const handleExpenseCreated = ({ groupName, paidName, amount, title }) => {
+  toast.success(`💰 Expense created in group "${groupName}" by ${paidName}: ${title} - Total Amount: ${amount}`);
+  
+  // Do something
 
 };
 

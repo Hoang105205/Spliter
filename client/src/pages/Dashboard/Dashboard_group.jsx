@@ -493,7 +493,7 @@ function Dashboard_group() {
   // Handle accept action in "new expense"
   const handleAddExpense = async () => {
     try {
-      await createExpense({
+      const expense = await createExpense({
         title: titleExpense,
         expDate: selectedDate,
         description: descriptionExpense,
@@ -505,6 +505,29 @@ function Dashboard_group() {
           shared_amount: member.debt || 0,
         })),
       });
+
+      // WebSocket service
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: "CREATE_EXPENSE",
+            payload: {
+              expenseId: expense.id, // Giả sử createExpense trả về expense với id
+              groupId: selectedGroup.id,
+              paidbyId: paidMember.id,
+              createdbyId: userData.id,
+              members: selectedMember.map(member => ({
+                userId: member.id,
+                shared_amount: member.debt || 0,
+              })),
+              amount: moneyExpense,
+              title: titleExpense,
+            },
+          })
+        );
+      } else {
+        console.warn('WebSocket is not open. Update may not be sent in real-time.');
+      }
 
       toast.success('Expense added successfully!');
     } catch (error) {

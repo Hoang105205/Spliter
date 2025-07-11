@@ -30,8 +30,9 @@ export const useExpense = create(() => ({
         })),
       };
 
-      await api.post('/api/expenses', payload);
-
+      const response = await api.post('/api/expenses', payload);
+      return response.data; 
+      
     } catch (err) {
       throw err; // Ném lỗi để component có thể xử lý nếu cần
     }

@@ -63,6 +63,13 @@ module.exports = function(ws, connectedClients) {
           handleKickGroupMember(ws, connectedClients, jsonData.payload);
           break;
 
+
+        // Expense related messages
+        case 'CREATE_EXPENSE':
+          handleCreateExpense(ws, connectedClients, jsonData.payload);
+          break;
+
+        
       
         default:
           ws.send(JSON.stringify({ 
@@ -628,5 +635,80 @@ async function handleKickGroupMember(ws, connectedClients, payload) {
       type: 'ERROR',
       message: err.message
     }));
+  }
+}
+
+
+// handle CREATE_EXPENSE
+async function handleCreateExpense(ws, connectedClients, payload) {
+  const { expenseId, groupId, paidbyId, createdbyId, members, amount, title } = payload;
+
+  if (!expenseId || !groupId || !paidbyId || !createdbyId || !members || !amount || !title) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin groupId, paidbyId, createdbyId, members, amount hoặc title.'
+    }));
+  }
+
+  const Group = await Groups.findOne({ where: { id: groupId } });
+  const paidUser = await Users.findOne({ where: { id: paidbyId } });
+
+
+  // server terminal debug
+  console.log("Received CREATE_EXPENSE request:", {
+    expenseId,
+    groupId,
+    paidbyId,
+    createdbyId,
+    members,
+    amount,
+    title
+  });
+
+  // Log Activity: tạo chi phí mới
+
+
+
+
+  //
+
+
+
+
+
+
+  // log Notification: thông báo chi phí mới
+
+
+
+  //
+
+
+
+  // ws service 
+  try {
+    // Tạo payload cho tin nhắn gửi đến thành viên
+    const expensePayload = {
+      groupName: Group.name,
+      paidName: paidUser.username,
+      amount,
+      title,
+    };
+    
+    // Gửi thông báo đến tất cả thành viên trong nhóm, trừ người tạo
+    members.forEach(member => {
+      if (member.userId !== createdbyId) { // Bỏ qua người tạo bill
+        const memberClient = connectedClients[member.userId];
+        if (memberClient && memberClient.ws.readyState === ws.OPEN) {
+          memberClient.ws.send(JSON.stringify({
+            type: 'EXPENSE_CREATED',
+            payload: expensePayload,
+          }));
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error("Lỗi khi tạo chi phí:", err);
   }
 }
