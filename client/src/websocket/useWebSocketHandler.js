@@ -119,6 +119,7 @@ export const useWebSocketHandler = (ws) => {
 
       case 'EXPENSE_CREATED':
         handleExpenseCreated(jsonData.payload);
+        incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
         break;
 
       default:

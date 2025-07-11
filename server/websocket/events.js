@@ -652,6 +652,7 @@ async function handleCreateExpense(ws, connectedClients, payload) {
 
   const Group = await Groups.findOne({ where: { id: groupId } });
   const paidUser = await Users.findOne({ where: { id: paidbyId } });
+  const createdbyUser = await Users.findOne({ where: { id: createdbyId } });
 
 
   // server terminal debug
@@ -678,9 +679,14 @@ async function handleCreateExpense(ws, connectedClients, payload) {
 
 
   // log Notification: thông báo chi phí mới
-
-
-
+  for (const member of members) {
+    if (member.userId !== createdbyId) {
+      await logNotification({
+        userId: member.userId,
+        description: `${createdbyUser.username} created a new expense "${title}" in group "${Group.name}". You owe: ${member.shared_amount}đ.`,
+      });
+    }
+  }
   //
 
 
