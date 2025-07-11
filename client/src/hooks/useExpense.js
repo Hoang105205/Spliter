@@ -36,4 +36,18 @@ export const useExpense = create(() => ({
       throw err; // Ném lỗi để component có thể xử lý nếu cần
     }
   },
+
+  // Lấy danh sách tất cả expense của một group
+  getExpenses: async (groupId) => {
+    if (!groupId) return null;
+
+    try {
+      const response = await api.get(`/api/expenses/${groupId}`);
+      return response.data; // Trả về danh sách expense từ server
+    } catch (err) {
+      console.error('Error fetching expenses:', err);
+      toast.error('Failed to fetch expenses. Please try again.');
+      return null;
+    }
+  },
 }));

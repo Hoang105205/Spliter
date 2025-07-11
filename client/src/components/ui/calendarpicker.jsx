@@ -21,8 +21,11 @@ function isSameDay(d1, d2) {
     d1?.getFullYear() === d2?.getFullYear()
   );
 }
+function stripTime(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
 
-const CalendarPopup = ({ value, onChange, open, onClose, position = { top: 0, left: 0 }, maxDate }) => {
+const CalendarPopup = ({ value, onChange, open, onClose, position = { top: 0, left: 0 }, maxDate, minDate, }) => {
   const today = new Date();
   const [viewYear, setViewYear] = React.useState(value?.getFullYear() || today.getFullYear());
   const [viewMonth, setViewMonth] = React.useState(value?.getMonth() || today.getMonth());
@@ -134,11 +137,16 @@ const CalendarPopup = ({ value, onChange, open, onClose, position = { top: 0, le
           const isSelected = isSameDay(date, value);
           const isHovered = hoveredIndex === i;
 
+          const strippedDate = stripTime(date);
+          const disabled =
+            (maxDate && strippedDate > stripTime(maxDate)) ||
+            (minDate && strippedDate < stripTime(minDate));
+
           return (
             <div
               key={i}
               onClick={() => {
-                if (!maxDate || date <= maxDate) {
+                if (!disabled) {
                   onChange(date);
                   onClose?.();
                 }
@@ -149,7 +157,7 @@ const CalendarPopup = ({ value, onChange, open, onClose, position = { top: 0, le
                 ...styles.dayCell,
                 ...(isSelected ? styles.selectedDay : {}),
                 ...(currentMonth ? {} : styles.outsideMonth),
-                ...(maxDate && date > maxDate ? { pointerEvents: "none", opacity: 0.3 } : {}),
+                ...(disabled ? { pointerEvents: "none", opacity: 0.3 } : {}),
                 ...(isHovered ? styles.hoveredDay : {}),
               }}
               className="calendar-day"

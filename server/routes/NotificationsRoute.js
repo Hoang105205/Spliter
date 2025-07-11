@@ -8,7 +8,7 @@ const {
 // API: /api/notifications/
 
 // Get notifications for the logged-in user
-router.get('/', getNotifications);
+router.get('/:id', getNotifications);
 
 // Mark a notification as read
 router.put('/:id/mark-as-read', markAsRead);

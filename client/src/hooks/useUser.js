@@ -123,6 +123,9 @@ export const useUser = create(
           const imageUrl = URL.createObjectURL(response.data); // Create a local URL for the image blob
           return imageUrl; // Return the image URL
         } catch (error) {
+          if (error.response && error.response.status === 404) {
+            return null; 
+          }
           set({ error: error.response ? error.response.data : error.message });
           throw error; // Re-throw the error to handle it in the component
         }
