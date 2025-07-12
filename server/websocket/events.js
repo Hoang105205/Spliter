@@ -680,10 +680,26 @@ async function handleCreateExpense(ws, connectedClients, payload) {
 
   // log Notification: thông báo chi phí mới
   for (const member of members) {
-    if (member.userId !== createdbyId) {
+    // Member who not created or paid the expense
+    if (member.userId !== createdbyId && member.userId !== paidbyId) { 
       await logNotification({
         userId: member.userId,
         description: `${createdbyUser.username} created a new expense "${title}" in group "${Group.name}". You owe: ${member.shared_amount}đ.`,
+      });
+    }
+    // Member who created the expense and not paid
+    else if (member.userId === createdbyId && member.userId !== paidbyId) {
+      await logNotification({
+        userId: member.userId,
+        description: `You created a new expense "${title}" in group "${Group.name}". You owe: ${member.shared_amount}đ.`,
+      });
+    }
+    // Member who paid the expense
+    else if (member.userId === paidbyId)
+    {
+      await logNotification({
+        userId: member.userId,
+        description: `You paid ${amount}đ for the expense "${title}" in group "${Group.name}".`,
       });
     }
   }
@@ -697,20 +713,20 @@ async function handleCreateExpense(ws, connectedClients, payload) {
     const expensePayload = {
       groupName: Group.name,
       paidName: paidUser.username,
+      paidbyId,
+      createdbyId,
       amount,
       title,
     };
     
-    // Gửi thông báo đến tất cả thành viên trong nhóm, trừ người tạo
+    // Gửi thông báo đến tất cả thành viên trong bill
     members.forEach(member => {
-      if (member.userId !== createdbyId) { // Bỏ qua người tạo bill
-        const memberClient = connectedClients[member.userId];
-        if (memberClient && memberClient.ws.readyState === ws.OPEN) {
-          memberClient.ws.send(JSON.stringify({
-            type: 'EXPENSE_CREATED',
-            payload: expensePayload,
-          }));
-        }
+      const memberClient = connectedClients[member.userId];
+      if (memberClient && memberClient.ws.readyState === ws.OPEN) {
+        memberClient.ws.send(JSON.stringify({
+          type: 'EXPENSE_CREATED',
+          payload: expensePayload,
+        }));
       }
     });
 

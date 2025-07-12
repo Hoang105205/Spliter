@@ -211,14 +211,26 @@ export const useWebSocketHandler = (ws) => {
     // Không cần fetchNotifications ở đây vì đã có trigger
   }
 
+  // Handle expense created
+  const handleExpenseCreated = ({ groupName, paidName, paidbyId, createdbyId, amount, title }) => {
+    if (userData.id !== createdbyId) {
+      toast.success(`💰 Expense created in group "${groupName}" by ${paidName}: ${title} - Total Amount: ${amount}`);
+    }
+    // Do something
+  }
+
+
+
+
+
+
+
+
+
 };
 
-// Handle expense created
-export const handleExpenseCreated = ({ groupName, paidName, amount, title }) => {
-  toast.success(`💰 Expense created in group "${groupName}" by ${paidName}: ${title} - Total Amount: ${amount}`);
-  
-  // Do something
 
-};
+
+
 
 
