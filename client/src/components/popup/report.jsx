@@ -3,6 +3,8 @@ import { Button } from "../../components/ui/button.jsx";
 import { useUser } from "../../hooks/useUser.js";
 import { WebSocketContext } from "../../websocket/WebSocketProvider.jsx";
 import { motion, AnimatePresence } from "framer-motion";
+import { useReport } from "../../hooks/useReport.js";
+import { toast } from "sonner";
 
 function Report({ show, onClose, ws }) {
   const [search, setSearch] = useState("");
@@ -11,6 +13,8 @@ function Report({ show, onClose, ws }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [reason, setReason] = useState("");
   const { userData, findUser } = useUser();
+  const { createReport } = useReport();
+
 
   useEffect(() => {
     if (show) {
@@ -37,16 +41,33 @@ function Report({ show, onClose, ws }) {
     setLoading(false);
   };
 
-  const handleSendReport = () => {
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-      alert("WebSocket not available.");
+  const handleSendReport = async () => {
+    setLoading(true);
+    if (!selectedUser) {
+      alert("Please select a user to report.");
       return;
+    }
+    if (!reason) {
+      alert("Please provide a reason for the report.");
+      return;
+    }
+    try {
+      await createReport({
+        reporterId: userData.id,
+        reportedUserId: selectedUser.id,
+        reason: reason,
+      });
+      toast.success("Report submitted successfully.");
+    } catch (error) {
+      console.error("Report submission failed", error);
+      toast.error("Failed to submit report. Please try again.");
     }
 
-    if (!selectedUser || !reason) {
-      alert("Please select a user and provide a reason.");
-      return;
-    }
+
+    // if (!ws || ws.readyState !== WebSocket.OPEN) {
+    //   alert("WebSocket not available.");
+    //   return;
+    // }
 
     // ws.send(
     //   JSON.stringify({
@@ -59,7 +80,7 @@ function Report({ show, onClose, ws }) {
     //   })
     // );
 
-    alert(`Report sent for ${selectedUser.username}`);
+    setLoading(false);
     onClose(); // ✅ Đóng popup sau khi gửi
   };
 
@@ -125,7 +146,7 @@ function Report({ show, onClose, ws }) {
                 className="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 transition-colors"
                 onClick={handleSendReport}
               >
-                Submit Report
+                Submit
               </Button>
               <Button
                 className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"

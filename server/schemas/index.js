@@ -6,6 +6,7 @@ const Groups = require('./Groups');
 const groupMembers = require('./groupMembers');
 const Expenses = require('./Expenses');
 const expenseItems = require('./expenseItems');
+const Reports = require('./Reports');
 
 // Associations
 Users.hasMany(Friends, { foreignKey: 'requesterId', as: 'sentRequests' });
@@ -35,6 +36,12 @@ expenseItems.belongsTo(Expenses, { foreignKey: 'expenseId', as: 'expense', const
 
 expenseItems.belongsTo(Groups, { foreignKey: 'groupId', as: 'group', constraints: false });
 expenseItems.belongsTo(Users, { foreignKey: 'userId', as: 'user', constraints: false });
+
+
+Users.hasMany(Reports, { foreignKey: 'reporterId', as: 'reports' });
+Users.hasMany(Reports, { foreignKey: 'reportedUserId', as: 'reportedReports' });
+Reports.belongsTo(Users, { foreignKey: 'reporterId', as: 'reporter' });
+Reports.belongsTo(Users, { foreignKey: 'reportedUserId', as: 'reportedUser' });
 
 
 module.exports = {

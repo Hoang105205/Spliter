@@ -28,6 +28,7 @@ const GroupsRoute = require('./routes/GroupsRoute');
 const authRouter = require('./routes/auth');
 const ActivitiesRoute = require('./routes/ActivitiesRoute');
 const ExpensesRoute = require('./routes/ExpensesRoute');
+const ReportsRoute = require('./routes/ReportsRoute');
 /////////
 
 
@@ -86,6 +87,7 @@ app.use('/api/group-members', groupMembersRoute);
 app.use('/api/groups', GroupsRoute);
 app.use('/api/activities', ActivitiesRoute);
 app.use('/api/expenses', ExpensesRoute);
+app.use('/api/reports', ReportsRoute);
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../client/dist')));
