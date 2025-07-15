@@ -15,6 +15,7 @@ import { useGroupMember } from '../../hooks/useGroupMember.js';
 import { useGroup } from "../../hooks/useGroup.js";
 import { useFriend } from "../../hooks/useFriend.js";
 import { useExpense } from '../../hooks/useExpense.js';
+import { useNotification } from '../../hooks/useNotification.js';
 
 // Import WebSocket context
 import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
@@ -57,6 +58,9 @@ function Dashboard_group() {
   // Use expense hook
   const { createExpense, getExpenses } = useExpense();
 
+  // Use notification hook
+  const { notificationTrigger } = useNotification();
+
   /// Websocket context to handle real-time updates
   const ws = useContext(WebSocketContext);
   
@@ -93,7 +97,16 @@ function Dashboard_group() {
   // State for Expenses in a specific group
   const [expenses, setExpenses] = useState([]);
   const [selectedExpense, setSelectedExpense] = useState(null); // Currently selected expense for details
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
+  const handleMouseEnter = (e, expense) => {
+    setMousePosition({ x: e.clientX + 10, y: e.clientY + 10 }); // add offset if needed
+    setSelectedExpense(expense);
+  };
+
+  const handleMouseLeave = () => {
+    setSelectedExpense(null);
+  };
   
   // Destructuring object 'expense' từ danh sách expenses
   // - id: ID duy nhất của chi tiêu (số nguyên, auto increment)
@@ -247,7 +260,7 @@ function Dashboard_group() {
         fetchGroupData();
       }
     }
-  }, [userData.id, selectedGroup, activeTab, trigger]);
+  }, [userData.id, selectedGroup, activeTab, trigger, notificationTrigger]);
 
   
   // ✅ Clear selectedGroup if it no longer exists (e.g., user was kicked)
@@ -493,7 +506,7 @@ function Dashboard_group() {
   // Handle accept action in "new expense"
   const handleAddExpense = async () => {
     try {
-      await createExpense({
+      const expense = await createExpense({
         title: titleExpense,
         expDate: selectedDate,
         description: descriptionExpense,
@@ -505,6 +518,29 @@ function Dashboard_group() {
           shared_amount: member.debt || 0,
         })),
       });
+
+      // WebSocket service
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: "CREATE_EXPENSE",
+            payload: {
+              expenseId: expense.id, // Giả sử createExpense trả về expense với id
+              groupId: selectedGroup.id,
+              paidbyId: paidMember.id,
+              createdbyId: userData.id,
+              members: selectedMember.map(member => ({
+                userId: member.id,
+                shared_amount: member.debt || 0,
+              })),
+              amount: moneyExpense,
+              title: titleExpense,
+            },
+          })
+        );
+      } else {
+        console.warn('WebSocket is not open. Update may not be sent in real-time.');
+      }
 
       toast.success('Expense added successfully!');
     } catch (error) {
@@ -612,60 +648,87 @@ function Dashboard_group() {
             <main className="flex-1 px-4">
               {activeTab === 'group' && selectedGroup && (
                 <div className="mt-4">
-                  <h2 className="[font-family:'Roboto',Helvetica] text-3xl font-bold text-[#193865]">
-                    {selectedGroup.name}
-                  </h2>
-                  <Button className="h-[57px] bg-[#ed5050] hover:bg-[#ed5050]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-3xl"
-                          onClick={() => {
-                            setShowExpenseModal(true);
-                            setSelectedDate(new Date());
-                          }}>
-                    New expense
-                  </Button>
-                  {expenses.length > 0 && (
-                    <div className="mt-4">
-                      {expenses.map((expense) => {
-                        const paidByUser = groupMembers.find(member => member.id === expense.paidbyId);
-                        return (
-                          <div
-                            key={expense.id}
-                            className="p-2 mb-2 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer"
-                            onMouseEnter={() => setSelectedExpense(expense)}
-                            onMouseLeave={() => setSelectedExpense(null)}
-                          >
-                            <p>Title: {expense.title}</p>
-                            <p>Amount: {expense.amount} ₫</p>
-                            <p>Paid by: {paidByUser ? paidByUser.username : 'Unknown'}</p>
-                            <p>Due Date: {new Date(expense.expDate).toLocaleDateString()}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {selectedExpense && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="fixed bg-white p-4 rounded shadow-lg z-50"
-                      style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
-                      onMouseLeave={() => setSelectedExpense(null)}
+                  <div className="flex justify-between items-center w-full mb-4">
+                    <h2 className="[font-family:'Roboto',Helvetica] text-3xl font-bold text-[#193865]">
+                      {selectedGroup.name}
+                    </h2>
+                    <Button
+                      className="h-[50px] bg-[#ed5050] hover:bg-[#ed5050]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-2xl"
+                      onClick={() => {
+                        setShowExpenseModal(true);
+                        setSelectedDate(new Date());
+                      }}
                     >
-                      <h3 className="font-bold">Details</h3>
-                      <p>Description: {selectedExpense.description || 'No description'}</p>
-                      <h4 className="font-semibold mt-2">Members:</h4>
-                      {selectedExpense.items.map((item) => {
+                      New expense
+                    </Button>
+                  </div>
+                  <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
+                    style={{ maxHeight: "600px" }}>
+                    {expenses.length > 0 && (
+                      <div className="mt-4">
+                        {[...expenses].reverse().map((expense) => {
+                          const paidByUser = groupMembers.find(member => member.id === expense.paidbyId);
+                          return (
+                            <div
+                              key={expense.id}
+                              className="p-2 mb-2 rounded-[20px] bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer text-[#13183c] [font-family:'Roboto_Condensed',Helvetica] text-lg"
+                              onMouseEnter={handleMouseLeave}
+                              onClick={(e) => handleMouseEnter(e, expense)}
+                            >
+                              <p><span className="font-semibold">Title:</span> {expense.title}</p>
+                              <p><span className="font-semibold">Amount:</span> {formatWithCommas(expense.amount)} ₫</p>
+                              <p><span className="font-semibold">Paid by:</span> {paidByUser ? paidByUser.username : 'Unknown'}</p>
+                              <p><span className="font-semibold">Due Date:</span> {new Date(expense.expDate).toLocaleDateString()}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  {selectedExpense && (
+                  <AnimatePresence>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.6 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.6 }}
+                      className="fixed bg-white p-4 rounded-[15px] shadow-xl min-w-[290px] z-50 text-gray-900 [font-family:'Roboto_Condensed',Helvetica]"
+                      style={{
+                        top: mousePosition.y > window.innerHeight / 2 ? undefined : mousePosition.y,
+                        bottom: mousePosition.y > window.innerHeight / 2 ? window.innerHeight - mousePosition.y - 5 : undefined,
+                        left: mousePosition.x - 6,
+                        transform: "translate(0, 0)",
+                      }}
+                      onMouseLeave={handleMouseLeave}
+                    >
+                      <p className="font-semibold text-gray">Description:</p>
+                      <textarea className="w-[275px] min-h-[50px] max-h-[100px] resize-none pointer-events-none focus:outline-none border-none bg-transparent">{selectedExpense.description || 'no description'}</textarea>
+                      <p className="font-semibold text-black mt-2">Members:</p>
+                      <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
+                      style={{ maxHeight: "100px" }}>
+                      {selectedExpense.items
+                      .slice()
+                      .sort((a, b) => (a.userId === ownSelf.id ? -1 : b.userId === ownSelf.id ? 1 : 0))
+                      .map((item) => {
                         const member = groupMembers.find(m => m.id === item.userId);
                         return (
                           <p key={item.id}>
-                            {member ? member.username : 'Unknown'}: {item.shared_amount} ₫
+                            {member ? member.username : 'Unknown'}: {`${formatWithCommas(item.shared_amount)} ₫`}
+                            {item.userId === ownSelf.id && ownSelf.id !== selectedExpense.paidbyId && (
+                              <Button 
+                                className="bg-blue-500 text-white hover:bg-blue-700 rounded-[15px] ml-4 h-[22px] text-[14px]" 
+                                disabled={item.is_paid}
+                              >
+                                Settle up
+                              </Button>
+                            )}
                           </p>
                         );
                       })}
-                      <p>Paid by: {groupMembers.find(m => m.id === selectedExpense.paidbyId)?.username || 'Unknown'}</p>
-                      <p>Due Date: {new Date(selectedExpense.expDate).toLocaleDateString()}</p>
-                      <Button className="mt-2 bg-gray-300" onClick={() => setSelectedExpense(null)}>Close</Button>
+                      </div>
+                      <p className="mt-3"><span className="font-semibold text-gray">Paid by:</span> {groupMembers.find(m => m.id === selectedExpense.paidbyId)?.username || 'Unknown'}</p>
+                      <p><span className="font-semibold text-gray">Due Date:</span> {new Date(selectedExpense.expDate).toLocaleDateString()}</p>
                     </motion.div>
+                  </AnimatePresence>
                   )}
                 </div>
               )}
@@ -968,7 +1031,7 @@ function Dashboard_group() {
 
                     {/* Paid by and split */}
                     <div className="flex flex-wrap justify-center	text-sm text-gray-700 gap-x-1">
-                      Paid by <span onClick={() => setShowPaidMemberModal(!showAddMemberModal)} className="inline-block bg-gray-200 px-2 text-sm rounded-full min-w-[50px] min-h-[10px]">{paidMember?.username || "null"}</span>
+                      Paid by <span onClick={() => setShowPaidMemberModal(!showAddMemberModal)} className="inline-block bg-gray-200 hover:bg-gray-300 px-2 text-sm rounded-full min-w-[50px] min-h-[10px]">{paidMember?.username || "null"}</span>
                       and splited by
                       <div className="relative inline-block">
                         <span className="inline-block bg-gray-200 px-2 text-sm rounded-full min-w-[25px] min-h-[10px]">{selectedMember.length}</span>
@@ -1012,7 +1075,7 @@ function Dashboard_group() {
                           </div>
                         )}
                       </div>
-                      due <span className="inline-block bg-gray-200 px-2 text-sm rounded-full min-w-[25px] min-h-[10px]">{selectedDate.toLocaleDateString()}</span>
+                      due <span onClick={() => setShowDateModal(true)} className="inline-block bg-gray-200 hover:bg-gray-300 px-2 text-sm rounded-full min-w-[25px] min-h-[10px]">{selectedDate.toLocaleDateString()}</span>
                       <div className="text-xs text-gray-500 mt-1 w-full">{splitMode === "equally" ? `(${formatWithCommas(eachDebt)} đ / person)` : "Custom by user"}</div>
                     </div>
 
@@ -1022,7 +1085,7 @@ function Dashboard_group() {
                         Calendar
                       </Button>
                       {showDateModal && (
-                        <div className="absolute bottom-full left-0 mb-10">
+                        <div className="absolute bottom-full left-1/2 ml-8 mb-8">
                             <CalendarPopup
                               value={selectedDate}
                               onChange={setSelectedDate}
@@ -1033,7 +1096,14 @@ function Dashboard_group() {
                         </div>)}
                     </div>
                     <div className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-red-500 min-h-[18px] text-[12px]">
-                      {moneyExpense === 0 ? "Total bill has not been entered!" : (!expenseValid ? 
+                      {moneyExpense === 0 
+                      ? (titleExpense.trim() === "" 
+                        ? "Total bill has not been entered, title cannot be empty!" 
+                        : "Total bill has not been entered!")
+                      : (titleExpense.trim() === "" 
+                        ? "Title cannot be empty!" 
+                        : (!expenseValid 
+                        ? 
                         `${splitMode === "%"
                           ? `Percentages don't add up correctly, ${
                               moneyRemainder < 0
@@ -1045,10 +1115,9 @@ function Dashboard_group() {
                                 ? `missing ${(Math.abs(moneyRemainder))} ₫`
                                 : `excess ${(Math.abs(moneyRemainder))} ₫`
                             }`}` 
-                        : "")}
-                    </div>
-                    <div className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-red-500 min-h-[18px] text-[12px]">
-                      {titleExpense.trim() === "" ? "Title cannot be empty!" : ""}
+                        : "")
+                        )
+                      }
                     </div>
                     <Button
                       className="bg-blue-500 hover:bg-blue-600 text-white px-4 pb-2 rounded-full transition-colors"

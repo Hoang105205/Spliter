@@ -63,6 +63,13 @@ module.exports = function(ws, connectedClients) {
           handleKickGroupMember(ws, connectedClients, jsonData.payload);
           break;
 
+
+        // Expense related messages
+        case 'CREATE_EXPENSE':
+          handleCreateExpense(ws, connectedClients, jsonData.payload);
+          break;
+
+        
       
         default:
           ws.send(JSON.stringify({ 
@@ -628,5 +635,102 @@ async function handleKickGroupMember(ws, connectedClients, payload) {
       type: 'ERROR',
       message: err.message
     }));
+  }
+}
+
+
+// handle CREATE_EXPENSE
+async function handleCreateExpense(ws, connectedClients, payload) {
+  const { expenseId, groupId, paidbyId, createdbyId, members, amount, title } = payload;
+
+  if (!expenseId || !groupId || !paidbyId || !createdbyId || !members || !amount || !title) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin groupId, paidbyId, createdbyId, members, amount hoặc title.'
+    }));
+  }
+
+  const Group = await Groups.findOne({ where: { id: groupId } });
+  const paidUser = await Users.findOne({ where: { id: paidbyId } });
+  const createdbyUser = await Users.findOne({ where: { id: createdbyId } });
+
+
+  // server terminal debug
+  console.log("Received CREATE_EXPENSE request:", {
+    expenseId,
+    groupId,
+    paidbyId,
+    createdbyId,
+    members,
+    amount,
+    title
+  });
+
+  // Log Activity: tạo chi phí mới
+
+
+
+
+  //
+
+
+
+
+
+
+  // log Notification: thông báo chi phí mới
+  for (const member of members) {
+    // Member who not created or paid the expense
+    if (member.userId !== createdbyId && member.userId !== paidbyId) { 
+      await logNotification({
+        userId: member.userId,
+        description: `${createdbyUser.username} created a new expense "${title}" in group "${Group.name}". You owe: ${member.shared_amount}đ.`,
+      });
+    }
+    // Member who created the expense and not paid
+    else if (member.userId === createdbyId && member.userId !== paidbyId) {
+      await logNotification({
+        userId: member.userId,
+        description: `You created a new expense "${title}" in group "${Group.name}". You owe: ${member.shared_amount}đ.`,
+      });
+    }
+    // Member who paid the expense
+    else if (member.userId === paidbyId)
+    {
+      await logNotification({
+        userId: member.userId,
+        description: `You paid ${amount}đ for the expense "${title}" in group "${Group.name}".`,
+      });
+    }
+  }
+  //
+
+
+
+  // ws service 
+  try {
+    // Tạo payload cho tin nhắn gửi đến thành viên
+    const expensePayload = {
+      groupName: Group.name,
+      paidName: paidUser.username,
+      paidbyId,
+      createdbyId,
+      amount,
+      title,
+    };
+    
+    // Gửi thông báo đến tất cả thành viên trong bill
+    members.forEach(member => {
+      const memberClient = connectedClients[member.userId];
+      if (memberClient && memberClient.ws.readyState === ws.OPEN) {
+        memberClient.ws.send(JSON.stringify({
+          type: 'EXPENSE_CREATED',
+          payload: expensePayload,
+        }));
+      }
+    });
+
+  } catch (err) {
+    console.error("Lỗi khi tạo chi phí:", err);
   }
 }
