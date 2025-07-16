@@ -19,7 +19,10 @@ export const useUser = create(
         updatedAt: '',
         bio: '',
         phone_number: '',
-        avatarURL: ''
+        avatarURL: '',
+        bankAccountNumber: '',
+        bankAccountName: '',
+        bankBranch: '',
       },
 
       setUserData: (newUserData) => set({ userData: newUserData }),
@@ -55,7 +58,10 @@ export const useUser = create(
               updatedAt: '',
               bio: '',
               phone_number: '',
-              avatarURL: ''
+              avatarURL: '',
+              bankAccountNumber: '',
+              bankAccountName: '',
+              bankBranch: '',
             }
           });
           localStorage.removeItem('user-storage'); // Clear Zustand persisted storage

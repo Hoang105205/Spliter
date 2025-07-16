@@ -48,7 +48,7 @@ app.use(passport.session());
 ////////// Sync database models
 const sequelize = require('./config/db');
 
-sequelize.sync()
+sequelize.sync({ alter: true })
     .then(() => {
         console.log('Database connected successfully');
     })

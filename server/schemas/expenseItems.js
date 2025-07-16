@@ -36,9 +36,9 @@ const expenseItems = sequelize.define('ExpenseItem', {
         allowNull: false,
     },
     is_paid: {
-        type: DataTypes.BOOLEAN,
+        type: DataTypes.ENUM('no', 'yes', 'pending'),
         allowNull: false,
-        defaultValue: false,
+        defaultValue: 'pending',
     },
 }, {
     timestamps: true,

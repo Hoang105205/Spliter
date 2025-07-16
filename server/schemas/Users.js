@@ -55,6 +55,21 @@ const Users = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
       defaultValue: null,
+    },
+    bankAccountNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
+    bankAccountName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
+    bankBranch: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
     }
   }, 
   {
