@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 // Import pages
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import BankAccountSetupPage from './pages/BankAccountSetupPage';
 import AccountPage from './pages/Dashboard/Accountpage';
 import Dashboard_main from './pages/Dashboard/Dashboard_main';
 import Dashboard_activities from './pages/Dashboard/Dashboard_activities';
@@ -29,6 +30,8 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/setup-bank" element={<BankAccountSetupPage />} />
+          {/* OAuth2 redirect handler */}
           <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
 
           {/* Protected routes */}

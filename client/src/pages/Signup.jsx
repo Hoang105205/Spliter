@@ -79,7 +79,7 @@ function Signup() {
       // Call addUser from your hook
       await addUser({ username, email, password });
       setIsLoading(false);
-      navigate('/login'); // Redirect to login after successful signup
+      navigate('/setup-bank'); // Redirect to bank setup after successful signup
     } catch (error) {
       setIsLoading(false);
       // Optionally, set an error message to display to the user
