@@ -4,17 +4,9 @@ const Users = require('../schemas/Users');
 const getUsers = async (req, res) => {
     try {
         const user = await Users.findAll({ 
-            attributes: { exclude: ['password'] } 
+            attributes: { exclude: ['password', 'avatar', 'avatar_mimetype'] } 
         });
-        const result = user.map(u => {
-            const data = u.toJSON();
-            data.avatarURL = data.avatar
-            ? `${req.protocol}://${req.get('host')}/users/${data.id}/avatar` : null;
-            delete data.avatar;
-            delete data.avatar_mimetype;
-            return data;
-        });
-        res.status(200).json(result);
+        res.status(200).json(user);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -24,17 +16,12 @@ const getSingleUser = async (req, res) => {
     try {
         const user = await Users.findOne({ 
             where: { username: req.params.username },
-            attributes: { exclude: ['password'] } 
+            attributes: { exclude: ['password', 'avatar', 'avatar_mimetype'] } 
         });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        const data = user.toJSON();
-        data.avatarURL = data.avatar
-        ? `${req.protocol}://${req.get('host')}/users/${data.id}/avatar` : null;
-        delete data.avatar;
-        delete data.avatar_mimetype;
-        res.status(200).json(data);
+        res.status(200).json(user);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
