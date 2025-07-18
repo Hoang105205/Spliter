@@ -7,6 +7,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Head_bar from "../../components/ui/headbar.jsx";
 import Left_bar from "../../components/ui/leftbar.jsx";
+import StatisticInfo from "../../components/ui/statistic_info.jsx";
 
 function Dashboard_statistics() {
 
@@ -28,6 +29,7 @@ function Dashboard_statistics() {
 
             {/* Main Content Area */}
             <main className="flex-1 px-4">
+              <StatisticInfo />
             </main>
 
             {/* Right Sidebar */}

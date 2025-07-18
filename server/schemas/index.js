@@ -30,6 +30,9 @@ groupMembers.belongsTo(Users, { foreignKey: 'userId', as: 'user', constraints: f
 Groups.hasMany(Expenses, { foreignKey: 'groupId', as: 'expenses' });
 Expenses.belongsTo(Groups, { foreignKey: 'groupId', as: 'group' });
 
+Users.hasMany(Expenses, { foreignKey: 'paidbyId', as: 'expensesPaid' });
+Expenses.belongsTo(Users, { foreignKey: 'paidbyId', as: 'paidBy' });
+
 Expenses.hasMany(expenseItems, { foreignKey: 'expenseId', as: 'items' });
 expenseItems.belongsTo(Expenses, { foreignKey: 'expenseId', as: 'expense', constraints: false });
 

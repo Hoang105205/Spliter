@@ -51,4 +51,46 @@ export const useExpense = create(() => ({
       return null;
     }
   },
+
+  //Lấy số tiền đã cho vay của người dùng
+  getAllLend: async (userId) => {
+    if (!userId) return null;
+
+    try {
+      const response = await api.get(`/api/expenses/allLend/${userId}`);
+      return response.data; // Trả về danh sách các khoản vay từ server
+    } catch (err) {
+      console.error('Error fetching all lendings:', err);
+      toast.error('Failed to fetch lendings. Please try again.');
+      return null;
+    }
+  },
+
+  //Lấy số tiền đã nợ của người dùng
+  getAllOwe: async (userId) => {
+    if (!userId) return null;
+
+    try {
+      const response = await api.get(`/api/expenses/allOwe/${userId}`);
+      return response.data; // Trả về danh sách các khoản nợ từ server
+    } catch (err) {
+      console.error('Error fetching all owes:', err);
+      toast.error('Failed to fetch owes. Please try again.');
+      return null;
+    }
+  },
+
+  // Lấy tất cả các khoản chi tiêu của người dùng
+  getUserExpenses: async (userId) => {
+    if (!userId) return null;
+
+    try {
+      const response = await api.get(`/api/expenses/allExpenses/${userId}`);
+      return response.data; // Trả về danh sách các khoản chi tiêu của người dùng
+    } catch (err) {
+      console.error('Error fetching user expenses:', err);
+      toast.error('Failed to fetch user expenses. Please try again.');
+      return null;
+    }
+  }
 }));
