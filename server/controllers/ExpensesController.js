@@ -39,7 +39,7 @@ const createExpense = async (req, res) => {
             groupId: groupId, // Ensure each item has groupId
             userId: member.memberId, // Assuming member has id
             shared_amount: member.amount, // Assuming member has amount
-            is_paid: member.memberId === paidbyId
+            is_paid: member.memberId === paidbyId ? 'yes' : 'no'
         }));
         await expenseItems.bulkCreate(ExpenseItems);
 

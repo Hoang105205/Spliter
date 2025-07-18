@@ -64,10 +64,15 @@ function Dashboard_group() {
   /// Websocket context to handle real-time updates
   const ws = useContext(WebSocketContext);
   
+  // Show modal settle up
+  const [showSettleModal, setShowSettleModal] = useState(false);
+
   // NEW EXPENSE TAB:
   // State variable
   const [searchLoading, setLoading] = useState(false);
   const [ownSelf, setOwnSelf] = useState(null);
+  const [paymentSelf, setPaymentSelf] = useState(0);          // So tien minh phai tra
+  const [paidMemberInfo, setPaidMemberInfo] = useState(null); // Thong tin nguoi tra tien cho expense do
 
   // Handle all users add by "new expense"
   // For UI:
@@ -92,7 +97,7 @@ function Dashboard_group() {
   const [descriptionExpense, setDescriptionExpense] = useState("")  // Description
   const [selectedDate, setSelectedDate] = useState(new Date())      // Expense's date
   const [selectedMember, setSelectedMember] = useState([])          // Member in expense
-  const [paidMember, setPaidMember] = useState()                // Member - who paid the expense
+  const [paidMember, setPaidMember] = useState()                    // Member - who paid the expense
 
   // State for Expenses in a specific group
   const [expenses, setExpenses] = useState([]);
@@ -420,6 +425,27 @@ function Dashboard_group() {
   }, [showAddMemberModal]);
 
 
+  useEffect(() => {
+    if (selectedExpense === null) {
+      return;
+    } 
+
+    setPaymentSelf(selectedExpense.items.find(
+                                                (item) =>
+                                                    item.userId === ownSelf.id &&
+                                                    ownSelf.id !== selectedExpense.paidbyId
+                                              )?.shared_amount ?? 0);
+    async function fetchData() {
+      const paidMember = groupMembers.find(m => m.id === selectedExpense.paidbyId);
+      console.log(paidMember)
+      if (paidMember !== null) {
+        const temp = await findUser(paidMember.username)
+        setPaidMemberInfo(temp);
+      }
+    }
+
+    fetchData();
+  }, [selectedExpense])
 
   // Lock background scroll when modal is open
   useEffect(() => {
@@ -716,7 +742,8 @@ function Dashboard_group() {
                             {item.userId === ownSelf.id && ownSelf.id !== selectedExpense.paidbyId && (
                               <Button 
                                 className="bg-blue-500 text-white hover:bg-blue-700 rounded-[15px] ml-4 h-[22px] text-[14px]" 
-                                disabled={item.is_paid}
+                                disabled={item.is_paid === 'yes' ? true : false}
+                                onClick={() => setShowSettleModal(true)}
                               >
                                 Settle up
                               </Button>
@@ -733,6 +760,41 @@ function Dashboard_group() {
                 </div>
               )}
 
+            <AnimatePresence>
+              {showSettleModal && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[999]"
+                >
+                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[600px] h-[350px] flex flex-col text-gray-900">
+                    <h2 className="text-xl font-bold mb-2">Settle Up Payment</h2>
+                    <p>You owe: {formatWithCommas(paymentSelf)} ₫</p>
+                    <div className="mt-4 p-3 border rounded-[15px] bg-gray-50 text-">
+                      <p>Name: {paidMemberInfo?.username || 'Unknown'}</p>
+                      <p>Account Name: {paidMemberInfo?.bankAccountName || 'null'}</p>
+                      <p>Account Number: {paidMemberInfo?.bankAccountNumber || 'null'}</p>
+                      <p>Bank Branch: {paidMemberInfo?.bankBranch || 'null'}</p>
+                    </div>
+                    <div className="mt-auto pt-2 space-x-8">
+                      <Button
+                        className="bg-blue-500 text-white px-4 py-2 w-[125px] rounded-full hover:bg-blue-600 transition-colors"
+                        onClick={() => setShowSettleModal(false)}
+                      >
+                        Confirm
+                      </Button>
+                      <Button
+                        className="bg-gray-300 text-black px-4 py-2 w-[125px] rounded-full hover:bg-gray-400 transition-colors"
+                        onClick={() => setShowSettleModal(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>  
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
               {/* Hiển thị chung chung ở đây khi không có nhóm được chọn và activeTab là "group" */}
             </main>

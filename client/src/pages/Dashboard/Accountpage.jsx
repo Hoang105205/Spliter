@@ -21,12 +21,15 @@ function AccountPage() {
     updatedAt: '',
     bio: '',
     phone_number: '',
-    avatarURL: ''
+    avatarURL: '',
+    bankAccountName: '',
+    bankAccountNumber: '',
+    bankBranch: '',
   })
 
-  useEffect(() => {
+  useEffect(async () => {
     // When the component mounts, fetch the user data
-    setLocalData({
+    await setLocalData({
       id: userData.id || '',
       username: userData.username || '',
       email: userData.email || '',
@@ -35,7 +38,10 @@ function AccountPage() {
       updatedAt: userData.updatedAt || '',
       bio: userData.bio || '',
       phone_number: userData.phone_number || '',
-      avatarURL: userData.avatarURL || ''
+      avatarURL: userData.avatarURL || '',
+      bankAccountName: userData.bankAccountName || '',
+      bankAccountNumber: userData.bankAccountNumber || '',
+      bankBranch: userData.bankBranch || '',
     })
   }, [userData])
 
@@ -48,6 +54,7 @@ function AccountPage() {
   
   const [editState, setEditState] = useState(false)
   const [editIState, setEditIState] = useState(false)
+  const [editPaymentState, setEditPaymentState] = useState(false)
   const [editPassword, setEditPassword] = useState(false)
   const [errorCurrent, setEC] = useState(false)
   const [errorNew, setEN] = useState(false)
@@ -120,7 +127,7 @@ function AccountPage() {
   const onEditPasswordClick = async () => {
     if (editPassword === true) {
       try {
-        if (!currentPass) {
+        if (currentPass.trim() === "") {
           setEC(true)
           setWarningCurrentPass("Current password cannot be empty")
         }
@@ -129,7 +136,7 @@ function AccountPage() {
           setWarningCurrentPass("")
         }
 
-        if (!newPass) {
+        if (newPass.trim() === "") {
           setEN(true)
           setWarningNewPass("New password cannot be empty")
           return
@@ -138,7 +145,7 @@ function AccountPage() {
           setEN(false)
           setWarningNewPass("")
         }
-        const result = await handleChangePassword(currentPass, newPass)
+        const result = await handleChangePassword(currentPass.trim(), newPass.trim())
 
         alert(result.message)
         setEditPassword(false)
@@ -186,6 +193,72 @@ function AccountPage() {
     }
   }
 
+  const [warningBankName, setWarningBankName] = useState("")
+  const [warningBankNumber, setWarningBankNumber] = useState("")
+  const [warningBankBranch, setWarningBankBranch] = useState("")
+  const [errorName, setErrorName] = useState(false)
+  const [errorNumber, setErrorNumber] = useState(false)
+  const [errorBranch, setErrorBranch] = useState(false)
+  const [prevLocalData, setPrevLocalData] = useState(null)
+
+  const onEditPaymentClick = async () => {
+    if (editPaymentState === true) {
+      if (localData.bankAccountName.trim() === "") {
+        setErrorName(true)
+        setWarningBankName("Bank account's name cannot be empty")
+      }
+      else {
+        setErrorName(false)
+        setWarningBankName("")
+      }
+
+      if (localData.bankAccountNumber.trim() === "") {
+        setErrorNumber(true)
+        setWarningBankNumber("Bank account's number cannot be empty")
+      }
+      else {
+        setErrorNumber(false)
+        setWarningBankNumber("")
+      }
+
+      if (localData.bankBranch.trim() === "") {
+        setErrorBranch(true)
+        setWarningBankBranch("Bank's brand cannot be empty")
+        return
+      }
+      else {
+        setErrorBranch(false)
+        setWarningBankBranch("")
+      }
+
+      try {
+        await updateUser(
+          {
+            id: localData.id,
+            bankAccountName: localData.bankAccountName,
+            bankAccountNumber: localData.bankAccountNumber,
+            bankBranch: localData.bankBranch,
+          }
+        ) // update on server
+        setEditPaymentState(false)        // exit edit mode after success
+        setErrorName(false)
+        setErrorNumber(false)
+        setErrorBranch(false)
+      } catch (error) {
+        alert("Failed to change user's data " + error)
+      }
+    } else {
+      setPrevLocalData(localData)
+      setEditPaymentState(true)
+      setErrorName(false)
+      setErrorNumber(false)
+      setErrorBranch(false)
+      setWarningBankName("")
+      setWarningBankNumber("")
+      setWarningBankBranch("")
+    }  
+  }
+
   const setBio = (event) => {
     setLocalData({
       ...localData,
@@ -211,6 +284,27 @@ function AccountPage() {
     setLocalData({
       ...localData,
       phone_number: event.target.value,
+    })
+  }
+
+  const setBankName = (event) => {
+    setLocalData({
+      ...localData,
+      bankAccountName: event.target.value,
+    })
+  }
+
+  const setBankNumber = (event) => {
+    setLocalData({
+      ...localData,
+      bankAccountNumber: event.target.value,
+    })
+  }
+
+  const setBankBranch = (event) => {
+    setLocalData({
+      ...localData,
+      bankBranch: event.target.value,
     })
   }
 
@@ -419,24 +513,99 @@ function AccountPage() {
               </div>
             </div>
 
-            <Separator orientation="vertical" className="mx-8 h-screen" />
+            <Separator orientation="vertical" className="mx-6"/>
 
             {/* Right section */}
             <div className="flex flex-col mt-8 w-[450px]">
               <div className="flex flex-col h-[350px]">
-                <h2 className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[24px] text-left">
+                <h2 className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[24px] text-left pb-2">
                   Payment method
                 </h2>
 
-                <p className="[font-family:'Roboto',Helvetica] font-normal text-black text-xl text-left mt-4">
-                  There is nothing here, how about...
-                </p>
+                {!editPaymentState &&
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="normal-input-header">
+                      Bank account's name
+                    </label>
+                    <p className="normal-data min-h-[35px]">
+                      {localData.bankAccountName}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="normal-input-header">
+                      Bank account's number
+                    </label>
+                    <p className="normal-data min-h-[35px]">
+                      {localData.bankAccountNumber}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="normal-input-header">
+                      Bank
+                    </label>
+                    <p className="normal-data min-h-[35px]">
+                      {localData.bankBranch}
+                    </p>
+                  </div>
+                </div>}
 
+                {!editPaymentState &&
                 <a
                   href="#"
-                  className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-[#4285f4] text-[25px] text-right underline mt-8">
-                  Add payment method
-                </a>
+                  className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-[#4285f4] text-[25px] text-right underline mt-8"
+                  onClick={onEditPaymentClick}>
+                  Change payment account
+                </a>}
+
+                <div className="space-y-2">
+                  <div>
+                    {editPaymentState &&
+                    <p className="normal-input-header"> Bank account's name </p>}
+                    {editPaymentState &&
+                    <input onChange={setBankName} className={errorName ? "error-input" : "normal-input"} value = {localData.bankAccountName}></input>}
+                    {editPaymentState &&
+                    <p className="error-text min-h-[20px]"> {warningBankName} </p>}
+                  </div>
+
+                  <div>
+                    {editPaymentState &&
+                    <p className="normal-input-header"> Bank account's number </p>}
+                    {editPaymentState &&
+                    <input onChange={setBankNumber} className={errorNumber ? "error-input" : "normal-input"} value = {localData.bankAccountNumber}></input>}
+                    {editPaymentState &&
+                    <p className="error-text min-h-[20px]"> {warningBankNumber} </p>}
+                  </div>
+
+                  <div>
+                    {editPaymentState &&
+                    <p className="normal-input-header"> Bank </p>}
+                    {editPaymentState &&
+                    <input onChange={setBankBranch} className={errorBranch ? "error-input" : "normal-input"} value = {localData.bankBranch}></input>}
+                    {editPaymentState &&
+                    <p className="error-text min-h-[20px]"> {warningBankBranch} </p>}
+                  </div>
+                </div>
+                <div className="flex gap-x-6 pt-4">
+                  {editPaymentState &&
+                  <Button onClick={onEditPaymentClick} className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
+                                                                transition-colors duration-200 border border-transparent hover:border-white">
+                    <span className="button-blue-data">
+                      Confirm
+                    </span>
+                  </Button>}
+                  {editPaymentState &&
+                  <Button 
+                    onClick={() => {setEditPaymentState(false)
+                                    setLocalData(prevLocalData)
+                    }} 
+                    className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
+                               transition-colors duration-200 border border-transparent hover:border-white">
+                    <span className="button-blue-data">
+                      Cancel
+                    </span>
+                  </Button>}
+                </div>
               </div>
             </div>
           </div>
