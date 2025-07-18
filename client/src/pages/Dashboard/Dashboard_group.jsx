@@ -775,7 +775,7 @@ function Dashboard_group() {
                       <p>Name: {paidMemberInfo?.username || 'Unknown'}</p>
                       <p>Account Name: {paidMemberInfo?.bankAccountName || 'null'}</p>
                       <p>Account Number: {paidMemberInfo?.bankAccountNumber || 'null'}</p>
-                      <p>Bank Branch: {paidMemberInfo?.bankBranch || 'null'}</p>
+                      <p>Bank Name: {paidMemberInfo?.bankName || 'null'}</p>
                     </div>
                     <div className="mt-auto pt-2 space-x-8">
                       <Button

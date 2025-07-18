@@ -27,23 +27,26 @@ function AccountPage() {
     bankName: '',
   })
 
-  useEffect(async () => {
-    // When the component mounts, fetch the user data
-    await setLocalData({
-      id: userData.id || '',
-      username: userData.username || '',
-      email: userData.email || '',
-      role: userData.role || '',
-      createdAt: userData.createdAt || '',
-      updatedAt: userData.updatedAt || '',
-      bio: userData.bio || '',
-      phone_number: userData.phone_number || '',
-      avatarURL: userData.avatarURL || '',
-      bankAccountName: userData.bankAccountName || '',
-      bankAccountNumber: userData.bankAccountNumber || '',
-      bankName: userData.bankName || '',
-    })
-  }, [userData])
+  // Cập nhật localData khi userData thay đổi
+  useEffect(() => {
+    const updateLocalData = async () => {
+      setLocalData({
+        id: userData.id || "",
+        username: userData.username || "",
+        email: userData.email || "",
+        role: userData.role || "",
+        createdAt: userData.createdAt || "",
+        updatedAt: userData.updatedAt || "",
+        bio: userData.bio || "",
+        phone_number: userData.phone_number || "",
+        avatarURL: userData.avatarURL || "",
+        bankAccountName: userData.bankAccountName || "",
+        bankAccountNumber: userData.bankAccountNumber || "",
+        bankName: userData.bankName || "",
+      });
+    };
+    updateLocalData();
+  }, [userData]);
 
   const [editText, setEditText] = useState("Edit")
   var defaultBio = "There is still nothing here, how about you spice something up?"
@@ -243,7 +246,7 @@ function AccountPage() {
         setEditPaymentState(false)        // exit edit mode after success
         setErrorName(false)
         setErrorNumber(false)
-        setErrorBranch(false)
+        setErrorBrand(false)
       } catch (error) {
         alert("Failed to change user's data " + error)
       }
@@ -252,7 +255,7 @@ function AccountPage() {
       setEditPaymentState(true)
       setErrorName(false)
       setErrorNumber(false)
-      setErrorBranch(false)
+      setErrorBrand(false)
       setWarningBankName("")
       setWarningBankNumber("")
       setWarningBankBrand("")
