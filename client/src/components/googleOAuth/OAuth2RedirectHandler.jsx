@@ -42,14 +42,22 @@ function OAuth2RedirectHandler() {
             id: user.id,
             username: user.username,
             email: user.email,
-            role: user.role || 'user', // Default to 'user' nếu không có role
+            role: user.role || 'user',
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
-            bio: user.bio || '' // Default là chuỗi rỗng nếu không có bio
+            bio: user.bio || '',
+            bankAccountNumber: user.bankAccountNumber,
+            bankAccountName: user.bankAccountName,
+            bankBranch: user.bankBranch
           });
 
-          // Điều hướng tới dashboard của user
-          navigate(`/dashboard/${user.id}`);
+          // Check if user has all 3 bank info fields
+          const hasAllBankInfo = user.bankAccountNumber && user.bankAccountName && user.bankBranch;
+          if (!hasAllBankInfo) {
+            navigate('/setup-bank');
+          } else {
+            navigate(`/dashboard/${user.id}`);
+          }
         } catch (error) {
           console.error('Error during OAuth redirect:', error);
           navigate('/login');
