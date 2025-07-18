@@ -55,7 +55,7 @@ function Login() {
     try {
       const user = await login(username, password);
       setLoading(false);
-      if (!user.bankAccountNumber || !user.bankAccountName || !user.bankBranch) { // Check if user has bank info
+      if (!user.bankAccountNumber || !user.bankAccountName || !user.bankName) { // Check if user has bank info
         navigate('/setup-bank');
       } else {
         navigate(`/dashboard/${user.id}`);

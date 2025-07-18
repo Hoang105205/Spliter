@@ -10,7 +10,7 @@ function BankAccountSetupPage() {
   const [loading, setLoading] = useState(false);
   const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [bankAccountName, setBankAccountName] = useState('');
-  const [bankBranch, setBankBranch] = useState('');
+  const [bankName, setBankName] = useState('');
   const [errors, setErrors] = useState({});
   const { updateUser, userData } = useUser();
 
@@ -18,7 +18,7 @@ function BankAccountSetupPage() {
     const newErrors = {};
     if (!bankAccountNumber.trim()) newErrors.bankAccountNumber = 'Account number is required';
     if (!bankAccountName.trim()) newErrors.bankAccountName = 'Account name is required';
-    if (!bankBranch.trim()) newErrors.bankBranch = 'Bank branch is required';
+    if (!bankName.trim()) newErrors.bankName = 'Bank is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -33,7 +33,7 @@ function BankAccountSetupPage() {
       id : userData.id,
       bankAccountNumber: bankAccountNumber,
       bankAccountName: bankAccountName,
-      bankBranch: bankBranch,
+      bankName: bankName,
     });
 
     navigate('/login');
@@ -102,12 +102,12 @@ function BankAccountSetupPage() {
                   <Input
                     type="text"
                     className="h-[35px] rounded-xl border-[#66666659]"
-                    value={bankBranch}
-                    onChange={e => setBankBranch(e.target.value)}
+                    value={bankName}
+                    onChange={e => setBankName(e.target.value)}
                     autoComplete="off"
                   />
-                  <span className={`error-message text-[#ef0a0acc] ${errors.bankBranch ? '' : 'invisible'}`}>
-                    {errors.bankBranch || 'placeholder'}
+                  <span className={`error-message text-[#ef0a0acc] ${errors.bankName ? '' : 'invisible'}`}>
+                    {errors.bankName || 'placeholder'}
                   </span>
                 </div>
 

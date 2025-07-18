@@ -48,11 +48,11 @@ function OAuth2RedirectHandler() {
             bio: user.bio || '',
             bankAccountNumber: user.bankAccountNumber,
             bankAccountName: user.bankAccountName,
-            bankBranch: user.bankBranch
+            bankName: user.bankName
           });
 
           // Check if user has all 3 bank info fields
-          const hasAllBankInfo = user.bankAccountNumber && user.bankAccountName && user.bankBranch;
+          const hasAllBankInfo = user.bankAccountNumber && user.bankAccountName && user.bankName;
           if (!hasAllBankInfo) {
             navigate('/setup-bank');
           } else {

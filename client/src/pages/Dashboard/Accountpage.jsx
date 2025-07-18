@@ -24,7 +24,7 @@ function AccountPage() {
     avatarURL: '',
     bankAccountName: '',
     bankAccountNumber: '',
-    bankBranch: '',
+    bankName: '',
   })
 
   useEffect(async () => {
@@ -41,7 +41,7 @@ function AccountPage() {
       avatarURL: userData.avatarURL || '',
       bankAccountName: userData.bankAccountName || '',
       bankAccountNumber: userData.bankAccountNumber || '',
-      bankBranch: userData.bankBranch || '',
+      bankName: userData.bankName || '',
     })
   }, [userData])
 
@@ -195,10 +195,10 @@ function AccountPage() {
 
   const [warningBankName, setWarningBankName] = useState("")
   const [warningBankNumber, setWarningBankNumber] = useState("")
-  const [warningBankBranch, setWarningBankBranch] = useState("")
+  const [warningBankBrand, setWarningBankBrand] = useState("")
   const [errorName, setErrorName] = useState(false)
   const [errorNumber, setErrorNumber] = useState(false)
-  const [errorBranch, setErrorBranch] = useState(false)
+  const [errorBrand, setErrorBrand] = useState(false)
   const [prevLocalData, setPrevLocalData] = useState(null)
 
   const onEditPaymentClick = async () => {
@@ -221,14 +221,14 @@ function AccountPage() {
         setWarningBankNumber("")
       }
 
-      if (localData.bankBranch.trim() === "") {
-        setErrorBranch(true)
-        setWarningBankBranch("Bank's brand cannot be empty")
+      if (localData.bankName.trim() === "") {
+        setErrorBrand(true)
+        setWarningBankBrand("Bank cannot be empty")
         return
       }
       else {
-        setErrorBranch(false)
-        setWarningBankBranch("")
+        setErrorBrand(false)
+        setWarningBankBrand("")
       }
 
       try {
@@ -237,7 +237,7 @@ function AccountPage() {
             id: localData.id,
             bankAccountName: localData.bankAccountName,
             bankAccountNumber: localData.bankAccountNumber,
-            bankBranch: localData.bankBranch,
+            bankName: localData.bankName,
           }
         ) // update on server
         setEditPaymentState(false)        // exit edit mode after success
@@ -255,7 +255,7 @@ function AccountPage() {
       setErrorBranch(false)
       setWarningBankName("")
       setWarningBankNumber("")
-      setWarningBankBranch("")
+      setWarningBankBrand("")
     }  
   }
 
@@ -301,10 +301,10 @@ function AccountPage() {
     })
   }
 
-  const setBankBranch = (event) => {
+  const setBankBrand = (event) => {
     setLocalData({
       ...localData,
-      bankBranch: event.target.value,
+      bankName: event.target.value,
     })
   }
 
@@ -545,7 +545,7 @@ function AccountPage() {
                       Bank
                     </label>
                     <p className="normal-data min-h-[35px]">
-                      {localData.bankBranch}
+                      {localData.bankName}
                     </p>
                   </div>
                 </div>}
@@ -581,9 +581,9 @@ function AccountPage() {
                     {editPaymentState &&
                     <p className="normal-input-header"> Bank </p>}
                     {editPaymentState &&
-                    <input onChange={setBankBranch} className={errorBranch ? "error-input" : "normal-input"} value = {localData.bankBranch}></input>}
+                    <input onChange={setBankBrand} className={errorBrand ? "error-input" : "normal-input"} value = {localData.bankName}></input>}
                     {editPaymentState &&
-                    <p className="error-text min-h-[20px]"> {warningBankBranch} </p>}
+                    <p className="error-text min-h-[20px]"> {warningBankBrand} </p>}
                   </div>
                 </div>
                 <div className="flex gap-x-6 pt-4">
