@@ -46,6 +46,7 @@ function OAuth2RedirectHandler() {
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
             bio: user.bio || '',
+            phone_number: user.phone_number || '',
             bankAccountNumber: user.bankAccountNumber,
             bankAccountName: user.bankAccountName,
             bankName: user.bankName
