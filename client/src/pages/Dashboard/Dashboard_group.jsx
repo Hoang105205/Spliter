@@ -732,25 +732,54 @@ function Dashboard_group() {
                       <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
                       style={{ maxHeight: "100px" }}>
                       {selectedExpense.items
-                      .slice()
-                      .sort((a, b) => (a.userId === ownSelf.id ? -1 : b.userId === ownSelf.id ? 1 : 0))
-                      .map((item) => {
-                        const member = groupMembers.find(m => m.id === item.userId);
-                        return (
-                          <p key={item.id}>
-                            {member ? member.username : 'Unknown'}: {`${formatWithCommas(item.shared_amount)} ₫`}
-                            {item.userId === ownSelf.id && ownSelf.id !== selectedExpense.paidbyId && (
-                              <Button 
-                                className="bg-blue-500 text-white hover:bg-blue-700 rounded-[15px] ml-4 h-[22px] text-[14px]" 
-                                disabled={item.is_paid === 'yes' ? true : false}
-                                onClick={() => setShowSettleModal(true)}
-                              >
-                                Settle up
-                              </Button>
-                            )}
-                          </p>
-                        );
-                      })}
+                        .slice()
+                        .sort((a, b) => (a.userId === ownSelf.id ? -1 : b.userId === ownSelf.id ? 1 : 0))
+                        .map((item) => {
+                          const member = groupMembers.find((m) => m.id === item.userId);
+                          return (
+                            <p key={item.id}>
+                              {member ? member.username : 'Unknown'}: {`${formatWithCommas(item.shared_amount)} ₫`}
+                              {ownSelf.id === selectedExpense.paidbyId ? ( // Chủ bill
+                                item.userId !== ownSelf.id && (
+                                  <>
+                                    {item.is_paid === 'no' && (
+                                      <span className="ml-4 text-yellow-500">Not Paid</span>
+                                    )}
+                                    {item.is_paid === 'yes' && (
+                                      <span className="ml-4 text-green-500">Paid</span>
+                                    )}
+                                    {item.is_paid === 'pending' && (
+                                      <Button
+                                        className="bg-orange-500 text-white hover:bg-orange-600 rounded-[15px] ml-4 h-[22px] text-[14px]"
+
+                                        onClick={() => {
+                                          // Handle pending payment logic here
+
+
+
+
+                                          toast.success("Confirm payment successfully!");
+                                          setShowSettleModal(false);
+                                        }}
+                                      >
+                                        Pending
+                                      </Button>
+                                    )}
+                                  </>
+                                )
+                              ) : ( // Người liên quan khác
+                                item.userId === ownSelf.id && item.is_paid === 'no' && (
+                                  <Button
+                                    className="bg-blue-500 text-white hover:bg-blue-700 rounded-[15px] ml-4 h-[22px] text-[14px]"
+                                    onClick={() => setShowSettleModal(true)}
+                                  >
+                                    Settle up
+                                  </Button>
+                                )
+                              )}
+                            </p>
+                          );
+                        })}
                       </div>
                       <p className="mt-3"><span className="font-semibold text-gray">Paid by:</span> {groupMembers.find(m => m.id === selectedExpense.paidbyId)?.username || 'Unknown'}</p>
                       <p><span className="font-semibold text-gray">Due Date:</span> {new Date(selectedExpense.expDate).toLocaleDateString()}</p>
@@ -780,7 +809,14 @@ function Dashboard_group() {
                     <div className="mt-auto pt-2 space-x-8">
                       <Button
                         className="bg-blue-500 text-white px-4 py-2 w-[125px] rounded-full hover:bg-blue-600 transition-colors"
-                        onClick={() => setShowSettleModal(false)}
+                        onClick={() => { 
+                          // Handle payment confirmation logic here
+                          
+
+                          toast.success("Payment settled successfully!");
+                          setShowSettleModal(false);
+
+                        }}
                       >
                         Confirm
                       </Button>
