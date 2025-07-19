@@ -44,7 +44,7 @@ function Dashboard_group() {
   });
   
   // Fetch user data
-  const { userData, findUser, getAvatar, revokeAvatarUrl } = useUser();
+  const { userData, findUser, getAvatar } = useUser();
 
   // Fetch groups that the user is a member of
   const { groups, loading, error, fetchGroups, removeMember, trigger, refreshGroups } = useGroupMember();
@@ -403,38 +403,56 @@ function Dashboard_group() {
     };
 
     fetchMemberAvatars();
+  }, [groupMembers, activeTab, getAvatar]);
 
-    // Cleanup avatar URLs when unmount or members change
+  // Fetch member avatars when groupMembers or activeTab changes
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchMemberAvatars = async () => {
+      if (groupMembers.length > 0 && activeTab === "group") {
+        const avatarPromises = groupMembers.map(async (member) => {
+          try {
+            const avatarUrl = await getAvatar(member.id);
+            return { memberId: member.id, avatarUrl };
+          } catch (error) {
+            return { memberId: member.id, avatarUrl: null };
+          }
+        });
+
+        const avatars = await Promise.all(avatarPromises);
+        if (isMounted) {
+          const newAvatars = avatars.reduce((acc, { memberId, avatarUrl }) => {
+            acc[memberId] = avatarUrl;
+            return acc;
+          }, {});
+          setMemberAvatars(newAvatars);
+        }
+      } else {
+        if (isMounted) setMemberAvatars({});
+      }
+    };
+
+    fetchMemberAvatars();
+
+    // Không cần cleanup avatar URLs nữa
     return () => {
       isMounted = false;
-      Object.values(memberAvatars).forEach((url) => revokeAvatarUrl(url));
-    };
-  }, [groupMembers, activeTab, getAvatar, revokeAvatarUrl]);
-
-  // Lock background scroll when modal is open
-  useEffect(() => {
-    if (showAddMemberModal) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
     }
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [showAddMemberModal]);
-
-
+  }, [groupMembers, activeTab, getAvatar]);
+  
+  
   useEffect(() => {
     if (selectedExpense === null) {
       return;
-    } 
-
-    setPaymentSelf(selectedExpense.items.find(
-                                                (item) =>
-                                                    item.userId === ownSelf.id &&
-                                                    ownSelf.id !== selectedExpense.paidbyId
-                                              )?.shared_amount ?? 0);
+    }
+    setPaymentSelf(
+      selectedExpense.items.find(
+        (item) =>
+          item.userId === ownSelf.id &&
+          ownSelf.id !== selectedExpense.paidbyId
+      )?.shared_amount ?? 0
+    );
     async function fetchData() {
       const paidMember = groupMembers.find(m => m.id === selectedExpense.paidbyId);
       console.log(paidMember)
@@ -443,9 +461,8 @@ function Dashboard_group() {
         setPaidMemberInfo(temp);
       }
     }
-
     fetchData();
-  }, [selectedExpense])
+  }, [selectedExpense]);
 
   // Lock background scroll when modal is open
   useEffect(() => {
@@ -732,25 +749,54 @@ function Dashboard_group() {
                       <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
                       style={{ maxHeight: "100px" }}>
                       {selectedExpense.items
-                      .slice()
-                      .sort((a, b) => (a.userId === ownSelf.id ? -1 : b.userId === ownSelf.id ? 1 : 0))
-                      .map((item) => {
-                        const member = groupMembers.find(m => m.id === item.userId);
-                        return (
-                          <p key={item.id}>
-                            {member ? member.username : 'Unknown'}: {`${formatWithCommas(item.shared_amount)} ₫`}
-                            {item.userId === ownSelf.id && ownSelf.id !== selectedExpense.paidbyId && (
-                              <Button 
-                                className="bg-blue-500 text-white hover:bg-blue-700 rounded-[15px] ml-4 h-[22px] text-[14px]" 
-                                disabled={item.is_paid === 'yes' ? true : false}
-                                onClick={() => setShowSettleModal(true)}
-                              >
-                                Settle up
-                              </Button>
-                            )}
-                          </p>
-                        );
-                      })}
+                        .slice()
+                        .sort((a, b) => (a.userId === ownSelf.id ? -1 : b.userId === ownSelf.id ? 1 : 0))
+                        .map((item) => {
+                          const member = groupMembers.find((m) => m.id === item.userId);
+                          return (
+                            <p key={item.id}>
+                              {member ? member.username : 'Unknown'}: {`${formatWithCommas(item.shared_amount)} ₫`}
+                              {ownSelf.id === selectedExpense.paidbyId ? ( // Chủ bill
+                                item.userId !== ownSelf.id && (
+                                  <>
+                                    {item.is_paid === 'no' && (
+                                      <span className="ml-4 text-yellow-500">Not Paid</span>
+                                    )}
+                                    {item.is_paid === 'yes' && (
+                                      <span className="ml-4 text-green-500">Paid</span>
+                                    )}
+                                    {item.is_paid === 'pending' && (
+                                      <Button
+                                        className="bg-orange-500 text-white hover:bg-orange-600 rounded-[15px] ml-4 h-[22px] text-[14px]"
+
+                                        onClick={() => {
+                                          // Handle pending payment logic here
+
+
+
+
+                                          toast.success("Confirm payment successfully!");
+                                          setShowSettleModal(false);
+                                        }}
+                                      >
+                                        Pending
+                                      </Button>
+                                    )}
+                                  </>
+                                )
+                              ) : ( // Người liên quan khác
+                                item.userId === ownSelf.id && item.is_paid === 'no' && (
+                                  <Button
+                                    className="bg-blue-500 text-white hover:bg-blue-700 rounded-[15px] ml-4 h-[22px] text-[14px]"
+                                    onClick={() => setShowSettleModal(true)}
+                                  >
+                                    Settle up
+                                  </Button>
+                                )
+                              )}
+                            </p>
+                          );
+                        })}
                       </div>
                       <p className="mt-3"><span className="font-semibold text-gray">Paid by:</span> {groupMembers.find(m => m.id === selectedExpense.paidbyId)?.username || 'Unknown'}</p>
                       <p><span className="font-semibold text-gray">Due Date:</span> {new Date(selectedExpense.expDate).toLocaleDateString()}</p>
@@ -775,12 +821,19 @@ function Dashboard_group() {
                       <p>Name: {paidMemberInfo?.username || 'Unknown'}</p>
                       <p>Account Name: {paidMemberInfo?.bankAccountName || 'null'}</p>
                       <p>Account Number: {paidMemberInfo?.bankAccountNumber || 'null'}</p>
-                      <p>Bank Branch: {paidMemberInfo?.bankBranch || 'null'}</p>
+                      <p>Bank Name: {paidMemberInfo?.bankName || 'null'}</p>
                     </div>
                     <div className="mt-auto pt-2 space-x-8">
                       <Button
                         className="bg-blue-500 text-white px-4 py-2 w-[125px] rounded-full hover:bg-blue-600 transition-colors"
-                        onClick={() => setShowSettleModal(false)}
+                        onClick={() => { 
+                          // Handle payment confirmation logic here
+                          
+
+                          toast.success("Payment settled successfully!");
+                          setShowSettleModal(false);
+
+                        }}
                       >
                         Confirm
                       </Button>
