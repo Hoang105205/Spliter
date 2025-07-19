@@ -44,7 +44,7 @@ function Dashboard_group() {
   });
   
   // Fetch user data
-  const { userData, findUser, getAvatar, revokeAvatarUrl } = useUser();
+  const { userData, findUser, getAvatar } = useUser();
 
   // Fetch groups that the user is a member of
   const { groups, loading, error, fetchGroups, removeMember, trigger, refreshGroups } = useGroupMember();
@@ -403,38 +403,56 @@ function Dashboard_group() {
     };
 
     fetchMemberAvatars();
+  }, [groupMembers, activeTab, getAvatar]);
 
-    // Cleanup avatar URLs when unmount or members change
+  // Fetch member avatars when groupMembers or activeTab changes
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchMemberAvatars = async () => {
+      if (groupMembers.length > 0 && activeTab === "group") {
+        const avatarPromises = groupMembers.map(async (member) => {
+          try {
+            const avatarUrl = await getAvatar(member.id);
+            return { memberId: member.id, avatarUrl };
+          } catch (error) {
+            return { memberId: member.id, avatarUrl: null };
+          }
+        });
+
+        const avatars = await Promise.all(avatarPromises);
+        if (isMounted) {
+          const newAvatars = avatars.reduce((acc, { memberId, avatarUrl }) => {
+            acc[memberId] = avatarUrl;
+            return acc;
+          }, {});
+          setMemberAvatars(newAvatars);
+        }
+      } else {
+        if (isMounted) setMemberAvatars({});
+      }
+    };
+
+    fetchMemberAvatars();
+
+    // Không cần cleanup avatar URLs nữa
     return () => {
       isMounted = false;
-      Object.values(memberAvatars).forEach((url) => revokeAvatarUrl(url));
-    };
-  }, [groupMembers, activeTab, getAvatar, revokeAvatarUrl]);
-
-  // Lock background scroll when modal is open
-  useEffect(() => {
-    if (showAddMemberModal) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
     }
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [showAddMemberModal]);
-
-
+  }, [groupMembers, activeTab, getAvatar]);
+  
+  
   useEffect(() => {
     if (selectedExpense === null) {
       return;
-    } 
-
-    setPaymentSelf(selectedExpense.items.find(
-                                                (item) =>
-                                                    item.userId === ownSelf.id &&
-                                                    ownSelf.id !== selectedExpense.paidbyId
-                                              )?.shared_amount ?? 0);
+    }
+    setPaymentSelf(
+      selectedExpense.items.find(
+        (item) =>
+          item.userId === ownSelf.id &&
+          ownSelf.id !== selectedExpense.paidbyId
+      )?.shared_amount ?? 0
+    );
     async function fetchData() {
       const paidMember = groupMembers.find(m => m.id === selectedExpense.paidbyId);
       console.log(paidMember)
@@ -443,9 +461,8 @@ function Dashboard_group() {
         setPaidMemberInfo(temp);
       }
     }
-
     fetchData();
-  }, [selectedExpense])
+  }, [selectedExpense]);
 
   // Lock background scroll when modal is open
   useEffect(() => {
