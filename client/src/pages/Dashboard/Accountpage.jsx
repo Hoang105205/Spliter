@@ -27,9 +27,9 @@ function AccountPage() {
     bankName: '',
   })
 
-  useEffect(async () => {
+  useEffect(() => {
     // When the component mounts, fetch the user data
-    await setLocalData({
+    setLocalData({
       id: userData.id || '',
       username: userData.username || '',
       email: userData.email || '',
@@ -243,7 +243,7 @@ function AccountPage() {
         setEditPaymentState(false)        // exit edit mode after success
         setErrorName(false)
         setErrorNumber(false)
-        setErrorBranch(false)
+        setErrorBrand(false)
       } catch (error) {
         alert("Failed to change user's data " + error)
       }
@@ -252,7 +252,7 @@ function AccountPage() {
       setEditPaymentState(true)
       setErrorName(false)
       setErrorNumber(false)
-      setErrorBranch(false)
+      setErrorBrand(false)
       setWarningBankName("")
       setWarningBankNumber("")
       setWarningBankBrand("")
