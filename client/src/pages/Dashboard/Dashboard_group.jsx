@@ -56,7 +56,7 @@ function Dashboard_group() {
   const { friends, loading: friendsLoading, error: friendsError, fetchFriends } = useFriend();
 
   // Use expense hook
-  const { createExpense, getExpenses } = useExpense();
+  const { createExpense, getExpenses, updateExpenseItemStatus, getExpenseById } = useExpense();
 
   // Use notification hook
   const { notificationTrigger } = useNotification();
@@ -104,14 +104,9 @@ function Dashboard_group() {
   const [selectedExpense, setSelectedExpense] = useState(null); // Currently selected expense for details
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  const handleMouseEnter = (e, expense) => {
-    setMousePosition({ x: e.clientX + 10, y: e.clientY + 10 }); // add offset if needed
-    setSelectedExpense(expense);
-  };
-
-  const handleMouseLeave = () => {
-    setSelectedExpense(null);
-  };
+  // State for a specific expense item
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // Destructuring object 'expense' từ danh sách expenses
   // - id: ID duy nhất của chi tiêu (số nguyên, auto increment)
@@ -437,15 +432,16 @@ function Dashboard_group() {
                                               )?.shared_amount ?? 0);
     async function fetchData() {
       const paidMember = groupMembers.find(m => m.id === selectedExpense.paidbyId);
-      console.log(paidMember)
       if (paidMember !== null) {
         const temp = await findUser(paidMember.username)
         setPaidMemberInfo(temp);
       }
     }
 
+    
+
     fetchData();
-  }, [selectedExpense])
+  }, [selectedExpense, refreshTrigger])
 
   // Lock background scroll when modal is open
   useEffect(() => {
@@ -688,8 +684,7 @@ function Dashboard_group() {
                       New expense
                     </Button>
                   </div>
-                  <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
-                    style={{ maxHeight: "600px" }}>
+                  <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "600px" }}>
                     {expenses.length > 0 && (
                       <div className="mt-4">
                         {[...expenses].reverse().map((expense) => {
@@ -698,8 +693,10 @@ function Dashboard_group() {
                             <div
                               key={expense.id}
                               className="p-2 mb-2 rounded-[20px] bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer text-[#13183c] [font-family:'Roboto_Condensed',Helvetica] text-lg"
-                              onMouseEnter={handleMouseLeave}
-                              onClick={(e) => handleMouseEnter(e, expense)}
+                              onClick={(e) => {
+                                setSelectedExpense(expense);
+                                setMousePosition({ x: e.clientX + 10, y: e.clientY + 10 });
+                              }}
                             >
                               <p><span className="font-semibold">Title:</span> {expense.title}</p>
                               <p><span className="font-semibold">Amount:</span> {formatWithCommas(expense.amount)} ₫</p>
@@ -712,79 +709,90 @@ function Dashboard_group() {
                     )}
                   </div>
                   {selectedExpense && (
-                  <AnimatePresence>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.6 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.6 }}
-                      className="fixed bg-white p-4 rounded-[15px] shadow-xl min-w-[290px] z-50 text-gray-900 [font-family:'Roboto_Condensed',Helvetica]"
-                      style={{
-                        top: mousePosition.y > window.innerHeight / 2 ? undefined : mousePosition.y,
-                        bottom: mousePosition.y > window.innerHeight / 2 ? window.innerHeight - mousePosition.y - 5 : undefined,
-                        left: mousePosition.x - 6,
-                        transform: "translate(0, 0)",
-                      }}
-                      onMouseLeave={handleMouseLeave}
-                    >
-                      <p className="font-semibold text-gray">Description:</p>
-                      <textarea className="w-[275px] min-h-[50px] max-h-[100px] resize-none pointer-events-none focus:outline-none border-none bg-transparent">{selectedExpense.description || 'no description'}</textarea>
-                      <p className="font-semibold text-black mt-2">Members:</p>
-                      <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
-                      style={{ maxHeight: "100px" }}>
-                      {selectedExpense.items
-                        .slice()
-                        .sort((a, b) => (a.userId === ownSelf.id ? -1 : b.userId === ownSelf.id ? 1 : 0))
-                        .map((item) => {
-                          const member = groupMembers.find((m) => m.id === item.userId);
-                          return (
-                            <p key={item.id}>
-                              {member ? member.username : 'Unknown'}: {`${formatWithCommas(item.shared_amount)} ₫`}
-                              {ownSelf.id === selectedExpense.paidbyId ? ( // Chủ bill
-                                item.userId !== ownSelf.id && (
-                                  <>
-                                    {item.is_paid === 'no' && (
-                                      <span className="ml-4 text-yellow-500">Not Paid</span>
-                                    )}
-                                    {item.is_paid === 'yes' && (
-                                      <span className="ml-4 text-green-500">Paid</span>
-                                    )}
-                                    {item.is_paid === 'pending' && (
-                                      <Button
-                                        className="bg-orange-500 text-white hover:bg-orange-600 rounded-[15px] ml-4 h-[22px] text-[14px]"
-
-                                        onClick={() => {
-                                          // Handle pending payment logic here
-
-
-
-
-                                          toast.success("Confirm payment successfully!");
-                                          setShowSettleModal(false);
-                                        }}
-                                      >
-                                        Pending
-                                      </Button>
-                                    )}
-                                  </>
-                                )
-                              ) : ( // Người liên quan khác
-                                item.userId === ownSelf.id && item.is_paid === 'no' && (
-                                  <Button
-                                    className="bg-blue-500 text-white hover:bg-blue-700 rounded-[15px] ml-4 h-[22px] text-[14px]"
-                                    onClick={() => setShowSettleModal(true)}
-                                  >
-                                    Settle up
-                                  </Button>
-                                )
-                              )}
-                            </p>
-                          );
-                        })}
-                      </div>
-                      <p className="mt-3"><span className="font-semibold text-gray">Paid by:</span> {groupMembers.find(m => m.id === selectedExpense.paidbyId)?.username || 'Unknown'}</p>
-                      <p><span className="font-semibold text-gray">Due Date:</span> {new Date(selectedExpense.expDate).toLocaleDateString()}</p>
-                    </motion.div>
-                  </AnimatePresence>
+                    <AnimatePresence>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.6 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.6 }}
+                        className="fixed bg-white p-4 rounded-[15px] shadow-xl min-w-[290px] z-50 text-gray-900 [font-family:'Roboto_Condensed',Helvetica]"
+                        style={{
+                          top: mousePosition.y > window.innerHeight / 2 ? undefined : mousePosition.y,
+                          bottom: mousePosition.y > window.innerHeight / 2 ? window.innerHeight - mousePosition.y - 5 : undefined,
+                          left: mousePosition.x - 6,
+                          transform: "translate(0, 0)",
+                        }}
+                      >
+                        <button
+                          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                          onClick={() => setSelectedExpense(null)}
+                        >
+                          ✕
+                        </button>
+                        <p className="font-semibold text-gray">Description:</p>
+                        <textarea className="w-[275px] min-h-[50px] max-h-[100px] resize-none pointer-events-none focus:outline-none border-none bg-transparent">{selectedExpense.description || 'no description'}</textarea>
+                        <p className="font-semibold text-black mt-2">Members:</p>
+                        <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "100px" }}>
+                          {selectedExpense.items
+                            .slice()
+                            .sort((a, b) => (a.userId === ownSelf.id ? -1 : b.userId === ownSelf.id ? 1 : 0))
+                            .map((item) => {
+                              const member = groupMembers.find((m) => m.id === item.userId);
+                              return (
+                                <p key={item.id}>
+                                  {member ? member.username : 'Unknown'}: {`${formatWithCommas(item.shared_amount)} ₫`}
+                                  {ownSelf.id === selectedExpense.paidbyId ? (
+                                    item.userId !== ownSelf.id && (
+                                      <>
+                                        {item.is_paid === 'no' && (
+                                          <span className="ml-4 text-yellow-500">Not Paid</span>
+                                        )}
+                                        {item.is_paid === 'yes' && (
+                                          <span className="ml-4 text-green-500">Paid</span>
+                                        )}
+                                        {item.is_paid === 'pending' && (
+                                          <Button
+                                            className="bg-orange-500 text-white hover:bg-orange-600 rounded-[15px] ml-4 h-[22px] text-[14px]"
+                                            onClick={() => {
+                                              toast.success("Confirm payment successfully!");
+                                              setShowSettleModal(false);
+                                            }}
+                                          >
+                                            Pending
+                                          </Button>
+                                        )}
+                                      </>
+                                    )
+                                  ) : (
+                                    item.userId === ownSelf.id ? (
+                                      <>
+                                        {item.is_paid === 'no' && (
+                                          <Button
+                                            className="bg-blue-500 text-white hover:bg-blue-700 rounded-[15px] ml-4 h-[22px] text-[14px]"
+                                            onClick={() => {
+                                              setSelectedItem(item);
+                                              setShowSettleModal(true);
+                                            }}
+                                          >
+                                            Settle up
+                                          </Button>
+                                        )}
+                                        {item.is_paid === 'yes' && (
+                                          <span className="ml-4 text-teal-400">Settled</span>
+                                        )}
+                                        {item.is_paid === 'pending' && (
+                                          <span className="ml-4 text-gray-500">Pending</span>
+                                        )}
+                                      </>
+                                    ) : null
+                                  )}
+                                </p>
+                              );
+                            })}
+                        </div>
+                        <p className="mt-3"><span className="font-semibold text-gray">Paid by:</span> {groupMembers.find(m => m.id === selectedExpense.paidbyId)?.username || 'Unknown'}</p>
+                        <p><span className="font-semibold text-gray">Due Date:</span> {new Date(selectedExpense.expDate).toLocaleDateString()}</p>
+                      </motion.div>
+                    </AnimatePresence>
                   )}
                 </div>
               )}
@@ -809,13 +817,32 @@ function Dashboard_group() {
                     <div className="mt-auto pt-2 space-x-8">
                       <Button
                         className="bg-blue-500 text-white px-4 py-2 w-[125px] rounded-full hover:bg-blue-600 transition-colors"
-                        onClick={() => { 
-                          // Handle payment confirmation logic here
-                          
+                        onClick={async () => {
+                          try {
+                            await updateExpenseItemStatus({
+                              expenseId: selectedExpense.id,
+                              itemId: selectedItem.id,
+                              userId: ownSelf.id,
+                              status: 'pending',
+                            });
+                            const updatedExpense = await getExpenseById(selectedExpense.id);
+                            setSelectedExpense(updatedExpense);
 
-                          toast.success("Payment settled successfully!");
-                          setShowSettleModal(false);
-
+                            // Update Expenses state
+                            setExpenses((prev) => {
+                              return prev.map((exp) =>
+                                exp.id === selectedExpense.id ? updatedExpense : exp
+                              );
+                            });
+                            
+                            setSelectedItem(null);
+                            setShowSettleModal(false);
+                            setRefreshTrigger((prev) => prev + 1); // Kích hoạt lại useEffect
+                            toast.success('Payment status updated successfully!');
+                          } catch (error) {
+                            console.error('Error updating status:', error);
+                            toast.error('Failed to update payment status. Please try again.');
+                          }
                         }}
                       >
                         Confirm

@@ -667,14 +667,18 @@ async function handleCreateExpense(ws, connectedClients, payload) {
   });
 
   // Ghi nhận Activity: Tạo mới một expense
-  const GroupName = await Groups.findOne({ where: { id: groupId } });
   await logActivity({
       userId: paidbyId,
       title: 'Create Expense',
       activityType: 'expense',
-      description: `Created a new expense in group: ${GroupName.name}.`
+      description: `Created a new expense in group: ${Group.name}.`
   });
+  //
+
+
+
   
+
   // log Notification: thông báo chi phí mới
   for (const member of members) {
     // Member who not created or paid the expense

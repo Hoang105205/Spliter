@@ -92,5 +92,40 @@ export const useExpense = create(() => ({
       toast.error('Failed to fetch user expenses. Please try again.');
       return null;
     }
-  }
+  },
+
+  // Cập nhật trạng thái is_paid của một expense item
+  updateExpenseItemStatus: async ({ expenseId, itemId, userId, status }) => {
+    if (!expenseId || !itemId || !userId || !status) return null;
+
+    try {
+      const payload = {
+        expenseId,
+        itemId,
+        userId,
+        status,
+      };
+
+      const response = await api.put('/api/expenses/updateStatus', payload);
+      return response.data; // Trả về dữ liệu cập nhật (nếu cần)
+    } catch (err) {
+      console.error('Error updating expense status:', err);
+      toast.error('Failed to update expense status. Please try again.');
+      return null;
+    }
+  },
+
+  // Lấy chi tiết một expense dựa trên expenseId
+  getExpenseById: async (expenseId) => {
+    if (!expenseId) return null;
+
+    try {
+      const response = await api.get(`/api/expenses/detail/${expenseId}`); // Sử dụng endpoint mới
+      return response.data; // Trả về chi tiết expense bao gồm items từ server
+    } catch (err) {
+      console.error('Error fetching expense details:', err);
+      toast.error('Failed to fetch expense details. Please try again.');
+      return null;
+    }
+  },
 }));

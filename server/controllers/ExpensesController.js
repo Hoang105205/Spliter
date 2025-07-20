@@ -1,5 +1,4 @@
 const { Expenses, expenseItems, Groups } = require('../schemas');
-const { logActivity } = require('../services/activityService.js');
 const { Op } = require('sequelize');
 
 
@@ -183,10 +182,62 @@ const getUserExpenses = async (req, res) => {
     }
 };
 
+const updateExpenseItemStatus = async (req, res) => {
+    const { expenseId, itemId, userId, status } = req.body; // Nhận expenseId, itemId, userId và status từ client
+    try {
+        const expenseItem = await expenseItems.findOne({
+            where: {
+                id: itemId,
+                expenseId: expenseId,
+                userId: userId
+            }
+        });
+
+        if (!expenseItem) {
+            return res.status(404).json({ message: 'Expense item not found' });
+        }
+
+        // Cập nhật trạng thái is_paid
+        await expenseItem.update({ is_paid: status });
+
+        res.status(200).json({ message: 'Expense item status updated successfully', updatedItem: expenseItem });
+    } catch (error) {
+        console.error('Error updating expense item status:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Get details of a specific expense by expenseId
+const getExpensesById = async (req, res) => {
+    const expenseId = Number(req.params.id); // Ensure expenseId is a number
+    try {
+        const expense = await Expenses.findByPk(expenseId, {
+            include: [{
+                model: expenseItems,
+                as: 'items',
+                required: false
+            }],
+        });
+
+        if (!expense) {
+            return res.status(404).json({ message: 'Expense not found' });
+        }
+
+        res.status(200).json(expense);
+    } catch (error) {
+        console.error('Error fetching expense details:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+
+
 module.exports = {
     getExpenses,
     createExpense,
     getAllLend,
     getUserExpenses,
-    getAllOwe
+    getAllOwe,
+    updateExpenseItemStatus,
+    getExpensesById
 };

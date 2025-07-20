@@ -5,7 +5,9 @@ const {
     getAllLend,
     createExpense,
     getAllOwe,
-    getUserExpenses
+    getUserExpenses,
+    updateExpenseItemStatus,
+    getExpensesById
 } = require('../controllers/ExpensesController');
 
 // API: /api/expenses/
@@ -24,5 +26,11 @@ router.post('/', createExpense);
 
 // Get all expenses for a user
 router.get('/allExpenses/:userId', getUserExpenses);
+
+// Update the status of an expense item
+router.put('/updateStatus', updateExpenseItemStatus);
+
+// Get expense details by ID
+router.get('/detail/:id', getExpensesById);
 
 module.exports = router;
