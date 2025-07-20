@@ -7,7 +7,7 @@ const {
     getAllOwe,
     getUserExpenses,
     updateExpenseItemStatus,
-    getExpensesById
+    getExpensesById,
 } = require('../controllers/ExpensesController');
 
 // API: /api/expenses/
