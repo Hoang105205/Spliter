@@ -35,7 +35,7 @@ function BankAccountSetupPage() {
       bankAccountName: bankAccountName,
       bankName: bankName,
     });
-
+    setLoading(false);
     navigate('/login');
   };
 

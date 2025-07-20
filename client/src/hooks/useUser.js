@@ -29,7 +29,8 @@ export const useUser = create(
 
       addUser: async (userData) => {
         try {
-          await api.post('/api/users', userData);
+          const response = await api.post('/api/users', userData);
+          set({ userData: response.data });
         } catch (error) {
           set({ error: error.response ? error.response.data : error.message });
           throw error; // Re-throw the error to handle it in the component
