@@ -123,26 +123,18 @@ export const useUser = create(
 
       getAvatar: async (userId) => {
         try {
-          const response = await api.get(`/api/users/${userId}/avatar`, {
-            responseType: 'blob' // Ensure the response is treated as a blob
-          });
-          const imageUrl = URL.createObjectURL(response.data); // Create a local URL for the image blob
-          return imageUrl; // Return the image URL
+          const response = await api.get(`/api/users/${userId}/avatar`);
+          return response.data.avatarURL;
         } catch (error) {
+          // Handle error if avatar not found or any other issue
           if (error.response && error.response.status === 404) {
-            return null; 
+            return null; // Avatar not found
           }
           set({ error: error.response ? error.response.data : error.message });
           throw error; // Re-throw the error to handle it in the component
         }
       },
-
-      // Giải phóng object URL khi không dùng nữa để tránh memory leak
-      revokeAvatarUrl: (url) => {
-        if (url) {
-          URL.revokeObjectURL(url);
-        }
-      },
+      
     }), 
     {
       name: 'user-storage', // unique name for the storage

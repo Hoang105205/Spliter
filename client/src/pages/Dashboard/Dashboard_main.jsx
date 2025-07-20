@@ -26,7 +26,7 @@ function Dashboard_main() {
   const [friendsWithAvatars, setFriendsWithAvatars] = useState([]);
 
   // Custom hooks for user and friend management
-  const { userData, findUser, getAvatar, revokeAvatarUrl } = useUser(); // Lấy trạng thái người dùng từ hook useUser
+  const { userData, findUser, getAvatar } = useUser(); // Lấy trạng thái người dùng từ hook useUser
   const { fetchFriends, friends, deleteFriend } = useFriend();
 
   const [contextMenu, setContextMenu] = useState({
@@ -48,7 +48,6 @@ function Dashboard_main() {
 
   useEffect(() => {
     let isMounted = true;
-    const urlsToRevoke = [];
 
     const loadAvatars = async () => {
       // Lấy tất cả friends hiện tại, không chỉ newFriends
@@ -60,7 +59,6 @@ function Dashboard_main() {
           // Im lặng các lỗi, chỉ log nếu cần debug
           // console.log('Error loading avatar:', err); // Bỏ comment nếu cần debug
         }
-        if (avatarURL) urlsToRevoke.push(avatarURL);
         return { ...friend, avatarURL };
       });
 
@@ -80,9 +78,8 @@ function Dashboard_main() {
 
     return () => {
       isMounted = false;
-      urlsToRevoke.forEach((url) => revokeAvatarUrl(url));
     };
-  }, [friends, getAvatar, revokeAvatarUrl]); // Chỉ phụ thuộc vào friends
+  }, [friends, getAvatar]); // Chỉ phụ thuộc vào friends
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false)

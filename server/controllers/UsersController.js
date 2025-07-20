@@ -1,10 +1,10 @@
 const Users = require('../schemas/Users');
-
+const uploadToCloudinary = require('../lib/cloudinaryUpload');
 
 const getUsers = async (req, res) => {
     try {
         const user = await Users.findAll({ 
-            attributes: { exclude: ['password', 'avatar', 'avatar_mimetype'] } 
+            attributes: { exclude: ['password'] } 
         });
         res.status(200).json(user);
     } catch (error) {
@@ -16,7 +16,7 @@ const getSingleUser = async (req, res) => {
     try {
         const user = await Users.findOne({ 
             where: { username: req.params.username },
-            attributes: { exclude: ['password', 'avatar', 'avatar_mimetype'] } 
+            attributes: { exclude: ['password'] } 
         });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -54,7 +54,6 @@ const updateUser = async (req, res) => {
         }
         const updatedUser = await Users.findOne({ where: { id: req.params.id } });
         const { password, ...userWithoutPassword } = updatedUser.toJSON();
-        userWithoutPassword.avatarURL = updatedUser.avatar ? `${req.protocol}://${req.get('host')}/users/${userWithoutPassword.id}/avatar` : null;
         res.status(200).json(userWithoutPassword);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -109,7 +108,6 @@ const loginUser = async (req, res) => {
         }
         // Exclude password from the response
         const { password: userPassword, ...userWithoutPassword } = user.toJSON();
-        userWithoutPassword.avatarURL = user.avatar ? `${req.protocol}://${req.get('host')}/users/${userWithoutPassword.id}/avatar` : null;
         res.status(200).json(userWithoutPassword);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -119,13 +117,12 @@ const loginUser = async (req, res) => {
 const getAvatar = async (req, res) => {
     try {
         const user = await Users.findByPk(req.params.id, {
-            attributes: ['avatar', 'avatar_mimetype']
+            attributes: ['avatarURL']
         });
-        if (!user || !user.avatar) {
+        if (!user || !user.avatarURL) {
             return res.status(404).json({ message: 'Avatar not found' });
         }
-        res.set('Content-Type', user.avatar_mimetype);
-        res.send(user.avatar);
+        res.status(200).json({ avatarURL: user.avatarURL });
     }
     catch (error) {
         res.status(500).json({ message: error.message });
@@ -138,16 +135,19 @@ const updateAvatar = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        if (req.file) {
-            user.avatar = req.file.buffer;
-            user.avatar_mimetype = req.file.mimetype;
-        } else {
+        if (!req.file) {
             return res.status(400).json({ message: 'No file uploaded' });
         }
+        // Upload file lên Cloudinary
+        let avatarURL;
+        try {
+            avatarURL = await uploadToCloudinary(req.file.buffer, user.id);
+        } catch (err) {
+            return res.status(500).json({ message: 'Cloudinary upload failed', error: err.message });
+        }
+        user.avatarURL = avatarURL;
         await user.save();
-        const avatarURL = `${req.protocol}://${req.get('host')}/users/${user.id}/avatar`;
-
-        res.status(200).json({ message: 'Avatar updated successfully', avatarURL });
+        res.status(200).json({ message: 'Avatar updated successfully', avatarURL: user.avatarURL });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

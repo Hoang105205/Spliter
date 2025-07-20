@@ -44,7 +44,7 @@ function Dashboard_group() {
   });
   
   // Fetch user data
-  const { userData, findUser, getAvatar, revokeAvatarUrl } = useUser();
+  const { userData, findUser, getAvatar } = useUser();
 
   // Fetch groups that the user is a member of
   const { groups, loading, error, fetchGroups, removeMember, trigger, refreshGroups } = useGroupMember();
@@ -399,12 +399,10 @@ function Dashboard_group() {
 
     fetchMemberAvatars();
 
-    // Cleanup avatar URLs when unmount or members change
     return () => {
       isMounted = false;
-      Object.values(memberAvatars).forEach((url) => revokeAvatarUrl(url));
     };
-  }, [groupMembers, activeTab, getAvatar, revokeAvatarUrl]);
+  }, [groupMembers, activeTab, getAvatar]);
 
   // Lock background scroll when modal is open
   useEffect(() => {
@@ -441,7 +439,7 @@ function Dashboard_group() {
     
 
     fetchData();
-  }, [selectedExpense, refreshTrigger])
+  }, [selectedExpense, refreshTrigger]);
 
   // Lock background scroll when modal is open
   useEffect(() => {

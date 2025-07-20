@@ -45,7 +45,7 @@ function Head_bar(){
   const [showAllNotiModal, setShowAllNotiModal] = useState(false);
 
   // User data
-  const { clearUserData, userData, getAvatar, revokeAvatarUrl } = useUser();
+  const { clearUserData, userData, getAvatar } = useUser();
 
   //Activities data
   const { clearActivityData } = useActivity();
@@ -282,22 +282,19 @@ function Head_bar(){
 
   useEffect(() => {
     let isMounted = true;
-    let oldUrl = avatarUrl;
 
     if (userData.id) {
       getAvatar(userData.id).then((url) => {
         if (isMounted) {
           setAvatarUrl(url);
-          if (oldUrl) revokeAvatarUrl(oldUrl);
         }
       });
     }
 
     return () => {
       isMounted = false;
-      if (avatarUrl) revokeAvatarUrl(avatarUrl);
     };
-  }, [userData.id]);
+  }, [userData.id, userData.avatarURL]);
 
   // Lock scroll khi mở modal See All Notifications
   useEffect(() => {

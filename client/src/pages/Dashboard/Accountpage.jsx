@@ -11,7 +11,7 @@ import Head_bar from "../../components/ui/headbar.jsx"
 import { useUser } from '../../hooks/useUser.js'
 
 function AccountPage() {
-  const { updateUser, handleChangePassword, userData, setUserData, setAvatar, getAvatar, revokeAvatarUrl } = useUser()
+  const { updateUser, handleChangePassword, userData, setUserData, setAvatar, getAvatar } = useUser()
   const [localData, setLocalData] = useState({
     id: '',
     username: '',
@@ -86,19 +86,16 @@ function AccountPage() {
   // Lấy avatar từ backend khi userId thay đổi
   useEffect(() => {
     let isMounted = true;
-    let oldUrl = avatarUrl;
+
     if (userData.id) {
       getAvatar(userData.id).then(url => {
         if (isMounted) {
           setAvatarUrl(url)
-          // Giải phóng URL cũ nếu có
-          if (oldUrl) revokeAvatarUrl(oldUrl)
         }
       })
     }
     return () => {
       isMounted = false;
-      if (avatarUrl) revokeAvatarUrl(avatarUrl)
     }
     // eslint-disable-next-line
   }, [userData.id])
@@ -114,8 +111,6 @@ function AccountPage() {
       // Sau khi upload thành công, lấy lại avatar mới nhất
       if (userData.id) {
         const newUrl = await getAvatar(userData.id)
-        // Giải phóng URL cũ
-        if (avatarUrl) revokeAvatarUrl(avatarUrl)
         setAvatarUrl(newUrl)
       }
     } catch (error) {
