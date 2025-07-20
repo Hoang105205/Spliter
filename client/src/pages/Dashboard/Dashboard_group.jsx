@@ -1,4 +1,4 @@
-import { PlusIcon, CrownIcon } from "lucide-react";
+import { PlusIcon, CrownIcon, RefreshCwIcon } from "lucide-react";
 import { useState, useEffect, useContext } from "react";
 import { Button } from "../../components/ui/button.jsx";
 import { useNavigate } from "react-router-dom";
@@ -67,6 +67,9 @@ function Dashboard_group() {
   // Show modal settle up
   const [showSettleModal, setShowSettleModal] = useState(false);
 
+  // Show modal confirm settle up
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
   // NEW EXPENSE TAB:
   // State variable
   const [searchLoading, setLoading] = useState(false);
@@ -107,6 +110,7 @@ function Dashboard_group() {
   // State for a specific expense item
   const [selectedItem, setSelectedItem] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isReloading, setIsReloading] = useState(false);
   
   // Destructuring object 'expense' từ danh sách expenses
   // - id: ID duy nhất của chi tiêu (số nguyên, auto increment)
@@ -665,22 +669,56 @@ function Dashboard_group() {
             <Left_bar activeTab={activeTab} setActiveTab={setActiveTab} onGroupSelect={setSelectedGroup} />
 
             {/* Main Content Area */}
-            <main className="flex-1 px-4">
+            <motion.main
+              className="flex-1 px-4"
+              initial={{ opacity: 1 }}
+              animate={{ opacity: isReloading ? 0.3 : 1 }} // Fade ra khi reload, fade vào khi hoàn tất
+              transition={{ duration: 0.5 }}
+            >
               {activeTab === 'group' && selectedGroup && (
                 <div className="mt-4">
                   <div className="flex justify-between items-center w-full mb-4">
                     <h2 className="[font-family:'Roboto',Helvetica] text-3xl font-bold text-[#193865]">
                       {selectedGroup.name}
                     </h2>
-                    <Button
-                      className="h-[50px] bg-[#ed5050] hover:bg-[#ed5050]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-2xl"
-                      onClick={() => {
-                        setShowExpenseModal(true);
-                        setSelectedDate(new Date());
-                      }}
-                    >
-                      New expense
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button
+                        className="h-[50px] bg-[#ed5050] hover:bg-[#ed5050]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-2xl"
+                        onClick={() => {
+                          setShowExpenseModal(true);
+                          setSelectedDate(new Date());
+                        }}
+                      >
+                        New expense
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-[50px] text-gray-600 hover:text-gray-800"
+                        onClick={async () => {
+                          setIsReloading(true); // Bắt đầu hiệu ứng reload
+                          try {
+                            const expenses = await getExpenses(selectedGroup.id);
+                            if (expenses) {
+                              setExpenses(expenses);
+                              toast.success('Expenses refreshed successfully!');
+                            }
+                          } catch (error) {
+                            console.error('Error refreshing expenses:', error);
+                            toast.error('Failed to refresh expenses. Please try again.');
+                          } finally {
+                            setIsReloading(false); // Kết thúc hiệu ứng reload
+                          }
+                        }}
+                      >
+                        <motion.div
+                          animate={{ rotate: isReloading ? 360 : 0 }} // Quay icon khi reload
+                          transition={{ duration: 1, repeat: isReloading ? Infinity : 0, ease: "linear" }}
+                        >
+                          <RefreshCwIcon className="w-6 h-6" />
+                        </motion.div>
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "600px" }}>
                     {expenses.length > 0 && (
@@ -751,13 +789,13 @@ function Dashboard_group() {
                                           <Button
                                             className="bg-orange-500 text-white hover:bg-orange-600 rounded-[15px] ml-4 h-[22px] text-[14px]"
                                             onClick={() => {
-                                              toast.success("Confirm payment successfully!");
-                                              setShowSettleModal(false);
+                                              setSelectedItem(item); // Đặt item để cập nhật trạng thái
+                                              setShowConfirmModal(true);
                                             }}
                                           >
                                             Pending
                                           </Button>
-                                        )}
+                                          )}
                                       </>
                                     )
                                   ) : (
@@ -795,6 +833,8 @@ function Dashboard_group() {
                 </div>
               )}
 
+
+            {/* Settle up Modal */}
             <AnimatePresence>
               {showSettleModal && (
                 <motion.div
@@ -854,11 +894,97 @@ function Dashboard_group() {
                     </div>  
                   </div>
                 </motion.div>
-              )}
-            </AnimatePresence>
+                )}
+              </AnimatePresence>
+
+
+              {/* Confirm Modal */}
+              <AnimatePresence>
+                {showConfirmModal && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]"
+                  >
+                    <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] flex flex-col text-gray-900">
+                      <h2 className="text-xl font-bold mb-4">Confirm Payment Status</h2>
+                      <p>Has {groupMembers.find(m => m.id === selectedItem.userId)?.username || 'Unknown'} paid their share?</p>
+                      <div className="mt-6 space-x-4">
+                        <Button
+                          className="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors"
+                          onClick={async () => {
+                            try {
+                              if (selectedItem && ownSelf.id === selectedExpense.paidbyId) {
+                                await updateExpenseItemStatus({
+                                  expenseId: selectedExpense.id,
+                                  itemId: selectedItem.id,
+                                  userId: selectedItem.userId,
+                                  status: 'yes',
+                                });
+                                const updatedExpense = await getExpenseById(selectedExpense.id);
+                                setSelectedExpense(updatedExpense);
+                                setExpenses((prev) =>
+                                  prev.map((exp) =>
+                                    exp.id === selectedExpense.id ? updatedExpense : exp
+                                  )
+                                );
+                                setShowConfirmModal(false);
+                                setRefreshTrigger((prev) => prev + 1);
+                                toast.success('Payment status updated to "Paid" successfully!');
+                              }
+                            } catch (error) {
+                              console.error('Error updating status:', error);
+                              toast.error('Failed to update payment status. Please try again.');
+                            }
+                          }}
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          className="bg-yellow-500 text-white px-4 py-2 rounded-full hover:bg-yellow-600 transition-colors"
+                          onClick={async () => {
+                            try {
+                              if (selectedItem && ownSelf.id === selectedExpense.paidbyId) {
+                                await updateExpenseItemStatus({
+                                  expenseId: selectedExpense.id,
+                                  itemId: selectedItem.id,
+                                  userId: selectedItem.userId,
+                                  status: 'no',
+                                });
+                                const updatedExpense = await getExpenseById(selectedExpense.id);
+                                setSelectedExpense(updatedExpense);
+                                setExpenses((prev) =>
+                                  prev.map((exp) =>
+                                    exp.id === selectedExpense.id ? updatedExpense : exp
+                                  )
+                                );
+                                setShowConfirmModal(false);
+                                setRefreshTrigger((prev) => prev + 1);
+                                toast.info('Payment status updated to "Not Paid" successfully!');
+                              }
+                            } catch (error) {
+                              console.error('Error updating status:', error);
+                              toast.error('Failed to update payment status. Please try again.');
+                            }
+                          }}
+                        >
+                          No
+                        </Button>
+                        <Button
+                          className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
+                          onClick={() => setShowConfirmModal(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Hiển thị chung chung ở đây khi không có nhóm được chọn và activeTab là "group" */}
-            </main>
+            </motion.main>
 
 
             {/* Right Sidebar - Only show when group is selected */}

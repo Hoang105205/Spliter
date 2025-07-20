@@ -654,18 +654,6 @@ async function handleCreateExpense(ws, connectedClients, payload) {
   const paidUser = await Users.findOne({ where: { id: paidbyId } });
   const createdbyUser = await Users.findOne({ where: { id: createdbyId } });
 
-
-  // server terminal debug
-  console.log("Received CREATE_EXPENSE request:", {
-    expenseId,
-    groupId,
-    paidbyId,
-    createdbyId,
-    members,
-    amount,
-    title
-  });
-
   // Ghi nhận Activity: Tạo mới một expense
   await logActivity({
       userId: paidbyId,
