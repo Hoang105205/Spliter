@@ -109,44 +109,53 @@ const getAllLend = async (req, res) => {
     }
 };
 
-//Get all amount of owe for a user, group by month, và trả về unPaidOwe tổng
+// Get all amount of owe for a user
 const getAllOwe = async (req, res) => {
     const userId = Number(req.params.userId); // Ensure userId is a number
     try {
-        const expenses = await Expenses.findAll({
-            where: {
-                paidbyId: { [Op.ne]: userId } // paidbyId khác với userId
-            },
-            include: [{
-                model: expenseItems,
-                as: 'items',
-                required: false
-            }],
+        // Lấy tất cả expenseItem của user này
+        const items = await expenseItems.findAll({
+            where: { userId }
         });
 
-        // Object lưu tổng owe từng tháng: { '07/2025': số tiền, ... }
+        // Lọc ra các expenseId mà user tham gia
+        const expenseIds = items.map(item => item.expenseId);
+
+        if (expenseIds.length === 0) {
+            return res.status(200).json({ monthlyOwe: {}, unPaidOwe: 0 });
+        }
+
+        // Lấy các Expense theo danh sách expenseId, paidbyId khác userId
+        const expenses = await Expenses.findAll({
+            where: {
+                id: expenseIds,
+                paidbyId: { [Op.ne]: userId }
+            }
+        });
+
+        //Build lookup Expense theo id để truy nhanh
+        const expenseMap = {};
+        expenses.forEach(expense => {
+            expenseMap[expense.id] = expense;
+        });
+
+        //Tính toán tổng hợp
         const monthlyOwe = {};
         let unPaidOwe = 0;
 
-        expenses.forEach(expense => {
+        items.forEach(item => {
+            const expense = expenseMap[item.expenseId];
+            if (!expense) return; // Nếu expense không phải của user (do paidbyId lọc ở trên)
+
             const date = expense.createdAt;
             const d = new Date(date);
             const monthKey = `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 
-            let oweInExpense = 0;
+            monthlyOwe[monthKey] = (monthlyOwe[monthKey] || 0) + Number(item.shared_amount || 0);
 
-            if (expense.items && expense.items.length > 0) {
-                expense.items.forEach(item => {
-                    if (item.userId === userId) {
-                        oweInExpense += Number(item.shared_amount || 0);
-                    }
-                    else if (item.is_paid === 'no') {
-                        unPaidOwe += Number(item.shared_amount || 0);
-                    }
-                });
+            if (item.is_paid === 'no' || item.is_paid === 'pending') {
+                unPaidOwe += Number(item.shared_amount || 0);
             }
-
-            monthlyOwe[monthKey] = (monthlyOwe[monthKey] || 0) + oweInExpense;
         });
 
         res.status(200).json({ 
@@ -154,7 +163,7 @@ const getAllOwe = async (req, res) => {
             unPaidOwe      // Tổng số tiền nợ chưa trả
         });
     } catch (error) {
-        console.error('Error fetching expenses:', error);
+        console.error('Error fetching owe items:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
