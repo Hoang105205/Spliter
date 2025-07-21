@@ -83,7 +83,7 @@ const getAllLend = async (req, res) => {
                     if (item.userId === userId) {
                         totalPaidbyAmount += Number(item.shared_amount || 0);
                     }
-                    else if (item.is_paid === 'no') {
+                    else if (item.is_paid === 'no' || item.is_paid === 'pending') {
                         unpaidLend += Number(item.shared_amount || 0);
                     }
                 });
