@@ -440,8 +440,6 @@ function Dashboard_group() {
       }
     }
 
-    
-
     fetchData();
   }, [selectedExpense, refreshTrigger]);
 
@@ -667,7 +665,16 @@ function Dashboard_group() {
           <div className="flex mt-4">
             {/* Left Sidebar */}
             <Left_bar activeTab={activeTab} setActiveTab={setActiveTab} onGroupSelect={setSelectedGroup} />
-
+            {!selectedGroup && (
+              <div className="mt-6 mx-8">
+                <div className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-blue-900 text-[25px] flex justify-between items-center w-full mb-4">
+                  Please join or select a group to get started.
+                </div>
+                <div className="[font-family:'Roboto_Condensed',Helvetica] text-gray-900 text-[22px] flex justify-between items-center w-full mb-4">
+                  No groups yet? Click the + button to create your first group!
+                </div>
+              </div>
+            )}
             {/* Main Content Area */}
             <motion.main
               className="flex-1 px-4"
@@ -1042,6 +1049,10 @@ function Dashboard_group() {
                   )}
                 </div>
               </aside>
+            )}
+
+            {!selectedGroup && (
+              <aside className="w-[269px] h-screen pl-4 border-l-4 border-[#4A73A8]"/>
             )}
 
             {/* Context Menu for Kick Member */}
