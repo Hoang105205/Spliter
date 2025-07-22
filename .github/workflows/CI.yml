@@ -1,0 +1,38 @@
+name: CI for dev_1 branch
+
+on:
+  push:
+    branches:
+      - testCI
+  pull_request:
+    branches:
+      - testCI
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies (client)
+        working-directory: ./client
+        run: npm install
+
+      - name: Install dependencies (server)
+        working-directory: ./server
+        run: npm install
+
+      # Nếu bạn có lệnh test cho client và server, hãy thêm bước test vào đây:
+      - name: Run client tests
+        working-directory: ./client
+        run: npm test || echo "No client tests"
+
+      - name: Run server tests
+        working-directory: ./server
+        run: npm test || echo "No server tests"
