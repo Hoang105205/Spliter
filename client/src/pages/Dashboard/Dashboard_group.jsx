@@ -671,7 +671,11 @@ function Dashboard_group() {
                   Please join or select a group to get started.
                 </div>
                 <div className="[font-family:'Roboto_Condensed',Helvetica] text-gray-900 text-[22px] flex justify-between items-center w-full mb-4">
-                  No groups yet? Click the + button to create your first group!
+                  No groups yet? Click {" "}
+                  <span className="w-10 h-10 rounded-full bg-[#cccccc]/50 flex items-center justify-center text-[#5a96f0] mx-2">
+                    <PlusIcon className="w-5 h-5" />
+                  </span>{" "}
+                  button to create your first group!
                 </div>
               </div>
             )}
