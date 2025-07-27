@@ -109,23 +109,39 @@ const getAllLend = async (req, res) => {
     }
 };
 
+<<<<<<< HEAD
 // Get all amount of owe for a user, group by month, và trả về unPaidOwe tổng (tối ưu: lọc expenseItems trước, lấy expense theo expenseId)
 const getAllOwe = async (req, res) => {
     const userId = Number(req.params.userId); // Ensure userId is a number
     try {
         //Lấy tất cả expenseItem của user này
+=======
+// Get all amount of owe for a user
+const getAllOwe = async (req, res) => {
+    const userId = Number(req.params.userId); // Ensure userId is a number
+    try {
+        // Lấy tất cả expenseItem của user này
+>>>>>>> origin/master
         const items = await expenseItems.findAll({
             where: { userId }
         });
 
+<<<<<<< HEAD
         //Lọc ra các expenseId mà user tham gia
+=======
+        // Lọc ra các expenseId mà user tham gia
+>>>>>>> origin/master
         const expenseIds = items.map(item => item.expenseId);
 
         if (expenseIds.length === 0) {
             return res.status(200).json({ monthlyOwe: {}, unPaidOwe: 0 });
         }
 
+<<<<<<< HEAD
         //Lấy các Expense theo danh sách expenseId, paidbyId khác userId
+=======
+        // Lấy các Expense theo danh sách expenseId, paidbyId khác userId
+>>>>>>> origin/master
         const expenses = await Expenses.findAll({
             where: {
                 id: expenseIds,
@@ -133,13 +149,21 @@ const getAllOwe = async (req, res) => {
             }
         });
 
+<<<<<<< HEAD
         // Build lookup Expense theo id để truy nhanh
+=======
+        //Build lookup Expense theo id để truy nhanh
+>>>>>>> origin/master
         const expenseMap = {};
         expenses.forEach(expense => {
             expenseMap[expense.id] = expense;
         });
 
+<<<<<<< HEAD
         // Tính toán tổng hợp
+=======
+        //Tính toán tổng hợp
+>>>>>>> origin/master
         const monthlyOwe = {};
         let unPaidOwe = 0;
 

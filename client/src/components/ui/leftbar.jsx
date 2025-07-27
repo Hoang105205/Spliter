@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { Button } from "../../components/ui/button.jsx";
 import { useNavigate } from "react-router-dom";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, Home, Calendar, BarChart2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 // Import custom hooks
@@ -90,9 +90,10 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
               : ""
           } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
             activeTab === "dashboard" ? "text-[#5a96f0]" : "text-[#193865]"
-          }`}
+          } `}
           onClick={() => handleClick("dashboard", `/dashboard/${userData.id}`)}
         >
+          <Home className="w-6 h-6 mr-2 inline-block" /> {/* Logo cho Dashboard */}
           Dashboard
         </div>
 
@@ -104,9 +105,10 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
               : ""
           } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
             activeTab === "activities" ? "text-[#5a96f0]" : "text-[#193865]"
-          }`}
+          } `}
           onClick={() => handleClick("activities", `/dashboard/${userData.id}/activities`)}
         >
+          <Calendar className="w-6 h-6 mr-2 inline-block" /> {/* Logo cho Activities */}
           Activities
         </div>
 
@@ -118,9 +120,10 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
               : ""
           } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
             activeTab === "statistics" ? "text-[#5a96f0]" : "text-[#193865]"
-          }`}
+          } `}
           onClick={() => handleClick("statistics", `/dashboard/${userData.id}/statistics`)}
         >
+          <BarChart2 className="w-6 h-6 mr-2 inline-block" /> {/* Logo cho Statistics */}
           Statistics
         </div>
 
@@ -132,9 +135,10 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
               : ""
           } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
             activeTab === "group" ? "text-[#5a96f0]" : "text-[#193865]"
-          }`}
+          } `}
           onClick={() => handleClick("group", `/dashboard/${userData.id}/group`)}
         >
+          <Users className="w-6 h-6 mr-2 inline-block" /> {/* Logo cho Your Group */}
           Your group
         </div>
       </nav>
