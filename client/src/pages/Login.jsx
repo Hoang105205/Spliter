@@ -55,10 +55,15 @@ function Login() {
     try {
       const user = await login(username, password);
       setLoading(false);
-      if (!user.bankAccountNumber || !user.bankAccountName || !user.bankName) { // Check if user has bank info
-        navigate('/setup-bank');
-      } else {
-        navigate(`/dashboard/${user.id}`);
+      if (user.role === 'admin') {
+        navigate(`/admin/dashboard/${user.id}`);
+        
+      } else if (user.role === 'user') {
+        if (!user.bankAccountNumber || !user.bankAccountName || !user.bankName) { // Check if user has bank info
+          navigate('/setup-bank');
+        } else {
+          navigate(`/dashboard/${user.id}`);
+        }
       }
     } catch (error) {
       setLoading(false);
