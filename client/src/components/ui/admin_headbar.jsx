@@ -1,11 +1,11 @@
 import { BellIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
 import { useState, useRef, useEffect, useContext } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar.jsx";
-import { Button } from "../../components/ui/button.jsx";
-import { Separator } from "../../components/ui/seperator.jsx";
+import { Avatar, AvatarFallback, AvatarImage } from "./avatar.jsx";
+import { Button } from "./button.jsx";
+import { Separator } from "./seperator.jsx";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import Report from "../../components/popup/report.jsx";
+import Report from "../popup/report.jsx";
 
 // API
 import { useUser } from '../../hooks/useUser.js';
@@ -23,7 +23,7 @@ const accountScroll = [
   { title: "Logout" },
 ];
 
-function Main_head_bar(){
+function Admin_head_bar(){
 
   const navigate = useNavigate();
   
@@ -395,9 +395,7 @@ function Main_head_bar(){
                       className="px-4 py-2 border-b hover:bg-gray-100 text-[20px] text-gray-800 text-center cursor-pointer"
                       onClick={() => {
                         if (accScr.title === "Account") {
-                          navigate(`/dashboard/${userData.id}/account`);
-                        } else if (accScr.title === "Report") {
-                          setShowReportPopup(true);
+                          navigate(`/admin/dashboard/${userData.id}/account`);
                         } else if (accScr.title === "Logout") {
                           setShowLogoutModal(true);
                           setShowAccountScrolldown(false);
@@ -573,4 +571,4 @@ function Main_head_bar(){
   );
 }
 
-export default Main_head_bar;
+export default Admin_head_bar;

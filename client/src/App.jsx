@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import BankAccountSetupPage from './pages/BankAccountSetupPage';
 import AccountPage from './pages/Dashboard/Accountpage';
+import Admin_accountPage from './pages/Admin/Admin_accountpage';
 import Dashboard_main from './pages/Dashboard/Dashboard_main';
 import Dashboard_activities from './pages/Dashboard/Dashboard_activities';
 import Dashboard_group from './pages/Dashboard/Dashboard_group';
@@ -100,7 +101,14 @@ function App() {
                   </ProtectedLayout>
                 } 
               />
-              
+              <Route
+                path="/admin/dashboard/:id/account"
+                element={
+                  <ProtectedLayout>
+                    <Admin_accountPage />
+                  </ProtectedLayout>
+                }
+              />
               {/* Thêm các route admin khác nếu cần */}
             </>
           )}
