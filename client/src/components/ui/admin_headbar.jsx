@@ -1,4 +1,4 @@
-import { BellIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
+import { BellIcon, ChevronDownIcon, PlusIcon, Camera, PencilIcon } from "lucide-react";
 import { useState, useRef, useEffect, useContext } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar.jsx";
 import { Button } from "./button.jsx";
@@ -6,6 +6,7 @@ import { Separator } from "./seperator.jsx";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Report from "../popup/report.jsx";
+import InputFile from "./inputfile.jsx";
 
 // API
 import { useUser } from '../../hooks/useUser.js';
@@ -43,8 +44,15 @@ function Admin_head_bar(){
   // State cho modal xem tất cả notification
   const [showAllNotiModal, setShowAllNotiModal] = useState(false);
 
+  // State cho popup account
+  const [showAccountPopup, setShowAccountPopup] = useState(false);
+  const [editPassword, setEditPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showAvatarPopup, setShowAvatarPopup] = useState(false);
+
   // User data
-  const { clearUserData, userData, getAvatar } = useUser();
+  const { clearUserData, userData, getAvatar, handleChangePassword, setAvatar } = useUser();
 
   //Activities data
   const { clearActivityData } = useActivity();
@@ -140,7 +148,7 @@ function Admin_head_bar(){
   };
 
   const handleLogoClick = () => {
-    navigate(`/dashboard/${userData.id}`);
+    navigate(`/admin/dashboard/${userData.id}`);
   };
 
 
@@ -307,6 +315,58 @@ function Admin_head_bar(){
     };
   }, [showAllNotiModal]);
 
+  // Lock scroll khi mở popup account
+  useEffect(() => {
+    if (showAccountPopup) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showAccountPopup]);
+
+  // Handle account popup functions
+  const handlePasswordChange = async () => {
+    if (editPassword) {
+      // Save password changes
+      try {
+        const result = await handleChangePassword(currentPassword, newPassword);
+        if (result.success) {
+          setEditPassword(false);
+          setCurrentPassword("");
+          setNewPassword("");
+        }
+      } catch (error) {
+        console.error("Failed to change password:", error);
+      }
+    } else {
+      // Start editing password
+      setEditPassword(true);
+    }
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      console.error("No file selected");
+      return;
+    }
+
+    try {
+      await setAvatar(file);
+      // Sau khi upload thành công, lấy lại avatar mới nhất
+      if (userData.id) {
+        const newUrl = await getAvatar(userData.id);
+        setAvatarUrl(newUrl);
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Failed to upload image: " + error.message);
+    }
+  };
+
   return(
     <>
       {/* Header */}
@@ -395,7 +455,8 @@ function Admin_head_bar(){
                       className="px-4 py-2 border-b hover:bg-gray-100 text-[20px] text-gray-800 text-center cursor-pointer"
                       onClick={() => {
                         if (accScr.title === "Account") {
-                          navigate(`/admin/dashboard/${userData.id}/account`);
+                          setShowAccountPopup(true);
+                          setShowAccountScrolldown(false);
                         } else if (accScr.title === "Logout") {
                           setShowLogoutModal(true);
                           setShowAccountScrolldown(false);
@@ -411,6 +472,164 @@ function Admin_head_bar(){
           </div>
         </div>
       </header>
+
+      {/* Account Popup */}
+      <AnimatePresence>
+        {showAccountPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[999]"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowAccountPopup(false);
+                setEditPassword(false);
+                setCurrentPassword("");
+                setNewPassword("");
+                setShowAvatarPopup(false);
+              }
+            }}
+          >
+            <div className="bg-white p-6 rounded-[20px] shadow-lg w-[700px] h-[550px] flex flex-col">
+              <h2 className="text-2xl font-bold mb-6 text-center">Account Information</h2>
+              
+              <div className="flex-1 flex">
+                {/* Left side - Avatar */}
+                <div className="flex flex-col items-center w-[250px] pr-6">
+                  <div className="relative w-[150px] h-[150px] mb-4">
+                    <Avatar className="w-full h-full bg-[#d9d9d9]">
+                      <AvatarImage src={avatarUrl || userData.avatarURL} />
+                      <AvatarFallback />
+                    </Avatar>
+                    
+                    <button
+                      onClick={() => setShowAvatarPopup(true)}
+                      className="absolute bottom-2 right-2 bg-white hover:bg-gray-100 
+                                border border-gray-300 rounded-full p-2 shadow-md cursor-pointer">
+                      <Camera className="w-5 h-5 text-gray-600" />
+                    </button>
+
+                    {showAvatarPopup && (
+                      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000]">
+                        <div className="bg-white rounded-xl p-6 shadow-xl space-y-4 w-[320px] h-auto flex flex-col">
+                          <h2 className="font-bold text-lg text-center">Change Avatar</h2>
+                          <div className="flex flex-row items-center justify-center gap-3">
+                            <div className="[&_label]:!text-sm [&_label]:!px-3 [&_label]:!py-2 [&_label]:!h-10">
+                              <InputFile
+                                onChange={async (e) => {
+                                  await handleImageChange(e);
+                                  setShowAvatarPopup(false);
+                                }}
+                                label="Upload image"
+                              />
+                            </div>
+                            <button
+                              onClick={() => setShowAvatarPopup(false)}
+                              className="w-[90px] h-10 rounded-full bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors 
+                                        duration-200 border border-transparent hover:border-white">
+                              <span className="text-white font-medium text-sm">
+                                Cancel
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right side - Account Info */}
+                <div className="flex-1 space-y-6">
+                  {/* Username - Read only */}
+                  <div className="space-y-2">
+                    <label className="block text-lg font-semibold text-gray-700">Username</label>
+                    <p className="text-gray-600 text-lg">{userData.username}</p>
+                  </div>
+
+                  {/* Email - Read only */}
+                  <div className="space-y-2">
+                    <label className="block text-lg font-semibold text-gray-700">Email</label>
+                    <p className="text-gray-600 text-lg">{userData.email}</p>
+                  </div>
+
+                  {/* Password Section */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-start">
+                      <label className="block text-lg font-semibold text-gray-700">Password</label>
+                      {!editPassword && (
+                        <button
+                          onClick={handlePasswordChange}
+                          className="flex items-center text-blue-500 hover:text-blue-700 ml-[120px]"
+                        >
+                          <PencilIcon className="w-4 h-4 mr-1" />
+                          Change Password
+                        </button>
+                      )}
+                    </div>
+                    
+                    {!editPassword ? (
+                      <p className="text-gray-600 text-lg">••••••••••••</p>
+                    ) : (
+                      <div className="space-y-3">
+                        <input
+                          type="password"
+                          placeholder="Current password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                        <input
+                          type="password"
+                          placeholder="New password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                        <div className="flex gap-3">
+                          <Button 
+                            onClick={handlePasswordChange}
+                            className="w-[100px] h-9 rounded-full bg-[#5a96f0] hover:bg-[#4a86e0] text-white"
+                          >
+                            Save
+                          </Button>
+                          <Button 
+                            onClick={() => {
+                              setEditPassword(false);
+                              setCurrentPassword("");
+                              setNewPassword("");
+                              setShowAvatarPopup(false);
+                            }}
+                            className="w-[100px] h-9 rounded-full bg-gray-500 hover:bg-gray-600 text-white"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <div className="flex justify-center mt-6">
+                <Button 
+                  onClick={() => {
+                    setShowAccountPopup(false);
+                    setEditPassword(false);
+                    setCurrentPassword("");
+                    setNewPassword("");
+                    setShowAvatarPopup(false);
+                  }}
+                  className="w-[120px] h-10 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-700"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Logout Modal */}
       <AnimatePresence>

@@ -5,7 +5,7 @@ import Admin_head_bar from "../../components/ui/admin_headbar.jsx";
 import Admin_left_bar from "../../components/ui/admin_leftbar.jsx";
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("homeboard");
 
   return (
     <div className="bg-white flex flex-row justify-center w-full min-h-screen">
