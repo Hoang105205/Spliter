@@ -7,8 +7,8 @@ import UserTable from "../../components/ui/user_table.jsx";
 import GroupTable from "../../components/ui/group_table.jsx";
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
   const [tab, setTab] = useState("users");
+  const [activeTab, setActiveTab] = useState("homeboard");
 
   return (
     <div className="bg-white flex flex-row justify-center w-full min-h-screen">
