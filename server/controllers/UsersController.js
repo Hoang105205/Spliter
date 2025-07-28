@@ -4,7 +4,8 @@ const uploadToCloudinary = require('../lib/cloudinaryUpload');
 const getUsers = async (req, res) => {
     try {
         const user = await Users.findAll({ 
-            attributes: { exclude: ['password'] } 
+            attributes: { exclude: ['password'] }, 
+            where: { role: 'user' } // Assuming you want to get only users, not admins
         });
         res.status(200).json(user);
     } catch (error) {

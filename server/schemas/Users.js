@@ -65,6 +65,14 @@ const Users = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
       defaultValue: null,
+    },
+    status: {
+      type: DataTypes.ENUM('Unbanned', 'Banned'),
+      allowNull: false,
+      defaultValue: 'Unbanned',
+      validate: {
+        isIn: [['Unbanned', 'Banned']],
+      }
     }
   }, 
   {

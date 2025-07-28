@@ -1,59 +1,38 @@
 import React, { useState, useEffect } from "react";
+import { useUser } from "../../hooks/useUser";
 
-const customersData = [
-  { id: 1, username: "Smith", email: "smith@example.com", phone: "123-456-7890", status: "Unbanned" },
-  { id: 2, username: "Bob", email: "bob@example.com", phone: "234-567-8901", status: "Banned" },
-  { id: 3, username: "Alice", email: "alice@example.com", phone: "345-678-9012", status: "Unbanned" },
-  { id: 4, username: "John", email: "john@example.com", phone: "456-789-0123", status: "Unbanned" },
-  { id: 5, username: "Jane", email: "jane@example.com", phone: "567-890-1234", status: "Unbanned" },
-  { id: 6, username: "Emily", email: "emily@example.com", phone: "678-901-2345", status: "Unbanned" },
-  { id: 7, username: "Michael", email: "michael@example.com", phone: "789-012-3456", status: "Unbanned" },
-  { id: 8, username: "Sarah", email: "sarah@example.com", phone: "890-123-4567", status: "Unbanned" },
-  { id: 9, username: "David", email: "david@example.com", phone: "901-234-5678", status: "Unbanned" },
-  { id: 10, username: "Laura", email: "laura@example.com", phone: "012-345-6789", status: "Unbanned" },
-  { id: 11, username: "Chris", email: "chris@example.com", phone: "123-456-7890", status: "Unbanned" },
-  { id: 12, username: "Jessica", email: "jessica@example.com", phone: "234-567-8901", status: "Unbanned" },
-  { id: 13, username: "Tom", email: "tom@example.com", phone: "345-678-9012", status: "Unbanned" },
-  { id: 14, username: "Lisa", email: "lisa@example.com", phone: "456-789-0123", status: "Unbanned" },
-  { id: 15, username: "Kevin", email: "kevin@example.com", phone: "567-890-1234", status: "Unbanned" },
-  { id: 16, username: "Rachel", email: "rachel@example.com", phone: "678-901-2345", status: "Unbanned" },
-  { id: 17, username: "Daniel", email: "daniel@example.com", phone: "789-012-3456", status: "Unbanned" },
-  { id: 18, username: "Olivia", email: "olivia@example.com", phone: "890-123-4567", status: "Unbanned" },
-  { id: 19, username: "James", email: "james@example.com", phone: "901-234-5678", status: "Unbanned" },
-  { id: 20, username: "Emma", email: "emma@example.com", phone: "012-345-6789", status: "Unbanned" },
-  { id: 21, username: "George", email: "george@example.com", phone: "123-456-7890", status: "Unbanned" }
-];
-
-export default function CustomerTable() {
+export default function UserTable() {
   const [search, setSearch] = useState("");
+  const [customersData, setCustomersData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
   // Local state for each user's status
-  const [userStatus, setUserStatus] = useState(() => {
-    const map = {};
-    customersData.forEach(c => { map[c.id] = c.status; });
-    return map;
-  });
+  const [userStatus, setUserStatus] = useState({});
+  const { findAllUsers, updateStatus } = useUser();
 
-  // Sync userStatus with customersData (handle new users)
+  // Fetch all users on mount
   useEffect(() => {
-    setUserStatus(prev => {
-      const updated = { ...prev };
-      let changed = false;
-      customersData.forEach(c => {
-        if (!(c.id in updated)) {
-          updated[c.id] = c.status || "Unbanned";
-          changed = true;
-        }
-      });
-      // Remove users that no longer exist
-      Object.keys(updated).forEach(id => {
-        if (!customersData.find(c => c.id === Number(id))) {
-          delete updated[id];
-          changed = true;
-        }
-      });
-      return changed ? updated : prev;
-    });
-  }, [customersData.length]);
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const users = await findAllUsers();
+        setCustomersData(users);
+        
+        // Set user status from fetched data
+        const statusMap = {};
+        users.forEach(user => {
+          statusMap[user.id] = user.status || "Unbanned";
+        });
+        setUserStatus(statusMap);
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, [findAllUsers]);
+
   // Checkbox state
   const [selected, setSelected] = useState([]);
 
@@ -62,6 +41,8 @@ export default function CustomerTable() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
+  // State for expanded user row
+  const [expandedUserId, setExpandedUserId] = useState(null);
 
   // Sort state
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'asc' });
@@ -104,6 +85,7 @@ export default function CustomerTable() {
       }
     });
     setPage(1);
+    setExpandedUserId(null); // Close expanded details
   };
 
   const isAllSelected = selected.length === paginatedCustomers.length && paginatedCustomers.length > 0;
@@ -114,16 +96,35 @@ export default function CustomerTable() {
     } else {
       setSelected([]);
     }
+    setExpandedUserId(null); // Close expanded details
   };
   const handleSelectRow = (id) => {
     setSelected(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    setExpandedUserId(null); // Close expanded details
   };
 
-  const handleToggleStatus = (id) => {
-    setUserStatus(prev => ({
-      ...prev,
-      [id]: prev[id] === "Banned" ? "Unbanned" : "Banned"
-    }));
+  // Toggle expanded row
+  const handleExpandRow = (id) => {
+    setExpandedUserId(prev => (prev === id ? null : id));
+  };
+
+  const handleToggleStatus = async (id) => {
+    try {
+      const currentStatus = userStatus[id];
+      const newStatus = currentStatus === "Banned" ? "Unbanned" : "Banned";
+      
+      // Update user status via API
+      await updateStatus(id, newStatus);
+      
+      // Update local state if API call successful
+      setUserStatus(prev => ({
+        ...prev,
+        [id]: newStatus
+      }));
+    } catch (error) {
+      console.error("Failed to update user status:", error);
+      // You can add a toast notification here if needed
+    }
   };
 
   // Animation state for notification bar
@@ -145,19 +146,78 @@ export default function CustomerTable() {
   }, [selected.length]);
 
   // Ban selected users
-  const handleBanSelected = () => {
-    setUserStatus(prev => {
-      const updated = { ...prev };
-      selected.forEach(id => {
-        updated[id] = "Banned";
+  const handleBanSelected = async () => {
+    try {
+      // Filter selected users that are currently unbanned
+      const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
+      
+      // Update each user via API
+      await Promise.all(
+        usersToBan.map(id => updateStatus(id, "Banned"))
+      );
+      
+      // Update local state if all API calls successful
+      setUserStatus(prev => {
+        const updated = { ...prev };
+        usersToBan.forEach(id => {
+          updated[id] = "Banned";
+        });
+        return updated;
       });
-      return updated;
-    });
-    setSelected([]);
+      
+      setSelected([]);
+      setExpandedUserId(null); // Close expanded details
+    } catch (error) {
+      console.error("Failed to ban selected users:", error);
+      // You can add a toast notification here if needed
+    }
   };
+
+  // Unban selected users
+  const handleUnbanSelected = async () => {
+    try {
+      // Filter selected users that are currently banned
+      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
+      
+      // Update each user via API
+      await Promise.all(
+        usersToUnban.map(id => updateStatus(id, "Unbanned"))
+      );
+      
+      // Update local state if all API calls successful
+      setUserStatus(prev => {
+        const updated = { ...prev };
+        usersToUnban.forEach(id => {
+          updated[id] = "Unbanned";
+        });
+        return updated;
+      });
+      
+      setSelected([]);
+      setExpandedUserId(null); // Close expanded details
+    } catch (error) {
+      console.error("Failed to unban selected users:", error);
+      // You can add a toast notification here if needed
+    }
+  };
+
+  // Check if any selected users are banned
+  const selectedUsers = selected.map(id => ({ id, status: userStatus[id] }));
+  const hasUnbannedUsers = selectedUsers.some(user => user.status === "Unbanned");
+  const hasBannedUsers = selectedUsers.some(user => user.status === "Banned");
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 shadow bg-white relative">
+      {/* Loading state */}
+      {loading && (
+        <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-30">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="text-gray-600">Loading users...</span>
+          </div>
+        </div>
+      )}
+      
       {/* Notification bar for selected users */}
       {showBar && (
         <div className={`absolute left-0 right-0 top-0 z-20 flex items-center bg-blue-50 border-b border-blue-200 px-6 py-3 ${barLeaving ? 'animate-slide-down' : 'animate-slide-up'}`}>
@@ -174,13 +234,23 @@ export default function CustomerTable() {
               {selected.length} user{selected.length > 1 ? 's' : ''} selected
             </span>
           </div>
-          <div className="flex-1 flex justify-end">
-            <button
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors font-semibold"
-              onClick={handleBanSelected}
-            >
-              Ban
-            </button>
+          <div className="flex-1 flex justify-end gap-2">
+            {hasUnbannedUsers && (
+              <button
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors font-semibold"
+                onClick={handleBanSelected}
+              >
+                Ban
+              </button>
+            )}
+            {hasBannedUsers && (
+              <button
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors font-semibold"
+                onClick={handleUnbanSelected}
+              >
+                Unban
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -199,6 +269,13 @@ export default function CustomerTable() {
         .animate-slide-down {
           animation: slide-down 0.3s cubic-bezier(0.4,0,0.2,1);
         }
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.25s cubic-bezier(0.4,0,0.2,1);
+        }
       `}</style>
       {/* Search bar with magnifying glass icon */}
       <div className="p-4 flex items-center">
@@ -214,7 +291,10 @@ export default function CustomerTable() {
             placeholder="Search user name."
             className="border pl-9 pr-3 py-2 rounded w-48"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => {
+              setSearch(e.target.value);
+              setExpandedUserId(null); // Close expanded details when searching
+            }}
           />
         </div>
       </div>
@@ -235,12 +315,12 @@ export default function CustomerTable() {
                 <span className="ml-1">
                   {sortConfig.key === 'id' ? (
                     sortConfig.direction === 'asc' ? (
-                      <span className="inline text-xs">▲</span>
+                      <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
                     ) : (
-                      <span className="inline text-xs">▼</span>
+                      <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
                     )
                   ) : (
-                    <span className="inline text-xs text-gray-300">▲</span>
+                    <svg className="inline w-3 h-3 text-gray-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
                   )}
                 </span>
               </span>
@@ -251,12 +331,12 @@ export default function CustomerTable() {
                 <span className="ml-1">
                   {sortConfig.key === 'username' ? (
                     sortConfig.direction === 'asc' ? (
-                      <span className="inline text-xs">▲</span>
+                      <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
                     ) : (
-                      <span className="inline text-xs">▼</span>
+                      <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
                     )
                   ) : (
-                    <span className="inline text-xs text-gray-300">▲</span>
+                    <svg className="inline w-3 h-3 text-gray-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
                   )}
                 </span>
               </span>
@@ -267,12 +347,12 @@ export default function CustomerTable() {
                 <span className="ml-1">
                   {sortConfig.key === 'email' ? (
                     sortConfig.direction === 'asc' ? (
-                      <span className="inline text-xs">▲</span>
+                      <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
                     ) : (
-                      <span className="inline text-xs">▼</span>
+                      <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
                     )
                   ) : (
-                    <span className="inline text-xs text-gray-300">▲</span>
+                    <svg className="inline w-3 h-3 text-gray-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
                   )}
                 </span>
               </span>
@@ -283,34 +363,106 @@ export default function CustomerTable() {
         </thead>
         <tbody>
           {paginatedCustomers.length > 0 ? paginatedCustomers.map((row, idx) => (
-            <tr
-              key={row.id}
-              className={idx % 2 === 0 ? "bg-white hover:bg-blue-50 transition" : "bg-gray-50 hover:bg-blue-50 transition"}
-            >
-              <td className="px-2 py-2 text-center">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(row.id)}
-                  onChange={() => handleSelectRow(row.id)}
-                  className="accent-blue-600 w-4 h-4 rounded"
-                />
-              </td>
-              <td className="px-4 py-2 text-center">{row.id}</td>
-              <td className="px-4 py-2 text-left">{row.username}</td>
-              <td className="px-4 py-2 text-left">{row.email}</td>
-              <td className="px-4 py-2 text-left">{row.phone}</td>
-              <td className="px-4 py-2 text-center">
-                <button
-                  className={`w-24 px-3 py-1 rounded font-semibold focus:outline-none transition ${userStatus[row.id] === "Banned" ? "bg-red-100 text-red-600 border border-red-400" : "bg-green-100 text-green-700 border border-green-400"}`}
-                  onClick={() => handleToggleStatus(row.id)}
-                >
-                  {userStatus[row.id]}
-                </button>
-              </td>
-            </tr>
+            <React.Fragment key={row.id}>
+              <tr
+                className={`${idx % 2 === 0 ? "bg-white hover:bg-blue-50" : "bg-gray-50 hover:bg-blue-50"} transition cursor-pointer`}
+                onClick={e => {
+                  // Đừng mở rộng khi click vào checkbox
+                  if (e.target.tagName === 'INPUT') return;
+                  handleExpandRow(row.id);
+                }}
+              >
+                <td className="px-2 py-2 text-center">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(row.id)}
+                    onChange={ev => { ev.stopPropagation(); handleSelectRow(row.id); }}
+                    className="accent-blue-600 w-4 h-4 rounded"
+                  />
+                </td>
+                <td className="px-4 py-2 text-center">{row.id}</td>
+                <td className="px-4 py-2 text-left">{row.username}</td>
+                <td className="px-4 py-2 text-left">{row.email}</td>
+                <td className="px-4 py-2 text-left">{row.phone}</td>
+                <td className="px-4 py-2 text-center">
+                  <span
+                    className={`w-24 px-3 py-1 rounded font-semibold inline-block ${userStatus[row.id] === "Banned" ? "bg-red-100 text-red-600 border border-red-400" : "bg-green-100 text-green-700 border border-green-400"}`}
+                  >
+                    {userStatus[row.id]}
+                  </span>
+                </td>
+              </tr>
+              {expandedUserId === row.id && (
+                <tr>
+                  <td colSpan={6} className="bg-blue-50 border-t border-b border-blue-200 animate-fade-in">
+                    <div className="p-4">
+                      <div className="font-semibold text-gray-700 mb-3">User Details</div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-600">ID:</span>
+                          <span className="ml-2">{row.id}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Username:</span>
+                          <span className="ml-2">{row.username}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Email:</span>
+                          <span className="ml-2">{row.email}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Phone:</span>
+                          <span className="ml-2">{row.phone}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Status:</span>
+                          <span className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${userStatus[row.id] === "Banned" ? "bg-red-100 text-red-600" : "bg-green-100 text-green-700"}`}>
+                            {userStatus[row.id]}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Account Created:</span>
+                          <span className="ml-2">
+                            {row.createdAt 
+                              ? new Date(row.createdAt).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })
+                              : 'N/A'
+                            }
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex items-center gap-3">
+                        <button
+                          className={`px-4 py-2 rounded font-semibold transition-colors ${
+                            userStatus[row.id] === "Banned" 
+                              ? "bg-green-500 text-white hover:bg-green-600" 
+                              : "bg-red-500 text-white hover:bg-red-600"
+                          }`}
+                          onClick={() => handleToggleStatus(row.id)}
+                        >
+                          {userStatus[row.id] === "Banned" ? "Unban" : "Ban"}
+                        </button>
+                        <span className="text-sm text-gray-500">
+                          Click to {userStatus[row.id] === "Banned" ? "unban" : "ban"} this user
+                        </span>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-blue-300">
+                        <span className="font-medium text-gray-600">Additional Info:</span>
+                        <p className="text-gray-500 text-sm mt-1">Click on this row to expand/collapse user details. You can add more information here as needed.</p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
           )) : (
             <tr>
-              <td colSpan={8} className="text-center py-4 text-gray-500">No customers found</td>
+              <td colSpan={6} className="text-center py-4 text-gray-500">
+                {loading ? "Loading..." : "No users found"}
+              </td>
             </tr>
           )}
         </tbody>
@@ -327,6 +479,7 @@ export default function CustomerTable() {
               onChange={e => {
                 setRowsPerPage(Number(e.target.value));
                 setPage(1);
+                setExpandedUserId(null); // Close expanded details when changing rows per page
               }}
             >
               {[5, 10, 15].map(n => (
@@ -349,7 +502,10 @@ export default function CustomerTable() {
           <div className="flex items-center gap-1">
             <button
               className="px-2 py-1 rounded disabled:opacity-50"
-              onClick={() => setPage(page - 1)}
+              onClick={() => {
+                setPage(page - 1);
+                setExpandedUserId(null); // Close expanded details when changing page
+              }}
               disabled={page === 1}
             >
               &lt;
@@ -358,14 +514,20 @@ export default function CustomerTable() {
               <button
                 key={p}
                 className={`w-8 h-8 rounded-full flex items-center justify-center ${p === page ? 'bg-gray-200 font-bold' : ''}`}
-                onClick={() => setPage(p)}
+                onClick={() => {
+                  setPage(p);
+                  setExpandedUserId(null); // Close expanded details when changing page
+                }}
               >
                 {p}
               </button>
             ))}
             <button
               className="px-2 py-1 rounded disabled:opacity-50"
-              onClick={() => setPage(page + 1)}
+              onClick={() => {
+                setPage(page + 1);
+                setExpandedUserId(null); // Close expanded details when changing page
+              }}
               disabled={page === totalPages || totalPages === 0}
             >
               &gt;

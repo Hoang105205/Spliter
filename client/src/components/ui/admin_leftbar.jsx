@@ -42,7 +42,7 @@ function Admin_left_bar({ activeTab, setActiveTab, onGroupSelect }) {
 
 
   return (
-    <aside className="w-[280px] h-screen pr-4 border-r-4 border-[#4A73A8]">
+    <aside className="w-[330px] h-screen pr-4 border-r-4 border-[#4A73A8]">
       <nav className="mt-4 space-y-6">
         {/* Dashboard */}
         <div

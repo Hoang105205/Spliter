@@ -23,6 +23,7 @@ export const useUser = create(
         bankAccountNumber: '',
         bankAccountName: '',
         bankName: '',
+        status: '',
       },
 
       setUserData: (newUserData) => set({ userData: newUserData }),
@@ -31,6 +32,16 @@ export const useUser = create(
         try {
           const response = await api.post('/api/users', userData);
           set({ userData: response.data });
+        } catch (error) {
+          set({ error: error.response ? error.response.data : error.message });
+          throw error; // Re-throw the error to handle it in the component
+        }
+      },
+
+      findAllUsers: async () => {
+        try {
+          const response = await api.get('/api/users');
+          return response.data;
         } catch (error) {
           set({ error: error.response ? error.response.data : error.message });
           throw error; // Re-throw the error to handle it in the component
@@ -136,6 +147,14 @@ export const useUser = create(
         }
       },
       
+      updateStatus: async (userId, status) => {
+        try {
+          await api.put(`/api/users/${userId}`, { status });
+        } catch (error) {
+          set({ error: error.response ? error.response.data : error.message });
+          throw error; // Re-throw the error to handle it in the component
+        }
+      },
     }), 
     {
       name: 'user-storage', // unique name for the storage

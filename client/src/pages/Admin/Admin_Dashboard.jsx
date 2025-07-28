@@ -27,13 +27,13 @@ const AdminDashboard = () => {
               {/* Nút chuyển đổi */}
               <div className="mb-6 flex gap-2">
                 <button
-                  className={`px-4 py-2 rounded font-semibold ${tab === "users" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"}`}
+                  className={`px-4 py-2 rounded font-semibold ${tab === "users" ? "bg-blue-400 text-white" : "bg-gray-200 text-gray-700"}`}
                   onClick={() => setTab("users")}
                 >
                   Users
                 </button>
                 <button
-                  className={`px-4 py-2 rounded font-semibold ${tab === "groups" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"}`}
+                  className={`px-4 py-2 rounded font-semibold ${tab === "groups" ? "bg-blue-400 text-white" : "bg-gray-200 text-gray-700"}`}
                   onClick={() => setTab("groups")}
                 >
                   Groups
