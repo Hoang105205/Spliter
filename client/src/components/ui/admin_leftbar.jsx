@@ -92,13 +92,13 @@ function Admin_left_bar({ activeTab, setActiveTab, onGroupSelect }) {
         {/* Report Request */}
         <div
           className={`${
-            activeTab === "group"
+            activeTab === "reportRequests"
               ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
               : ""
           } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[25px] cursor-pointer ${
-            activeTab === "reportRequest" ? "text-[#5a96f0]" : "text-[#193865]"
+            activeTab === "reportRequests" ? "text-[#5a96f0]" : "text-[#193865]"
           } `}
-          onClick={() => handleClick("reportRequest", `/admin/dashboard/${userData.id}/reportRequest`)}
+          onClick={() => handleClick("reportRequests", `/admin/dashboard/${userData.id}/reportRequests`)}
         >
           <AlertTriangle className="w-6 h-6 mr-2 inline-block" /> {/* Logo cho Report Request */}
           Report Requests

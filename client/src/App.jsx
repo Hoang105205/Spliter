@@ -16,8 +16,10 @@ import Dashboard_group from './pages/Dashboard/Dashboard_group';
 import Dashboard_statistics from './pages/Dashboard/Dashboard_statistics';
 
 // Import pages (Admin)
-import AdminDashboard from './pages/Admin/Admin_Dashboard';
-
+import AdminDashboard from './pages/Admin/Admin_dashboard';
+import AdminActivities from './pages/Admin/Admin_activities';
+import AdminStatistics from './pages/Admin/Admin_statistics';
+import AdminReportRequests from './pages/Admin/Admin_reportRequests';
 
 // Import components
 import OAuth2RedirectHandler from './components/googleOAuth/OAuth2RedirectHandler.jsx';
@@ -102,6 +104,30 @@ function App() {
               />
               
               {/* Thêm các route admin khác nếu cần */}
+              <Route
+                path="/admin/dashboard/:id/activities"
+                element={
+                  <ProtectedLayout>
+                    <AdminActivities />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/admin/dashboard/:id/statistics"
+                element={
+                  <ProtectedLayout>
+                    <AdminStatistics />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/admin/dashboard/:id/reportRequests"
+                element={
+                  <ProtectedLayout>
+                    <AdminReportRequests />
+                  </ProtectedLayout>
+                }
+              />
             </>
           )}
 

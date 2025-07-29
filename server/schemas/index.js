@@ -55,5 +55,6 @@ module.exports = {
   Groups,
   groupMembers,
   Expenses,
-  expenseItems
+  expenseItems,
+  Reports
 };

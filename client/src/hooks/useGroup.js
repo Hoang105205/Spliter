@@ -48,5 +48,16 @@ export const useGroup = () => {
     [] // useCallback không phụ thuộc vào biến nào
   );
 
-  return { members, loading, error, getGroupmember };
+  // Fetch all groups for admin
+  const fetchAllGroups = useCallback(async () => {
+    try {
+      const response = await api.get('/api/groups');
+      return response.data;
+    } catch (err) {
+      console.error("Failed to fetch all groups:", err);
+      throw err;
+    }
+  }, []);
+
+  return { members, loading, error, getGroupmember, fetchAllGroups };
 };

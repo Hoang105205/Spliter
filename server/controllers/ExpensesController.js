@@ -239,6 +239,66 @@ const getExpensesById = async (req, res) => {
     }
 };
 
+// Get all expenses for admin statistics
+const getAllExpenses = async (req, res) => {
+    try {
+        const expenses = await Expenses.findAll({
+            include: [{
+                model: expenseItems,
+                as: 'items',
+                required: false
+            }],
+            order: [['createdAt', 'DESC']]
+        });
+
+        // Calculate paid/unpaid statistics
+        let totalPaidExpenses = 0;
+        let totalUnpaidExpenses = 0;
+        let totalPaidAmount = 0;
+        let totalUnpaidAmount = 0;
+
+        const expensesWithStatus = expenses.map(expense => {
+            let isPaid = false;
+            const expenseAmount = Number(expense.amount || 0);
+            
+            if (expense.items && expense.items.length > 0) {
+                // Check if all items are paid
+                isPaid = expense.items.every(item => item.is_paid === 'yes');
+            } else {
+                // If no items, consider as unpaid
+                isPaid = false;
+            }
+
+            if (isPaid) {
+                totalPaidExpenses++;
+                totalPaidAmount += expenseAmount;
+            } else {
+                totalUnpaidExpenses++;
+                totalUnpaidAmount += expenseAmount;
+            }
+
+            return {
+                ...expense.toJSON(),
+                calculatedStatus: isPaid ? 'paid' : 'unpaid'
+            };
+        });
+
+        res.status(200).json({
+            expenses: expensesWithStatus,
+            summary: {
+                total: expenses.length,
+                paid: totalPaidExpenses,
+                unpaid: totalUnpaidExpenses,
+                paidAmount: totalPaidAmount,
+                unpaidAmount: totalUnpaidAmount
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching all expenses:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 module.exports = {
     getExpenses,
     createExpense,
@@ -246,5 +306,6 @@ module.exports = {
     getUserExpenses,
     getAllOwe,
     updateExpenseItemStatus,
-    getExpensesById
+    getExpensesById,
+    getAllExpenses
 };
