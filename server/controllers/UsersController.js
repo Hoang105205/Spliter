@@ -16,7 +16,7 @@ const getUsers = async (req, res) => {
 const getSingleUser = async (req, res) => {
     try {
         const user = await Users.findOne({ 
-            where: { username: req.params.username },
+            where: { username: req.params.username, role: 'user' }, // Assuming you want to get only users, not admins
             attributes: { exclude: ['password'] } 
         });
         if (!user) {
