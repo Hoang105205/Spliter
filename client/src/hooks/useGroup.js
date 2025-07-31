@@ -59,5 +59,43 @@ export const useGroup = () => {
     }
   }, []);
 
-  return { members, loading, error, getGroupmember, fetchAllGroups };
+  const renameGroup = useCallback(
+    async (groupId, newName) => {
+      if (!groupId || !newName) {
+        setError("Group ID and new name are required");
+        return false;
+      }
+
+      let isMounted = true;
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await api.put(`/api/groups/${groupId}`, { name: newName });
+        if (isMounted) {
+          // Cập nhật thành viên nếu cần, hoặc chỉ trả về thành công
+          // (Tùy thuộc vào yêu cầu, hiện tại không cần thay đổi members)
+          return true; // Trả về true nếu đổi tên thành công
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(
+            err.response?.data?.message || err.message || "Failed to rename group"
+          );
+        }
+        return false; // Trả về false nếu thất bại
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+
+      return () => {
+        isMounted = false;
+      };
+    },
+    []
+  );
+
+  return { members, loading, error, getGroupmember, fetchAllGroups, renameGroup };
 };

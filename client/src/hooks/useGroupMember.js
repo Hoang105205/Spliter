@@ -108,6 +108,26 @@ export const useGroupMember = create((set, get) => ({
     }
   },
 
+  leaveGroup: async (groupId, userId) => {
+    if (!groupId || !userId) return false;
+    set({ loading: true, error: null });
+    try {
+      const response = await api.post('/api/group-members/leave', { groupId, userId });
+      if (response.status === 200) {
+        await get().fetchGroups(userId); // Cập nhật danh sách groups
+        return true;
+      }
+      return false;
+    } catch (err) {
+      set({
+        error: err.response ? err.response.data.message : err.message,
+        loading: false,
+      });
+      return false;
+    } finally {
+      set({ loading: false });
+    }
+  },
 
   clearGroups: () => {
     set({ groups: [],  pendingInvites: []});

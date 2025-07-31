@@ -122,6 +122,22 @@ export const useWebSocketHandler = (ws) => {
         incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
         break;
 
+      case 'GROUP_RENAMED':
+        handleGroupRenamed(jsonData.payload);
+        incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
+        break;
+
+      case 'GROUP_DELETED':
+        handleGroupDeleted(jsonData.payload);
+        incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
+        break;
+
+      case 'GROUP_MEMBER_LEFT':
+        handleGroupMemberLeft(jsonData.payload);
+        incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
+        break;
+
+
       default:
         console.warn(`⚠️ Loại tin nhắn không hỗ trợ: ${type}`);
     }
@@ -219,14 +235,32 @@ export const useWebSocketHandler = (ws) => {
     // Do something
   }
 
+  // Handle group renamed
+  const handleGroupRenamed = ({ groupId, newName, oldName, ownerId }) => {
+    if (userData.id !== ownerId) {
+      toast.info(`🎉 Group "${oldName}" has been renamed to "${newName}"`);
+    }
+    // Do something
+  }
 
 
+  // Handle group deleted
+  const handleGroupDeleted = ({ groupId, groupName, ownerId }) => {
+    if (userData.id === ownerId) {
+      toast.info(`Group "${groupName}" has been deleted successfully`);
+    } else {
+      toast.info(`Group "${groupName}" has been deleted`);
+    }
+    fetchGroups(userData.id); // Cập nhật danh sách nhóm
+  }
 
-
-
-
-
-
+  // Handle group member left
+  const handleGroupMemberLeft = ({ groupId, groupName, memberId, memberName }) => {
+    if (userData.id !== memberId) {
+      toast.info(`${memberName} has left the group "${groupName}"`);
+    }
+    fetchGroups(userData.id); // Cập nhật danh sách nhóm
+  }
 };
 
 

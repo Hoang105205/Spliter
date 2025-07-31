@@ -1,5 +1,5 @@
-const { Groups, Users } = require('../schemas');
-
+const { Groups, Users, Expenses, expenseItems } = require('../schemas');
+const sequelize = require('../config/db');
 
 // Only Admin can access this controller
 const getAllGroups = async (req, res) => {
@@ -54,34 +54,44 @@ const createGroup = async (req, res) => {
 }
 
 
-const updateGroup = async (req, res) => {
-    try {
-        const group = await Groups.update(req.body, {
-            where: { id: req.params.id },
-            returning: true
-        });
-        if (!group) {
-            return res.status(404).json({ message: 'Group not found' });
-        }
-        res.status(200).json(group);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-}
+const updateGroupName = async (req, res) => {
+  const transaction = await sequelize.transaction();
 
-const deleteGroup = async (req, res) => {
-    try {
-        const deleted = await Groups.destroy({
-            where: { id: req.params.id }
-        });
-        if (!deleted) {
-            return res.status(404).json({ message: 'Group not found' });
-        }
-        res.status(204).send();
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+  try {
+    const { name } = req.body; // Lấy tên mới từ request body
+    const groupId = req.params.id;
+
+    if (!name || !groupId) {
+      await transaction.rollback();
+      return res.status(400).json({ message: 'Group ID and name are required' });
     }
-}
+
+    const group = await Groups.findByPk(groupId, { transaction });
+    if (!group) {
+      await transaction.rollback();
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    const [updated] = await Groups.update(
+      { name },
+      {
+        where: { id: groupId },
+        transaction,
+      }
+    );
+
+    if (!updated) {
+      await transaction.rollback();
+      return res.status(500).json({ message: 'Failed to update group name' });
+    }
+
+    await transaction.commit();
+    res.status(200).json({ message: 'Group name updated successfully', name });
+  } catch (error) {
+    await transaction.rollback();
+    res.status(500).json({ message: error.message || 'Failed to update group name' });
+  }
+};
 
 const getGroupMembers = async (req, res) => {
     try {
@@ -109,8 +119,7 @@ module.exports = {
     getAllGroups,
     getGroupById,
     createGroup,
-    updateGroup,
-    deleteGroup,
+    updateGroupName,
     getGroupMembers,
 };
 

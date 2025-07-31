@@ -1,4 +1,4 @@
-import { PlusIcon, CrownIcon, RefreshCwIcon } from "lucide-react";
+import { PlusIcon, CrownIcon, RefreshCwIcon, SettingsIcon } from "lucide-react";
 import { useState, useEffect, useContext } from "react";
 import { Button } from "../../components/ui/button.jsx";
 import { useNavigate } from "react-router-dom";
@@ -47,10 +47,10 @@ function Dashboard_group() {
   const { userData, findUser, getAvatar } = useUser();
 
   // Fetch groups that the user is a member of
-  const { groups, loading, error, fetchGroups, removeMember, trigger, refreshGroups } = useGroupMember();
+  const { groups, loading, error, fetchGroups, removeMember, trigger, refreshGroups, leaveGroup } = useGroupMember();
 
   // Fetch group details
-  const { members: groupMembers, loading: membersLoading, error: membersError, getGroupmember } = useGroup();
+  const { members: groupMembers, loading: membersLoading, error: membersError, getGroupmember, renameGroup } = useGroup();
 
   // Use friend hook
   const { friends, loading: friendsLoading, error: friendsError, fetchFriends } = useFriend();
@@ -69,6 +69,20 @@ function Dashboard_group() {
 
   // Show modal confirm settle up
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Menu Settings
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+
+  // Show modal delete group
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Rename group modal
+  const [showRenameModal, setShowRenameModal] = useState(false); // State để hiển thị modal rename
+  const [newGroupName, setNewGroupName] = useState("");
+
+  // Leave group modal
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   // NEW EXPENSE TAB:
   // State variable
@@ -456,7 +470,21 @@ function Dashboard_group() {
     };
   }, [showExpenseModal]);
 
-  // Handle adding a member to the group
+
+  // Menu Settings click outside handler
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showSettingsModal && !e.target.closest('.settings-modal')) {
+        setShowSettingsModal(false);
+      }
+    };
+    if (showSettingsModal) {
+      window.addEventListener('click', handleClickOutside);
+    }
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, [showSettingsModal]);  // Handle adding a member to the group
+
+
   const handleAddMember = async (friendId) => {
     if (!selectedGroup || !isOwner) {
       toast.error("You are not authorized to add members.");
@@ -616,6 +644,90 @@ function Dashboard_group() {
     toast.info(`Member ${memberUsername} has been kicked!`);
   };
 
+  // Handle delete group
+  const handleDeleteGroup = async () => {
+    if (!selectedGroup) return;
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      const message = {
+        type: "DELETE_GROUP",
+        payload: {
+          groupId: selectedGroup.id,
+          ownerId: userData.id,
+          groupName: selectedGroup.name,
+        },
+      };
+      ws.send(JSON.stringify(message));
+
+      setSelectedGroup(null);
+    }
+    else {
+      toast.error("Failed to delete group. Please try again.");
+    }
+  };
+
+  // Handle Rename group
+  const handleRenameGroup = async () => {
+    if (!selectedGroup || !newGroupName.trim()) {
+      toast.error("Group name cannot be empty.");
+      return;
+    }
+
+    const oldName = selectedGroup.name; // Lưu tên cũ để gửi qua WebSocket
+    const success = await renameGroup(selectedGroup.id, newGroupName.trim());
+    if (success) {
+      
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const message = {
+          type: "RENAME_GROUP",
+          payload: {
+            groupId: selectedGroup.id,
+            newName: newGroupName.trim(),
+            oldName: oldName,
+            ownerId: userData.id
+          },
+        };
+        ws.send(JSON.stringify(message));
+      }
+      
+      toast.success("Group renamed successfully!");
+      setSelectedGroup(prev => ({ ...prev, name: newGroupName.trim() }));
+      setNewGroupName(""); // Reset input field 
+    } else {
+      toast.error("Failed to rename group. Please try again.");
+    }
+  };
+
+  // Handle leave group
+  const handleLeaveGroup = async () => {
+    if (!selectedGroup || !userData.id) return;
+
+    const groupId = selectedGroup.id;
+    const groupName = selectedGroup.name;
+
+    const success = await leaveGroup(selectedGroup.id, userData.id);
+
+    if (success) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const message = {
+          type: "LEAVE_GROUP",
+          payload: {
+            groupId: groupId,
+            memberId: userData.id,
+            groupName: groupName
+          },
+        };
+        ws.send(JSON.stringify(message));
+      }
+
+
+      toast.info("You have left the group.");
+      setSelectedGroup(null);
+    } else {
+      toast.error("Failed to leave group. Please try again.");
+    }
+  };
+
   // Handle context menu click
   const handleContextMenu = (e, memberId) => {
     e.preventDefault();
@@ -729,6 +841,26 @@ function Dashboard_group() {
                           <RefreshCwIcon className="w-6 h-6" />
                         </motion.div>
                       </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent w-9 h-[50px] text-gray-600 hover:text-gray-800"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation(); // Prevent event bubbling
+                          const mouseX = e.clientX; // Tọa độ x của chuột
+                          const mouseY = e.clientY; // Tọa độ y của chuột
+                          setContextMenuPosition({
+                            x: mouseX,
+                            y: mouseY,
+                          });
+                          setShowSettingsModal(true);
+                        }}
+                      >
+                        <SettingsIcon className="w-6 h-6" />
+                      </Button>
+                       
                     </div>
                   </div>
                   <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "600px" }}>
@@ -1071,6 +1203,7 @@ function Dashboard_group() {
                 >
                   Kick Member
                 </button>
+
               </div>
             )}
 
@@ -1458,6 +1591,211 @@ function Dashboard_group() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+
+            {/* Settings Modal */}
+            <AnimatePresence>
+              {showSettingsModal && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="fixed bg-white border border-gray-300 rounded-lg shadow-lg py-2 px-4 z-[2000] settings-modal"
+                  style={{
+                    top: contextMenuPosition.y > window.innerHeight / 2 ? 'auto' : `${contextMenuPosition.y}px`,
+                    bottom: contextMenuPosition.y > window.innerHeight / 2 ? `${window.innerHeight - contextMenuPosition.y}px` : 'auto',
+                    left: `${Math.min(contextMenuPosition.x, window.innerWidth - 150)}px`, // Giới hạn rìa phải
+                    minWidth: '120px',
+                    maxWidth: '90vw',
+                    maxHeight: '90vh',
+                    overflow: 'auto',
+                  }}
+                >
+                
+                  {isOwner ? (
+                    <>
+                      <button
+                        className="w-full text-left text-blue-600 hover:bg-blue-50 hover:text-blue-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
+                        onClick={() => {
+                          setShowSettingsModal(false);
+                          setNewGroupName(selectedGroup.name); // Default value
+                          setShowRenameModal(true); // Hiển thị modal rename
+                        }}
+                      >
+                        Rename Group
+                      </button>
+                      <button
+                        className="w-full text-left text-red-600 hover:bg-red-50 hover:text-red-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
+                        onClick={() => {
+                          setShowSettingsModal(false);
+                          setShowDeleteModal(true);
+                        }}
+                      >
+                        Delete Group
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="w-full text-left text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
+                      onClick={() => {
+                        setShowSettingsModal(false); // Đóng modal Settings
+                        setShowLeaveModal(true); // Mở modal Leave
+                      }}
+                    >
+                      Leave Group
+                    </button>
+                  )}
+
+
+                  <div className="mt-2">
+                    <Button
+                      className="bg-gray-300 text-black px-2 py-1 rounded hover:bg-gray-400 transition-colors w-full"
+                      onClick={() => setShowSettingsModal(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Delete Group Modal */}
+            <AnimatePresence>
+              {showDeleteModal && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]"
+                >
+                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] flex flex-col text-gray-900">
+                    <h2 className="text-xl font-bold mb-4">Confirm Group Deletion</h2>
+                    <p className="mb-4">This is a permanent action. You cannot UNDO</p>
+                    <div className="mt-auto pt-2 space-x-4">
+                      <Button
+                        className="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 transition-colors"
+                        onClick={async () => {
+                          try {
+                            await handleDeleteGroup();
+
+                            setShowDeleteModal(false);
+                          } catch (error) {
+                            console.error('Error deleting group:', error);
+                            toast.error('Failed to delete group. Please try again.');
+                          }
+                        }}
+                      >
+                        Confirm
+                      </Button>
+                      <Button
+                        className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
+                        onClick={() => setShowDeleteModal(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>  
+
+            {/* Rename Group Modal */}
+            <AnimatePresence>
+              {showRenameModal && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]"
+                >
+                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] flex flex-col text-gray-900">
+                    <h2 className="text-xl font-bold mb-4">Rename Group</h2>
+                    <input
+                      type="text"
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                      placeholder="Enter new group name"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                    <div className="mt-auto pt-2 space-x-4">
+                      <Button
+                        className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors"
+                        onClick={async () => {
+                          try {
+                            await handleRenameGroup();
+
+                            setShowRenameModal(false); // Đóng modal
+                            setShowSettingsModal(false); // Đảm bảo Settings Modal cũng đóng
+                            setNewGroupName(""); // Reset state
+                          } catch (error) {
+                            console.error("Error renaming group:", error);
+                            toast.error("Failed to rename group. Please try again.");
+                          }
+                        }}
+                        disabled={!newGroupName.trim() || newGroupName === selectedGroup.name} // Vô hiệu hóa nếu tên trống hoặc không đổi
+                      >
+                        Confirm
+                      </Button>
+                      <Button
+                        className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
+                        onClick={() => {
+                          setShowRenameModal(false); // Đóng modal
+                          setNewGroupName(""); // Reset state
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Leave Group Modal */}
+            <AnimatePresence>
+              {showLeaveModal && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]"
+                >
+                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] flex flex-col text-gray-900">
+                    <h2 className="text-xl font-bold mb-4">Confirm Leaving Group</h2>
+                    <p className="mb-4">Are you sure you want to leave <strong>{selectedGroup?.name}</strong>? This action cannot be undone, and you will lose access to this group.</p>
+                    <div className="mt-auto pt-2 space-x-4">
+                      <Button
+                        className="bg-yellow-500 text-white px-4 py-2 rounded-full hover:bg-yellow-600 transition-colors"
+                        onClick={async () => {
+                          try {
+                            await handleLeaveGroup();
+
+                            setShowLeaveModal(false); // Đóng modal
+                            setShowSettingsModal(false); // Đảm bảo Settings Modal cũng đóng
+                            setSelectedGroup(null); // Reset selected group
+                              
+                          } catch (error) {
+                            console.error("Error leaving group:", error);
+                            toast.error("Failed to leave group. Please try again.");
+                          }
+                        }}
+                      >
+                        Confirm
+                      </Button>
+                      <Button
+                        className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
+                        onClick={() => {
+                          setShowLeaveModal(false); // Đóng modal
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
           </div>
         </div>
       </div>
