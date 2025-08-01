@@ -153,24 +153,40 @@ function Signup() {
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      className="h-[35px] rounded-xl border-[#66666659]"
+                      className="h-[35px] rounded-xl border-[#66666659] pr-20 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-strong-password-auto-fill-button]:hidden"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       autoComplete="current-password"
+                      style={{ 
+                        WebkitTextSecurity: showPassword ? 'none' : 'disc',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none'
+                      }}
                     />
-
+                    <style jsx>{`
+                      input[type="password"]::-ms-reveal,
+                      input[type="password"]::-ms-clear {
+                        display: none;
+                      }
+                      input[type="password"]::-webkit-credentials-auto-fill-button {
+                        display: none !important;
+                      }
+                      input[type="password"]::-webkit-strong-password-auto-fill-button {
+                        display: none !important;
+                      }
+                    `}</style>
                   <button 
-                    className="absolute right-3 top-1 flex items-center gap-2 cursor-pointer" 
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded cursor-pointer" 
                     onClick={togglePasswordVisibility}
                     type="button"
                   >
                     {showPassword ? (
-                        <EyeIcon className="w-6 h-6" />
+                        <EyeOffIcon className="w-4 h-4 text-gray-600" />
                       ) : (
-                        <EyeOffIcon className="w-6 h-6" />
+                        <EyeIcon className="w-4 h-4 text-gray-600" />
                       )}
-                    <span className = "font-['Poppins',Helvetica] font-normal text-[#666666cc] text-lg">
-                      {showPassword ? 'Show' : 'Hide'}
+                    <span className="font-['Poppins',Helvetica] font-normal text-[#666666cc] text-sm whitespace-nowrap">
+                      {showPassword ? 'Hide' : 'Show'}
                     </span>
                   </button>
                 </div>
@@ -186,24 +202,28 @@ function Signup() {
                   <div className="relative">
                     <Input
                       type={showConfirmPassword ? "text" : "password"}
-                      className="h-[35px] rounded-xl border-[#66666659]"
+                      className="h-[35px] rounded-xl border-[#66666659] pr-20 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-strong-password-auto-fill-button]:hidden"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       autoComplete="new-password"
+                      style={{ 
+                        WebkitTextSecurity: showConfirmPassword ? 'none' : 'disc',
+                        WebkitAppearance: 'none',
+                        MozAppearance: 'none'
+                      }}
                     />
-
                   <button 
-                    className="absolute right-3 top-1 flex items-center gap-2 cursor-pointer" 
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded cursor-pointer" 
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     type="button"
                   >
                     {showConfirmPassword ? (
-                        <EyeIcon className="w-6 h-6" />
+                        <EyeOffIcon className="w-4 h-4 text-gray-600" />
                       ) : (
-                        <EyeOffIcon className="w-6 h-6" />
+                        <EyeIcon className="w-4 h-4 text-gray-600" />
                       )}
-                    <span className = "font-['Poppins',Helvetica] font-normal text-[#666666cc] text-lg">
-                      {showConfirmPassword ? 'Show' : 'Hide'}
+                    <span className="font-['Poppins',Helvetica] font-normal text-[#666666cc] text-sm whitespace-nowrap">
+                      {showConfirmPassword ? 'Hide' : 'Show'}
                     </span>
                   </button>
                 </div>

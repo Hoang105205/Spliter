@@ -112,12 +112,17 @@ export default function UserTable() {
   };
 
   const handleToggleStatus = async (id) => {
+    // Only allow banning, not unbanning
+    const currentStatus = userStatus[id];
+    if (currentStatus === "Banned") {
+      return; // Don't allow unbanning
+    }
+
     try {
       // Add to updating set
       setUpdatingUsers(prev => new Set([...prev, id]));
       
-      const currentStatus = userStatus[id];
-      const newStatus = currentStatus === "Banned" ? "Unbanned" : "Banned";
+      const newStatus = "Banned";
       
       // Update user status via API
       await updateStatus(id, newStatus);
@@ -143,7 +148,6 @@ export default function UserTable() {
       });
       
       console.error("Failed to update user status:", error);
-      // You can add a toast notification here if needed
     }
   };
 
@@ -210,56 +214,6 @@ export default function UserTable() {
     }
   };
 
-  // Unban selected users
-  const handleUnbanSelected = async () => {
-    try {
-      // Filter selected users that are currently banned
-      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
-      
-      // Add all users to unban to updating set
-      setUpdatingUsers(prev => new Set([...prev, ...usersToUnban]));
-      
-      // Update each user via API
-      await Promise.all(
-        usersToUnban.map(id => updateStatus(id, "Unbanned"))
-      );
-      
-      // Update local state if all API calls successful
-      setUserStatus(prev => {
-        const updated = { ...prev };
-        usersToUnban.forEach(id => {
-          updated[id] = "Unbanned";
-        });
-        return updated;
-      });
-      
-      // Remove all unbanned users from updating set and clear selection
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        usersToUnban.forEach(id => newSet.delete(id));
-        return newSet;
-      });
-      setSelected([]);
-      setExpandedUserId(null); // Close expanded details
-    } catch (error) {
-      // Remove all users from updating set on error
-      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        usersToUnban.forEach(id => newSet.delete(id));
-        return newSet;
-      });
-      
-      console.error("Failed to unban selected users:", error);
-      // You can add a toast notification here if needed
-    }
-  };
-
-  // Check if any selected users are banned
-  const selectedUsers = selected.map(id => ({ id, status: userStatus[id] }));
-  const hasUnbannedUsers = selectedUsers.some(user => user.status === "Unbanned");
-  const hasBannedUsers = selectedUsers.some(user => user.status === "Banned");
-
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 shadow bg-white relative">
       {/* Loading state */}
@@ -305,22 +259,6 @@ export default function UserTable() {
                 {selected.some(id => updatingUsers.has(id)) ? 'Waiting...' : 'Ban'}
               </button>
             )}
-            {hasBannedUsers && (
-              <button
-                className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
-                  selected.some(id => updatingUsers.has(id))
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-500 hover:bg-green-600'
-                } text-white`}
-                onClick={handleUnbanSelected}
-                disabled={selected.some(id => updatingUsers.has(id))}
-              >
-                {selected.some(id => updatingUsers.has(id)) && (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                )}
-                {selected.some(id => updatingUsers.has(id)) ? 'Waiting...' : 'Unban'}
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -346,6 +284,38 @@ export default function UserTable() {
         .animate-fade-in {
           animation: fade-in 0.25s cubic-bezier(0.4,0,0.2,1);
         }
+        .username-column {
+          width: 200px !important;
+          min-width: 200px !important;
+          max-width: 200px !important;
+        }
+        .username-cell {
+          width: 200px !important;
+          min-width: 200px !important;
+          max-width: 200px !important;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .fixed-table {
+          table-layout: fixed !important;
+          width: 100% !important;
+        }
+        .col-checkbox {
+          width: 50px !important;
+        }
+        .col-id {
+          width: 80px !important;
+        }
+        .col-email {
+          width: 250px !important;
+        }
+        .col-phone {
+          width: 150px !important;
+        }
+        .col-status {
+          width: 120px !important;
+        }
       `}</style>
       {/* Search bar with magnifying glass icon */}
       <div className="p-4 flex items-center">
@@ -368,10 +338,10 @@ export default function UserTable() {
           />
         </div>
       </div>
-      <table className="min-w-full text-sm align-middle">
+      <table className="min-w-full text-sm align-middle fixed-table">
         <thead>
           <tr className="bg-gray-50">
-            <th className="px-2 py-3 text-center font-semibold text-gray-700 w-10">
+            <th className="px-2 py-3 text-center font-semibold text-gray-700 col-checkbox">
               <input
                 type="checkbox"
                 checked={isAllSelected}
@@ -379,7 +349,7 @@ export default function UserTable() {
                 className="accent-blue-600 w-4 h-4 rounded"
               />
             </th>
-            <th className="px-4 py-3 text-center font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('id')}>
+            <th className="px-4 py-3 text-center font-semibold text-gray-700 cursor-pointer select-none col-id" onClick={() => handleSort('id')}>
               <span className="inline-flex items-center">
                 ID
                 <span className="ml-1">
@@ -395,7 +365,7 @@ export default function UserTable() {
                 </span>
               </span>
             </th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('username')}>
+            <th className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer select-none username-column" onClick={() => handleSort('username')}>
               <span className="inline-flex items-center">
                 Username
                 <span className="ml-1">
@@ -411,7 +381,7 @@ export default function UserTable() {
                 </span>
               </span>
             </th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('email')}>
+            <th className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer select-none col-email" onClick={() => handleSort('email')}>
               <span className="inline-flex items-center">
                 Email
                 <span className="ml-1">
@@ -427,8 +397,8 @@ export default function UserTable() {
                 </span>
               </span>
             </th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-700">Phone</th>
-            <th className="px-4 py-3 text-center font-semibold text-gray-700">Status</th>
+            <th className="px-4 py-3 text-left font-semibold text-gray-700 col-phone">Phone</th>
+            <th className="px-4 py-3 text-center font-semibold text-gray-700 col-status">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -442,7 +412,7 @@ export default function UserTable() {
                   handleExpandRow(row.id);
                 }}
               >
-                <td className="px-2 py-2 text-center">
+                <td className="px-2 py-2 text-center col-checkbox">
                   <input
                     type="checkbox"
                     checked={selected.includes(row.id)}
@@ -450,11 +420,21 @@ export default function UserTable() {
                     className="accent-blue-600 w-4 h-4 rounded"
                   />
                 </td>
-                <td className="px-4 py-2 text-center">{row.id}</td>
-                <td className="px-4 py-2 text-left">{row.username}</td>
-                <td className="px-4 py-2 text-left">{row.email}</td>
-                <td className="px-4 py-2 text-left">{row.phone}</td>
-                <td className="px-4 py-2 text-center">
+                <td className="px-4 py-2 text-center col-id">{row.id}</td>
+                <td className="px-4 py-2 text-left username-cell" title={row.username}>
+                  {row.username}
+                </td>
+                <td className="px-4 py-2 text-left col-email" title={row.email}>
+                  <div className="truncate">
+                    {row.email}
+                  </div>
+                </td>
+                <td className="px-4 py-2 text-left col-phone" title={row.phone}>
+                  <div className="truncate">
+                    {row.phone}
+                  </div>
+                </td>
+                <td className="px-4 py-2 text-center col-status">
                   <span
                     className={`w-24 px-3 py-1 rounded font-semibold inline-block ${userStatus[row.id] === "Banned" ? "bg-red-100 text-red-600 border border-red-400" : "bg-green-100 text-green-700 border border-green-400"}`}
                   >
@@ -496,7 +476,7 @@ export default function UserTable() {
                             {row.createdAt 
                               ? new Date(row.createdAt).toLocaleDateString('en-US', {
                                   year: 'numeric',
-                                  month: 'short',
+                                  month: 'long',
                                   day: 'numeric'
                                 })
                               : 'N/A'
@@ -505,35 +485,38 @@ export default function UserTable() {
                         </div>
                       </div>
                       <div className="mt-4 flex items-center gap-3">
-                        <button
-                          className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
-                            updatingUsers.has(row.id)
-                              ? 'bg-gray-400 cursor-not-allowed'
-                              : userStatus[row.id] === "Banned" 
-                                ? "bg-green-500 text-white hover:bg-green-600" 
-                                : "bg-red-500 text-white hover:bg-red-600"
-                          } text-white`}
-                          onClick={() => handleToggleStatus(row.id)}
-                          disabled={updatingUsers.has(row.id)}
-                        >
-                          {updatingUsers.has(row.id) && (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          )}
-                          {updatingUsers.has(row.id) 
-                            ? 'Waiting...' 
-                            : userStatus[row.id] === "Banned" ? "Unban" : "Ban"
-                          }
-                        </button>
-                        <span className="text-sm text-gray-500">
-                          {updatingUsers.has(row.id) 
-                            ? 'Processing...' 
-                            : `Click to ${userStatus[row.id] === "Banned" ? "unban" : "ban"} this user`
-                          }
-                        </span>
+                        {userStatus[row.id] === "Unbanned" ? (
+                          <>
+                            <button
+                              className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
+                                updatingUsers.has(row.id)
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : "bg-red-500 text-white hover:bg-red-600"
+                              } text-white`}
+                              onClick={() => handleToggleStatus(row.id)}
+                              disabled={updatingUsers.has(row.id)}
+                            >
+                              {updatingUsers.has(row.id) && (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              )}
+                              {updatingUsers.has(row.id) ? 'Waiting...' : 'Ban'}
+                            </button>
+                            <span className="text-sm text-gray-500">
+                              {updatingUsers.has(row.id) 
+                                ? 'Processing...' 
+                                : 'Click to ban this user'
+                              }
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-sm text-red-600 font-medium">
+                            This user has been permanently banned
+                          </span>
+                        )}
                       </div>
                       <div className="mt-3 pt-3 border-t border-blue-300">
                         <span className="font-medium text-gray-600">Additional Info:</span>
-                        <p className="text-gray-500 text-sm mt-1">Click on this row to expand/collapse user details. You can add more information here as needed.</p>
+                        <p className="text-gray-500 text-sm mt-1">Click on this row to expand/collapse user details.</p>
                       </div>
                     </div>
                   </td>

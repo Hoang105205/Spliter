@@ -282,13 +282,24 @@ function Head_bar(){
 
   useEffect(() => {
     let isMounted = true;
-
-    if (userData.id) {
-      getAvatar(userData.id).then((url) => {
-        if (isMounted) {
-          setAvatarUrl(url);
-        }
-      });
+    
+    // Chỉ gọi API khi:
+    // 1. userData.id tồn tại
+    // 2. avatarUrl hiện tại rỗng hoặc userData.avatarURL đã thay đổi
+    if (userData.id && (!avatarUrl || avatarUrl !== userData.avatarURL)) {
+      // Nếu userData.avatarURL có sẵn, sử dụng nó trước
+      if (userData.avatarURL && userData.avatarURL !== avatarUrl) {
+        setAvatarUrl(userData.avatarURL);
+      } else if (!userData.avatarURL) {
+        // Chỉ gọi API khi userData.avatarURL không có
+        getAvatar(userData.id).then((url) => {
+          if (isMounted && url && url !== avatarUrl) {
+            setAvatarUrl(url);
+          }
+        }).catch((error) => {
+          console.error("Error fetching avatar:", error);
+        });
+      }
     }
 
     return () => {
