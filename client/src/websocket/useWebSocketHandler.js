@@ -142,6 +142,12 @@ export const useWebSocketHandler = (ws) => {
         incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
         break;
 
+      case 'EXPENSE_ITEM_STATUS_UPDATED':
+        handleExpenseItemStatusUpdated(jsonData.payload);
+        incrementNotificationTrigger();
+        break;
+
+        
       default:
         console.warn(`⚠️ Loại tin nhắn không hỗ trợ: ${type}`);
     }
@@ -269,6 +275,17 @@ export const useWebSocketHandler = (ws) => {
   // Handle settle up request
   const handleSettleUpRequest = ({ groupName, userName, expenseTitle }) => {
     toast.info(`💰 ${userName} has requested to settle up for the expense "${expenseTitle}" in group "${groupName}".`);
+  }
+
+  // Handle expense item status updated
+  const handleExpenseItemStatusUpdated = ({ groupName, expenseTitle, status }) => {
+    if (status === 'yes') {
+      toast.success(`✅ A settled up expense request with title: "${expenseTitle}" in group "${groupName}" has been marked as "Paid".`);
+    }
+    else if (status === 'no') {
+      toast.info(`❌ A settled up expense request with title: "${expenseTitle}" in group "${groupName}" has been returned to "Unpaid".`);
+    }
+
   }
 };
 

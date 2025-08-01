@@ -191,7 +191,7 @@ async function handleAddFriend(ws, connectedClients, payload) {
     userId: senderId,
     title: 'Send Friend Request',
     activityType: 'relationship',
-    description: `Sent a friend request to ${ReceiverName.username}.`
+    description: `Sent a friend request to "${ReceiverName.username}".`  
   });
 
   } catch (err) {
@@ -228,7 +228,7 @@ async function handleAcceptFriendRequest(ws, connectedClients, payload) {
 
     await logNotification({
       userId: requesterId,
-      description: `${accepterName.username} accepted your friend request.`
+      description: `"${accepterName.username}" accepted your friend request.`
     });
 
 
@@ -257,7 +257,7 @@ async function handleAcceptFriendRequest(ws, connectedClients, payload) {
       userId: accepterId,
       title: 'Accept Friend Request',
       activityType: 'relationship',
-      description: `Accepted friend request from ${requesterName.username}.`
+      description: `Accepted friend request from "${requesterName.username}".`
     });
 
   } catch (err) {
@@ -290,7 +290,7 @@ async function handleDeclineFriendRequest(ws, connectedClients, payload) {
     // Tạo notification cho requester
     await logNotification({
       userId: requesterId,
-      description: `${declinerName.username} rejected your friend request.`
+      description: `"${declinerName.username}" rejected your friend request.`
     });
 
     // Gửi event về requester để cập nhật notification ngay
@@ -317,7 +317,7 @@ async function handleDeclineFriendRequest(ws, connectedClients, payload) {
       userId: declinerId,
       title: 'Decline Friend Request',
       activityType: 'relationship',
-      description: `Declined friend request from ${requesterName.username}.`
+      description: `Declined friend request from "${requesterName.username}".`
     });
   } catch (err) {
     console.error("Lỗi khi xử lý DECLINE_FRIEND_REQUEST:", err);
@@ -356,7 +356,7 @@ async function handleCreateGroup(ws, connectedClients, payload) {
       userId: creator_id,
       title: 'Create Group',
       activityType: 'relationship',
-      description: `Created a new group: ${group_name}.`
+      description: `Created a new group: "${group_name}".`
     });
 
   } catch (err) {
@@ -408,7 +408,7 @@ async function handleAddGroupMember(ws, connectedClients, payload) {
       groupId: groupId,
       title: 'Invite Friend to Group',
       activityType: 'relationship',
-      description: `Invited ${MemberName.username} to join the group ${groupName}.`,
+      description: `Invited "${MemberName.username}" to join the group "${groupName}".`,
     });
     
   } catch (err) {
@@ -442,7 +442,7 @@ async function handleAcceptJoinGroupRequest(ws, connectedClients, payload) {
     // ✅ Tạo Notification cho owner
     await logNotification({
       userId: ownerId,
-      description: `${accepterName.username} accepted your group joining request.`
+      description: `"${accepterName.username}" accepted your group joining request.`
     });
 
     const message = {
@@ -470,7 +470,7 @@ async function handleAcceptJoinGroupRequest(ws, connectedClients, payload) {
       groupId: groupId,
       title: 'Accept Join Group Request',
       activityType: 'relationship',
-      description: `Accepted join request for group ${GroupName.name}.`
+      description: `Accepted join request for group "${GroupName.name}".`
     });
 
   } catch (err) {
@@ -503,7 +503,7 @@ async function handleDeclineJoinGroupRequest(ws, connectedClients, payload) {
     // Tạo notification cho owner
     await logNotification({
       userId: ownerId,
-      description: `${declinerName.username} rejected your group joining request.`
+      description: `"${declinerName.username}" rejected your group joining request.`
     });
 
     const message = {
@@ -531,7 +531,7 @@ async function handleDeclineJoinGroupRequest(ws, connectedClients, payload) {
       groupId: groupId,
       title: 'Decline Join Group Request',
       activityType: 'relationship',
-      description: `Declined join group request from ${GroupName.name}.`
+      description: `Declined join group request from "${GroupName.name}".`
     });
   } catch (err) {
     console.error("Lỗi khi xử lý DECLINE_JOIN_GROUP_REQUEST:", err);
@@ -566,7 +566,7 @@ async function handleUnfriend(ws, connectedClients, payload) {
     // ✅ Tạo Notification cho người bị hủy kết bạn
     await logNotification({
       userId: friendId,
-      description: `${userName.username} unfriended you.`
+      description: `"${userName.username}" unfriended you.`
     });
 
 
@@ -597,7 +597,7 @@ async function handleUnfriend(ws, connectedClients, payload) {
       friendId: friendId,
       title: 'Unfriend',
       activityType: 'relationship',
-      description: `Deleted ${FriendName.username} from friend list.`
+      description: `Deleted "${FriendName.username}" from friend list.`
     });
 
   } catch (err) {
@@ -630,7 +630,7 @@ async function handleKickGroupMember(ws, connectedClients, payload) {
     // ✅ Tạo Notification cho người bị kick
     await logNotification({
       userId: memberId,
-      description: `You have been kicked from the group: ${groupName}.`
+      description: `You have been kicked from the group: "${groupName}".`
     });
 
     if (memberClient && memberClient.ws.readyState === ws.OPEN) {
@@ -650,7 +650,7 @@ async function handleKickGroupMember(ws, connectedClients, payload) {
       groupId: groupId,
       title: 'Kick Group Member',
       activityType: 'relationship',
-      description: `Kicked ${memberName.username} from group ${groupName}.`
+      description: `Kicked "${memberName.username}" from group "${groupName}".`
     });
 
   } catch (err) {
@@ -683,7 +683,7 @@ async function handleCreateExpense(ws, connectedClients, payload) {
       userId: paidbyId,
       title: 'Create Expense',
       activityType: 'expense',
-      description: `Created a new expense in group: ${Group.name}.`
+      description: `Created a new expense in group: "${Group.name}".`
   });
   //
 
@@ -697,14 +697,14 @@ async function handleCreateExpense(ws, connectedClients, payload) {
     if (member.userId !== createdbyId && member.userId !== paidbyId) { 
       await logNotification({
         userId: member.userId,
-        description: `${createdbyUser.username} created a new expense "${title}" in group "${Group.name}". You owe: ${member.shared_amount}đ.`,
+        description: `"${createdbyUser.username}" created a new expense "${title}" in group "${Group.name}". You owe: "${member.shared_amount}đ".`,
       });
     }
     // Member who created the expense and not paid
     else if (member.userId === createdbyId && member.userId !== paidbyId) {
       await logNotification({
         userId: member.userId,
-        description: `You created a new expense "${title}" in group "${Group.name}". You owe: ${member.shared_amount}đ.`,
+        description: `You created a new expense "${title}" in group "${Group.name}". You owe: "${member.shared_amount}đ".`,
       });
     }
     // Member who paid the expense
@@ -712,7 +712,7 @@ async function handleCreateExpense(ws, connectedClients, payload) {
     {
       await logNotification({
         userId: member.userId,
-        description: `You paid ${amount}đ for the expense "${title}" in group "${Group.name}".`,
+        description: `You paid "${amount}đ" for the expense "${title}" in group "${Group.name}".`,
       });
     }
   }
@@ -766,7 +766,7 @@ async function handleDeleteGroup(ws, connectedClients, payload) {
       userId: ownerId,
       title: 'Delete Group',
       activityType: 'relationship',
-      description: `Deleted the group ${groupName}.`
+      description: `Deleted the group "${groupName}".`
     });
 
 
@@ -827,7 +827,7 @@ async function handleRenameGroup(ws, connectedClients, payload) {
       userId: ownerId,
       title: 'Rename Group',
       activityType: 'relationship',
-      description: `Renamed the group ${oldName} to ${newName}.`
+      description: `Renamed the group "${oldName}" to "${newName}".`
     });
 
     // Log Notification: thông báo đổi tên nhóm
@@ -897,18 +897,18 @@ async function handleLeaveGroup(ws, connectedClients, payload) {
       userId: memberId,
       title: 'Leave Group',
       activityType: 'relationship',
-      description: `Left the group ${groupName}.`,
+      description: `Left the group "${groupName}".`,
     });
 
     // Log Notification: thông báo rời nhóm (cho cả người rời và chủ nhóm)
     await logNotification({
       userId: memberId,
-      description: `You have left the group ${groupName}.`
+      description: `You have left the group ""${groupName}"".`
     });
 
     await logNotification({
       userId: ownerId,
-      description: `${leftMember.username} has left your group "${groupName}".`
+      description: `"${leftMember.username}" has left your group "${groupName}".`
     });
 
     // Gửi thông báo đến tất cả thành viên trong nhóm
@@ -972,13 +972,13 @@ async function handleSettleUp(ws, connectedClients, payload) {
       userId: userId,
       title: 'Settle Up',
       activityType: 'expense',
-      description: `Requested to settle up for expense ${expense.title} in group ${group.name}.`
+      description: `Requested to settle up for expense "${expense.title}" in group "${group.name}".`
     });
 
     // Log Notification: thông báo settle up
     await logNotification({
       userId: paidbyId,
-      description: `${user.username} has requested to settle up for the expense "${expense.title}" in group "${group.name}".`
+      description: `"${user.username}" has requested to settle up for the expense "${expense.title}" in group "${group.name}".`
     });
 
     // Gửi thông báo đến người trả tiền
@@ -1049,9 +1049,26 @@ async function handleUpdateExpenseItemStatus(ws, connectedClients, payload) {
       userId: paidId,
       title: 'Update Expense Item Status',
       activityType: 'expense',
-      description: `Updated the status of expense ${expense.title} in group ${group.name} to ${statusText}.`
+      description: `Updated the status of expense "${expense.title}" in group "${group.name}" to "${statusText}".`
     });
 
+    await logNotification({
+      userId: userId,
+      description: `The status of expense item "${expense.title}" in group "${group.name}" has been updated to "${statusText}".`
+    });
+
+    // Gửi thông báo đến thành viên của item
+    userClient = connectedClients[userId];
+    if (userClient && userClient.ws.readyState === ws.OPEN) {
+      userClient.ws.send(JSON.stringify({
+        type: 'EXPENSE_ITEM_STATUS_UPDATED',
+        payload: {
+          groupName: group.name,
+          expenseTitle: expense.title,
+          status: status,
+        }
+      }));
+    }
 
   } catch (error) {
     console.error("Lỗi khi cập nhật trạng thái mục chi phí:", error);
