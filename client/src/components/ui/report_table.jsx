@@ -1,81 +1,81 @@
 import React, { useState, useEffect } from "react";
-import { useUser } from "../../hooks/useUser";
+import { useReport } from "../../hooks/useReport";
 
-export default function UserTable() {
+export default function ReportTable() {
   const [search, setSearch] = useState("");
-  const [customersData, setCustomersData] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Loading states for individual users
-  const [updatingUsers, setUpdatingUsers] = useState(new Set());
+  // Loading states for individual reports
+  const [updatingReports, setUpdatingReports] = useState(new Set());
   
-  // Local state for each user's status
-  const [userStatus, setUserStatus] = useState({});
-  const { findAllUsers, updateStatus } = useUser();
+  // Use reports from zustand store directly
+  const { reports, fetchAllReports, updateReportStatus } = useReport();
 
-  // Fetch all users on mount
+  // Fetch all reports on mount
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchReports = async () => {
       try {
         setLoading(true);
-        const users = await findAllUsers();
-        setCustomersData(users);
-        
-        // Set user status from fetched data
-        const statusMap = {};
-        users.forEach(user => {
-          statusMap[user.id] = user.status || "Unbanned";
-        });
-        setUserStatus(statusMap);
+        await fetchAllReports();
       } catch (error) {
-        console.error("Failed to fetch users:", error);
+        console.error("Failed to fetch reports:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchUsers();
-  }, [findAllUsers]);
+    fetchReports();
+  }, [fetchAllReports]);
 
   // Checkbox state
   const [selected, setSelected] = useState([]);
-
 
   // Pagination state
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
-  // State for expanded user row
-  const [expandedUserId, setExpandedUserId] = useState(null);
+  // State for expanded report row
+  const [expandedReportId, setExpandedReportId] = useState(null);
 
   // Sort state
-  const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'desc' });
 
-  // Filter by username (case insensitive)
-  let filteredCustomers = customersData.filter(
-    c => c.username.toLowerCase().includes(search.toLowerCase())
+  // Filter by reporter username or reported user username (case insensitive)
+  let filteredReports = reports.filter(
+    r => r.reporter?.username.toLowerCase().includes(search.toLowerCase()) ||
+         r.reportedUser?.username.toLowerCase().includes(search.toLowerCase()) ||
+         r.reason.toLowerCase().includes(search.toLowerCase())
   );
 
   // Sort logic
   if (sortConfig.key) {
-    filteredCustomers = [...filteredCustomers].sort((a, b) => {
-      let aValue = a[sortConfig.key];
-      let bValue = b[sortConfig.key];
+    filteredReports = [...filteredReports].sort((a, b) => {
+      let aValue, bValue;
       if (sortConfig.key === 'id') {
-        aValue = Number(aValue);
-        bValue = Number(bValue);
+        aValue = Number(a[sortConfig.key]);
+        bValue = Number(b[sortConfig.key]);
+      } else if (sortConfig.key === 'reporter') {
+        aValue = a.reporter?.username.toLowerCase() || '';
+        bValue = b.reporter?.username.toLowerCase() || '';
+      } else if (sortConfig.key === 'reportedUser') {
+        aValue = a.reportedUser?.username.toLowerCase() || '';
+        bValue = b.reportedUser?.username.toLowerCase() || '';
+      } else if (sortConfig.key === 'createdAt') {
+        aValue = new Date(a[sortConfig.key]);
+        bValue = new Date(b[sortConfig.key]);
       } else {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
+        aValue = a[sortConfig.key]?.toLowerCase() || '';
+        bValue = b[sortConfig.key]?.toLowerCase() || '';
       }
+      
       if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
   }
 
-  const totalRows = filteredCustomers.length;
+  const totalRows = filteredReports.length;
   const totalPages = Math.ceil(totalRows / rowsPerPage);
-  const paginatedCustomers = filteredCustomers.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const paginatedReports = filteredReports.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   // Sort handler
   const handleSort = (key) => {
@@ -88,62 +88,53 @@ export default function UserTable() {
       }
     });
     setPage(1);
-    setExpandedUserId(null); // Close expanded details
+    setExpandedReportId(null); // Close expanded details
   };
 
-  const isAllSelected = selected.length === paginatedCustomers.length && paginatedCustomers.length > 0;
+  const isAllSelected = selected.length === paginatedReports.length && paginatedReports.length > 0;
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelected(paginatedCustomers.map(c => c.id));
+      setSelected(paginatedReports.map(r => r.id));
     } else {
       setSelected([]);
     }
-    setExpandedUserId(null); // Close expanded details
+    setExpandedReportId(null); // Close expanded details
   };
+
   const handleSelectRow = (id) => {
-    setSelected(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-    setExpandedUserId(null); // Close expanded details
+    setSelected(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
   };
 
   // Toggle expanded row
   const handleExpandRow = (id) => {
-    setExpandedUserId(prev => (prev === id ? null : id));
+    setExpandedReportId(prev => prev === id ? null : id);
   };
 
-  const handleToggleStatus = async (id) => {
+  // Update report status
+  const handleUpdateStatus = async (id, newStatus) => {
     try {
       // Add to updating set
-      setUpdatingUsers(prev => new Set([...prev, id]));
+      setUpdatingReports(prev => new Set([...prev, id]));
       
-      const currentStatus = userStatus[id];
-      const newStatus = currentStatus === "Banned" ? "Unbanned" : "Banned";
-      
-      // Update user status via API
-      await updateStatus(id, newStatus);
-      
-      // Update local state if API call successful
-      setUserStatus(prev => ({
-        ...prev,
-        [id]: newStatus
-      }));
+      await updateReportStatus(id, newStatus);
       
       // Remove from updating set after completion
-      setUpdatingUsers(prev => {
+      setUpdatingReports(prev => {
         const newSet = new Set(prev);
         newSet.delete(id);
         return newSet;
       });
     } catch (error) {
       // Remove from updating set on error
-      setUpdatingUsers(prev => {
+      setUpdatingReports(prev => {
         const newSet = new Set(prev);
         newSet.delete(id);
         return newSet;
       });
       
-      console.error("Failed to update user status:", error);
-      // You can add a toast notification here if needed
+      console.error("Failed to update report status:", error);
+      alert("Failed to update report status: " + error.message);
     }
   };
 
@@ -155,110 +146,50 @@ export default function UserTable() {
     if (selected.length > 0) {
       setShowBar(true);
       setBarLeaving(false);
-    } else if (showBar) {
-      setBarLeaving(true);
-      const timeout = setTimeout(() => {
-        setShowBar(false);
-        setBarLeaving(false);
-      }, 300);
-      return () => clearTimeout(timeout);
+    } else {
+      if (showBar) {
+        setBarLeaving(true);
+        setTimeout(() => {
+          setShowBar(false);
+          setBarLeaving(false);
+        }, 300);
+      }
     }
   }, [selected.length]);
 
-  // Ban selected users
-  const handleBanSelected = async () => {
+  // Resolve selected reports
+  const handleResolveSelected = async () => {
     try {
-      // Filter selected users that are currently unbanned
-      const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
+      // Add all selected reports to updating set
+      setUpdatingReports(prev => new Set([...prev, ...selected]));
       
-      // Add all users to ban to updating set
-      setUpdatingUsers(prev => new Set([...prev, ...usersToBan]));
+      await Promise.all(selected.map(id => updateReportStatus(id, 'Resolved')));
       
-      // Update each user via API
-      await Promise.all(
-        usersToBan.map(id => updateStatus(id, "Banned"))
-      );
-      
-      // Update local state if all API calls successful
-      setUserStatus(prev => {
-        const updated = { ...prev };
-        usersToBan.forEach(id => {
-          updated[id] = "Banned";
-        });
-        return updated;
-      });
-      
-      // Remove all banned users from updating set and clear selection
-      setUpdatingUsers(prev => {
+      // Remove all selected reports from updating set and clear selection
+      setUpdatingReports(prev => {
         const newSet = new Set(prev);
-        usersToBan.forEach(id => newSet.delete(id));
+        selected.forEach(id => newSet.delete(id));
         return newSet;
       });
       setSelected([]);
-      setExpandedUserId(null); // Close expanded details
     } catch (error) {
-      // Remove all users from updating set on error
-      const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
-      setUpdatingUsers(prev => {
+      // Remove all selected reports from updating set on error
+      setUpdatingReports(prev => {
         const newSet = new Set(prev);
-        usersToBan.forEach(id => newSet.delete(id));
+        selected.forEach(id => newSet.delete(id));
         return newSet;
       });
       
-      console.error("Failed to ban selected users:", error);
-      // You can add a toast notification here if needed
+      console.error("Failed to resolve reports:", error);
     }
   };
 
-  // Unban selected users
-  const handleUnbanSelected = async () => {
-    try {
-      // Filter selected users that are currently banned
-      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
-      
-      // Add all users to unban to updating set
-      setUpdatingUsers(prev => new Set([...prev, ...usersToUnban]));
-      
-      // Update each user via API
-      await Promise.all(
-        usersToUnban.map(id => updateStatus(id, "Unbanned"))
-      );
-      
-      // Update local state if all API calls successful
-      setUserStatus(prev => {
-        const updated = { ...prev };
-        usersToUnban.forEach(id => {
-          updated[id] = "Unbanned";
-        });
-        return updated;
-      });
-      
-      // Remove all unbanned users from updating set and clear selection
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        usersToUnban.forEach(id => newSet.delete(id));
-        return newSet;
-      });
-      setSelected([]);
-      setExpandedUserId(null); // Close expanded details
-    } catch (error) {
-      // Remove all users from updating set on error
-      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        usersToUnban.forEach(id => newSet.delete(id));
-        return newSet;
-      });
-      
-      console.error("Failed to unban selected users:", error);
-      // You can add a toast notification here if needed
-    }
-  };
-
-  // Check if any selected users are banned
-  const selectedUsers = selected.map(id => ({ id, status: userStatus[id] }));
-  const hasUnbannedUsers = selectedUsers.some(user => user.status === "Unbanned");
-  const hasBannedUsers = selectedUsers.some(user => user.status === "Banned");
+  // Check if any selected reports are pending
+  const selectedReports = selected.map(id => {
+    const report = reports.find(r => r.id === id);
+    return { id, status: report?.status || 'Pending' };
+  });
+  const hasPendingReports = selectedReports.some(report => report.status === "Pending");
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 shadow bg-white relative">
@@ -267,12 +198,12 @@ export default function UserTable() {
         <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-30">
           <div className="flex items-center gap-2">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="text-gray-600">Loading users...</span>
+            <span className="text-gray-600">Loading reports...</span>
           </div>
         </div>
       )}
       
-      {/* Notification bar for selected users */}
+      {/* Notification bar for selected reports */}
       {showBar && (
         <div className={`absolute left-0 right-0 top-0 z-20 flex items-center bg-blue-50 border-b border-blue-200 px-6 py-3 ${barLeaving ? 'animate-slide-down' : 'animate-slide-up'}`}>
           <div className="flex items-center gap-2">
@@ -285,45 +216,30 @@ export default function UserTable() {
               &times;
             </button>
             <span className="text-blue-700 font-medium">
-              {selected.length} user{selected.length > 1 ? 's' : ''} selected
+              {selected.length} report{selected.length > 1 ? 's' : ''} selected
             </span>
           </div>
           <div className="flex-1 flex justify-end gap-2">
-            {hasUnbannedUsers && (
+            {hasPendingReports && (
               <button
                 className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
-                  selected.some(id => updatingUsers.has(id))
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-red-500 hover:bg-red-600'
-                } text-white`}
-                onClick={handleBanSelected}
-                disabled={selected.some(id => updatingUsers.has(id))}
-              >
-                {selected.some(id => updatingUsers.has(id)) && (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                )}
-                {selected.some(id => updatingUsers.has(id)) ? 'Waiting...' : 'Ban'}
-              </button>
-            )}
-            {hasBannedUsers && (
-              <button
-                className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
-                  selected.some(id => updatingUsers.has(id))
+                  selected.some(id => updatingReports.has(id))
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-green-500 hover:bg-green-600'
                 } text-white`}
-                onClick={handleUnbanSelected}
-                disabled={selected.some(id => updatingUsers.has(id))}
+                onClick={handleResolveSelected}
+                disabled={selected.some(id => updatingReports.has(id))}
               >
-                {selected.some(id => updatingUsers.has(id)) && (
+                {selected.some(id => updatingReports.has(id)) && (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 )}
-                {selected.some(id => updatingUsers.has(id)) ? 'Waiting...' : 'Unban'}
+                {selected.some(id => updatingReports.has(id)) ? 'Waiting...' : 'Resolve'}
               </button>
             )}
           </div>
         </div>
       )}
+      
       <style>{`
         @keyframes slide-up {
           0% { opacity: 0; transform: translateY(40px); }
@@ -347,7 +263,8 @@ export default function UserTable() {
           animation: fade-in 0.25s cubic-bezier(0.4,0,0.2,1);
         }
       `}</style>
-      {/* Search bar with magnifying glass icon */}
+      
+      {/* Search bar */}
       <div className="p-4 flex items-center">
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -358,16 +275,17 @@ export default function UserTable() {
           </span>
           <input
             type="text"
-            placeholder="Search user name."
-            className="border pl-9 pr-3 py-2 rounded w-48"
+            placeholder="Search reports by username or reason..."
+            className="border pl-9 pr-3 py-2 rounded w-80"
             value={search}
             onChange={e => {
               setSearch(e.target.value);
-              setExpandedUserId(null); // Close expanded details when searching
+              setExpandedReportId(null);
             }}
           />
         </div>
       </div>
+
       <table className="min-w-full text-sm align-middle">
         <thead>
           <tr className="bg-gray-50">
@@ -395,11 +313,11 @@ export default function UserTable() {
                 </span>
               </span>
             </th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('username')}>
+            <th className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('reporter')}>
               <span className="inline-flex items-center">
-                Username
+                Reporter
                 <span className="ml-1">
-                  {sortConfig.key === 'username' ? (
+                  {sortConfig.key === 'reporter' ? (
                     sortConfig.direction === 'asc' ? (
                       <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
                     ) : (
@@ -411,11 +329,11 @@ export default function UserTable() {
                 </span>
               </span>
             </th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('email')}>
+            <th className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('reportedUser')}>
               <span className="inline-flex items-center">
-                Email
+                Reported User
                 <span className="ml-1">
-                  {sortConfig.key === 'email' ? (
+                  {sortConfig.key === 'reportedUser' ? (
                     sortConfig.direction === 'asc' ? (
                       <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
                     ) : (
@@ -427,17 +345,32 @@ export default function UserTable() {
                 </span>
               </span>
             </th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-700">Phone</th>
+            <th className="px-4 py-3 text-left font-semibold text-gray-700">Reason</th>
+            <th className="px-4 py-3 text-center font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('createdAt')}>
+              <span className="inline-flex items-center">
+                Date
+                <span className="ml-1">
+                  {sortConfig.key === 'createdAt' ? (
+                    sortConfig.direction === 'asc' ? (
+                      <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
+                    ) : (
+                      <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    )
+                  ) : (
+                    <svg className="inline w-3 h-3 text-gray-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
+                  )}
+                </span>
+              </span>
+            </th>
             <th className="px-4 py-3 text-center font-semibold text-gray-700">Status</th>
           </tr>
         </thead>
         <tbody>
-          {paginatedCustomers.length > 0 ? paginatedCustomers.map((row, idx) => (
+          {paginatedReports.length > 0 ? paginatedReports.map((row, idx) => (
             <React.Fragment key={row.id}>
               <tr
                 className={`${idx % 2 === 0 ? "bg-white hover:bg-blue-50" : "bg-gray-50 hover:bg-blue-50"} transition cursor-pointer`}
                 onClick={e => {
-                  // Đừng mở rộng khi click vào checkbox
                   if (e.target.tagName === 'INPUT') return;
                   handleExpandRow(row.id);
                 }}
@@ -451,90 +384,94 @@ export default function UserTable() {
                   />
                 </td>
                 <td className="px-4 py-2 text-center">{row.id}</td>
-                <td className="px-4 py-2 text-left">{row.username}</td>
-                <td className="px-4 py-2 text-left">{row.email}</td>
-                <td className="px-4 py-2 text-left">{row.phone}</td>
+                <td className="px-4 py-2 text-left">{row.reporter?.username || 'N/A'}</td>
+                <td className="px-4 py-2 text-left">{row.reportedUser?.username || 'N/A'}</td>
+                <td className="px-4 py-2 text-left">{row.reason.length > 50 ? row.reason.substring(0, 50) + '...' : row.reason}</td>
+                <td className="px-4 py-2 text-center">
+                  {new Date(row.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </td>
                 <td className="px-4 py-2 text-center">
                   <span
-                    className={`w-24 px-3 py-1 rounded font-semibold inline-block ${userStatus[row.id] === "Banned" ? "bg-red-100 text-red-600 border border-red-400" : "bg-green-100 text-green-700 border border-green-400"}`}
+                    className={`w-24 px-3 py-1 rounded font-semibold inline-block ${
+                      (row.status || 'Pending') === "Pending" ? "bg-yellow-100 text-yellow-700 border border-yellow-400" :
+                      (row.status || 'Pending') === "Resolved" ? "bg-green-100 text-green-700 border border-green-400" :
+                      "bg-red-100 text-red-600 border border-red-400"
+                    }`}
                   >
-                    {userStatus[row.id]}
+                    {row.status || 'Pending'}
                   </span>
                 </td>
               </tr>
-              {expandedUserId === row.id && (
+              {expandedReportId === row.id && (
                 <tr>
-                  <td colSpan={6} className="bg-blue-50 border-t border-b border-blue-200 animate-fade-in">
+                  <td colSpan={7} className="bg-blue-50 border-t border-b border-blue-200 animate-fade-in">
                     <div className="p-4">
-                      <div className="font-semibold text-gray-700 mb-3">User Details</div>
+                      <div className="font-semibold text-gray-700 mb-3">Report Details</div>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="font-medium text-gray-600">ID:</span>
+                          <span className="font-medium text-gray-600">Report ID:</span>
                           <span className="ml-2">{row.id}</span>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Username:</span>
-                          <span className="ml-2">{row.username}</span>
+                          <span className="font-medium text-gray-600">Reporter:</span>
+                          <span className="ml-2">{row.reporter?.username} ({row.reporter?.email})</span>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Email:</span>
-                          <span className="ml-2">{row.email}</span>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Phone:</span>
-                          <span className="ml-2">{row.phone}</span>
+                          <span className="font-medium text-gray-600">Reported User:</span>
+                          <span className="ml-2">{row.reportedUser?.username} ({row.reportedUser?.email})</span>
                         </div>
                         <div>
                           <span className="font-medium text-gray-600">Status:</span>
-                          <span className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${userStatus[row.id] === "Banned" ? "bg-red-100 text-red-600" : "bg-green-100 text-green-700"}`}>
-                            {userStatus[row.id]}
+                          <span className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${
+                            (row.status || 'Pending') === "Pending" ? "bg-yellow-100 text-yellow-700" :
+                            (row.status || 'Pending') === "Resolved" ? "bg-green-100 text-green-700" :
+                            "bg-red-100 text-red-600"
+                          }`}>
+                            {row.status || 'Pending'}
                           </span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="font-medium text-gray-600">Reason:</span>
+                          <p className="ml-2 mt-1 text-gray-700">{row.reason}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Account Created:</span>
+                          <span className="font-medium text-gray-600">Reported Date:</span>
                           <span className="ml-2">
-                            {row.createdAt 
-                              ? new Date(row.createdAt).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric'
-                                })
-                              : 'N/A'
-                            }
+                            {new Date(row.createdAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </span>
                         </div>
                       </div>
-                      <div className="mt-4 flex items-center gap-3">
-                        <button
-                          className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
-                            updatingUsers.has(row.id)
-                              ? 'bg-gray-400 cursor-not-allowed'
-                              : userStatus[row.id] === "Banned" 
-                                ? "bg-green-500 text-white hover:bg-green-600" 
-                                : "bg-red-500 text-white hover:bg-red-600"
-                          } text-white`}
-                          onClick={() => handleToggleStatus(row.id)}
-                          disabled={updatingUsers.has(row.id)}
-                        >
-                          {updatingUsers.has(row.id) && (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          )}
-                          {updatingUsers.has(row.id) 
-                            ? 'Waiting...' 
-                            : userStatus[row.id] === "Banned" ? "Unban" : "Ban"
-                          }
-                        </button>
-                        <span className="text-sm text-gray-500">
-                          {updatingUsers.has(row.id) 
-                            ? 'Processing...' 
-                            : `Click to ${userStatus[row.id] === "Banned" ? "unban" : "ban"} this user`
-                          }
-                        </span>
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-blue-300">
-                        <span className="font-medium text-gray-600">Additional Info:</span>
-                        <p className="text-gray-500 text-sm mt-1">Click on this row to expand/collapse user details. You can add more information here as needed.</p>
-                      </div>
+                      {(row.status === "Pending" || !row.status) && (
+                        <div className="mt-4 flex items-center gap-3">
+                          <button
+                            className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
+                              updatingReports.has(row.id) 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-green-500 hover:bg-green-600'
+                            } text-white`}
+                            onClick={() => handleUpdateStatus(row.id, 'Resolved')}
+                            disabled={updatingReports.has(row.id)}
+                          >
+                            {updatingReports.has(row.id) && (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            )}
+                            {updatingReports.has(row.id) ? 'Waiting...' : 'Resolve'}
+                          </button>
+                          <span className="text-sm text-gray-500">
+                            {updatingReports.has(row.id) ? 'Processing...' : 'Click to resolve this report'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -542,8 +479,8 @@ export default function UserTable() {
             </React.Fragment>
           )) : (
             <tr>
-              <td colSpan={6} className="text-center py-4 text-gray-500">
-                {loading ? "Loading..." : "No users found"}
+              <td colSpan={7} className="text-center py-8 text-gray-500">
+                {filteredReports.length === 0 && search ? 'No reports match your search.' : 'No reports found.'}
               </td>
             </tr>
           )}
@@ -561,7 +498,7 @@ export default function UserTable() {
               onChange={e => {
                 setRowsPerPage(Number(e.target.value));
                 setPage(1);
-                setExpandedUserId(null); // Close expanded details when changing rows per page
+                setExpandedReportId(null); // Close expanded details when changing rows per page
               }}
             >
               {[5, 10, 15].map(n => (
@@ -586,7 +523,7 @@ export default function UserTable() {
               className="px-2 py-1 rounded disabled:opacity-50"
               onClick={() => {
                 setPage(page - 1);
-                setExpandedUserId(null); // Close expanded details when changing page
+                setExpandedReportId(null); // Close expanded details when changing page
               }}
               disabled={page === 1}
             >
@@ -598,7 +535,7 @@ export default function UserTable() {
                 className={`w-8 h-8 rounded-full flex items-center justify-center ${p === page ? 'bg-gray-200 font-bold' : ''}`}
                 onClick={() => {
                   setPage(p);
-                  setExpandedUserId(null); // Close expanded details when changing page
+                  setExpandedReportId(null); // Close expanded details when changing page
                 }}
               >
                 {p}
@@ -608,7 +545,7 @@ export default function UserTable() {
               className="px-2 py-1 rounded disabled:opacity-50"
               onClick={() => {
                 setPage(page + 1);
-                setExpandedUserId(null); // Close expanded details when changing page
+                setExpandedReportId(null); // Close expanded details when changing page
               }}
               disabled={page === totalPages || totalPages === 0}
             >

@@ -7,7 +7,8 @@ const {
     rejectGroupRequest,
     removeMember,
     getPendingGroupInvites,
-    getSentGroupRequests
+    getSentGroupRequests,
+    leaveGroup
 } = require('../controllers/groupMembersController');
 
 // API: /api/group-members/
@@ -32,5 +33,8 @@ router.get('/:userId/pending-invites', getPendingGroupInvites);
 
 // Get sent group requests for a user
 router.get('/:userId/sent-requests', getSentGroupRequests);
+
+// New route to leave a group
+router.post('/leave', leaveGroup);
 
 module.exports = router;

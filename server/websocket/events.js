@@ -1,7 +1,7 @@
 const { createFriendRequest } = require('../services/friendService.js');
-const { createGroup, createGroupMemberRequest } = require('../services/groupService.js');
+const { createGroup, createGroupMemberRequest, deleteGroup } = require('../services/groupService.js');
 const { logActivity } = require('../services/activityService.js');
-const { Users, Groups } = require('../schemas');
+const { Users, Groups, groupMembers } = require('../schemas');
 const { logNotification } = require('../services/notificationService.js');
 
 module.exports = function(ws, connectedClients) {
@@ -70,6 +70,22 @@ module.exports = function(ws, connectedClients) {
           break;
 
         
+        // Handle delete group
+        case 'DELETE_GROUP':
+          handleDeleteGroup(ws, connectedClients, jsonData.payload);
+          break;
+
+        // Handle rename group
+        case 'RENAME_GROUP':
+          handleRenameGroup(ws, connectedClients, jsonData.payload);
+          break;
+
+        // Handle Leave Group
+        case 'LEAVE_GROUP':
+          handleLeaveGroup(ws, connectedClients, jsonData.payload);
+          break;
+
+
       
         default:
           ws.send(JSON.stringify({ 
@@ -721,5 +737,195 @@ async function handleCreateExpense(ws, connectedClients, payload) {
 
   } catch (err) {
     console.error("Lỗi khi tạo chi phí:", err);
+  }
+}
+
+
+// Handle DELETE_GROUP
+async function handleDeleteGroup(ws, connectedClients, payload) {
+  const { groupId, ownerId, groupName } = payload;
+
+  if (!groupId || !ownerId || !groupName) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin groupId, ownerId hoặc groupName.'
+    }));
+  }
+
+  try {
+
+    await logActivity({
+      userId: ownerId,
+      title: 'Delete Group',
+      activityType: 'relationship',
+      description: `Deleted the group ${groupName}.`
+    });
+
+
+    // 2. Gửi Notification cho tất cả thành viên
+    const groupMembersList = await groupMembers.findAll({ where: { groupId } });
+    const notifications = groupMembersList.map(member =>
+      logNotification({
+        userId: member.userId,
+        description: `The group "${groupName}" has been deleted by the owner.`,
+      })
+    );
+    await Promise.all(notifications); // Chờ tất cả notification được ghi
+
+    // 3. Xóa nhóm
+    await deleteGroup(groupId);
+
+    // 4. Gửi thông báo xóa nhóm đến tất cả thành viên 
+    groupMembersList.forEach(member => {
+      const memberClient = connectedClients[member.userId];
+      if (memberClient && memberClient.ws.readyState === ws.OPEN) {
+        memberClient.ws.send(JSON.stringify({
+          type: 'GROUP_DELETED',
+          payload: {
+            groupId,
+            groupName,
+            ownerId,
+          },
+        }));
+      }
+    });
+
+  } catch (err) {
+    console.error("Lỗi khi xóa nhóm:", err);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: err.message
+    }));
+  }
+}
+
+// Handle RENAME_GROUP
+async function handleRenameGroup(ws, connectedClients, payload) {
+  const { groupId, newName, oldName, ownerId } = payload;
+
+  if (!groupId || !newName || !oldName || !ownerId) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin groupId, newName, oldName hoặc ownerId.'
+    }));
+  }
+
+  try {
+    group = await Groups.findOne({ where: { id: groupId } });
+    const Members = await groupMembers.findAll({ where: { groupId } });
+
+    // Ghi nhận Activity: đổi tên nhóm
+    await logActivity({
+      userId: ownerId,
+      title: 'Rename Group',
+      activityType: 'relationship',
+      description: `Renamed the group ${oldName} to ${newName}.`
+    });
+
+    // Log Notification: thông báo đổi tên nhóm
+    const notifications = Members.map(member =>
+      logNotification({
+        userId: member.userId,
+        description: `The group has been renamed from "${oldName}" to "${newName}".`
+      })
+    );
+
+    await Promise.all(notifications); // Chờ tất cả notification được ghi
+
+    // Gửi thông báo đến tất cả thành viên trong nhóm
+    Members.forEach(member => {
+      const memberClient = connectedClients[member.userId];
+      if (memberClient && memberClient.ws.readyState === ws.OPEN) {
+        memberClient.ws.send(JSON.stringify({
+          type: 'GROUP_RENAMED',
+          payload: {
+            groupId,
+            newName,
+            oldName,
+            ownerId,
+          }
+        }));
+      }
+    });
+
+  } catch (err) {
+    console.error("Lỗi khi đổi tên nhóm:", err);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: err.message
+    }));
+  }
+
+}
+
+
+// Handle Leave Group
+async function handleLeaveGroup(ws, connectedClients, payload) {
+  const { groupId, memberId, groupName } = payload;
+
+  if (!groupId || !memberId || !groupName) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin groupId, memberId hoặc groupName.'
+    }));
+  }
+
+  try {
+    // Tìm thông tin nhóm và thành viên
+    const group = await Groups.findOne({ where: { id: groupId } });
+    if (!group) {
+      throw new Error('Group not found');
+    }
+
+    const leftMember = await Users.findOne({ where: { id: memberId } });
+    if (!leftMember) {
+      throw new Error('Member not found');
+    }
+
+    const ownerId = group.ownerId;
+
+    // Ghi nhận Activity: rời nhóm (chỉ log cho người rời nhóm)
+    await logActivity({
+      userId: memberId,
+      title: 'Leave Group',
+      activityType: 'relationship',
+      description: `Left the group ${groupName}.`,
+    });
+
+    // Log Notification: thông báo rời nhóm (cho cả người rời và chủ nhóm)
+    await logNotification({
+      userId: memberId,
+      description: `You have left the group ${groupName}.`
+    });
+
+    await logNotification({
+      userId: ownerId,
+      description: `${leftMember.username} has left your group "${groupName}".`
+    });
+
+    // Gửi thông báo đến tất cả thành viên trong nhóm
+    const groupMembersList = await groupMembers.findAll({ where: { groupId } });
+    groupMembersList.forEach(member => {
+      const memberClient = connectedClients[member.userId];
+      if (memberClient && memberClient.ws.readyState === ws.OPEN) {
+        memberClient.ws.send(JSON.stringify({
+          type: 'GROUP_MEMBER_LEFT',
+          payload: {
+            groupId,
+            groupName,
+            memberId: leftMember.id,
+            memberName: leftMember.username,
+          },
+        }));
+      }
+    });
+
+
+  } catch (err) {
+    console.error("Lỗi khi xử lý Leave Group:", err);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: err.message || 'Failed to process leave group.',
+    }));
   }
 }

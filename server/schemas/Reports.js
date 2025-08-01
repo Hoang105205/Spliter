@@ -28,6 +28,11 @@ const Reports = sequelize.define('Report',
         type: DataTypes.STRING,
         allowNull: false,
     },
+    status: {
+        type: DataTypes.ENUM('Pending', 'Resolved'),
+        defaultValue: 'Pending',
+        allowNull: false,
+    },
 },
 {
     tableName: 'reports',

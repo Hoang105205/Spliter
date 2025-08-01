@@ -128,4 +128,16 @@ export const useExpense = create(() => ({
       return null;
     }
   },
+
+  // Lấy tất cả expenses cho admin statistics
+  getAllExpenses: async () => {
+    try {
+      const response = await api.get('/api/expenses/all');
+      return response.data; // Trả về danh sách tất cả expenses
+    } catch (err) {
+      console.error('Error fetching all expenses:', err);
+      toast.error('Failed to fetch expenses. Please try again.');
+      return [];
+    }
+  },
 }));

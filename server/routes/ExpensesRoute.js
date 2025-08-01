@@ -8,9 +8,13 @@ const {
     getUserExpenses,
     updateExpenseItemStatus,
     getExpensesById,
+    getAllExpenses,
 } = require('../controllers/ExpensesController');
 
 // API: /api/expenses/
+
+// Get all expenses for admin (must be first before parameterized routes)
+router.get('/all', getAllExpenses);
 
 // Get all expenses in a group
 router.get('/:groupId', getExpenses);

@@ -129,6 +129,25 @@ const getSentGroupRequests = async (req, res) => {
     }
 }
 
+const leaveGroup = async (req, res) => {
+    try {
+        const { groupId, userId } = req.body;
+        if (!groupId || !userId) {
+            return res.status(400).json({ message: 'Group ID and User ID are required' });
+        }
+
+        const member = await groupMembers.findOne({ where: { groupId, userId } });
+        if (!member) {
+            return res.status(404).json({ message: 'Member not found in this group' });
+        }
+
+        await member.destroy();
+        res.status(200).json({ message: 'Successfully left the group' });
+    } catch (error) {
+        res.status(500).json({ message: error.message || 'Failed to leave group' });
+    }
+};
+
 
 module.exports = {
     getAllGroupsOfUser,
@@ -137,5 +156,6 @@ module.exports = {
     rejectGroupRequest,
     removeMember,
     getPendingGroupInvites,
-    getSentGroupRequests
+    getSentGroupRequests,
+    leaveGroup
 };

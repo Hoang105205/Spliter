@@ -1,4 +1,5 @@
-const { Groups, Users, groupMembers, Activities } = require('../schemas');
+const { Groups, Users, groupMembers, Activities, Expenses, expenseItems } = require('../schemas');
+const sequelize = require('../config/db');
 
 
 const createGroup = async ({ name, ownerId }) => {
@@ -73,7 +74,54 @@ const createGroupMemberRequest = async ({senderId, groupId, memberId}) => {
 
 };
 
+
+const deleteGroup = async (groupId) => {
+  if (!groupId) {
+    throw new Error('groupId is required');
+  }
+
+  const transaction = await sequelize.transaction();
+
+  try {
+    // 1. Xóa tất cả ExpenseItem liên quan đến group
+    await expenseItems.destroy({
+      where: { groupId },
+      transaction,
+    });
+
+    // 2. Xóa tất cả Expense liên quan đến group
+    await Expenses.destroy({
+      where: { groupId },
+      transaction,
+    });
+
+    // 3. Xóa tất cả thành viên liên quan đến group
+    await groupMembers.destroy({
+      where: { groupId },
+      transaction,
+    });
+
+    // 4. Xóa group
+    const deleted = await Groups.destroy({
+      where: { id: groupId },
+      transaction,
+    });
+
+    if (!deleted) {
+      throw new Error('Group not found');
+    }
+
+    await transaction.commit();
+
+    return { success: true };
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+};
+
 module.exports = {
   createGroup,
-  createGroupMemberRequest
+  createGroupMemberRequest,
+  deleteGroup
 };
