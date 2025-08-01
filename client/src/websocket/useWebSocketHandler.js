@@ -137,6 +137,10 @@ export const useWebSocketHandler = (ws) => {
         incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
         break;
 
+      case 'SETTLE_UP_REQUEST':
+        handleSettleUpRequest(jsonData.payload);
+        incrementNotificationTrigger(); // ✅ Tăng trigger để UI cập nhật
+        break;
 
       default:
         console.warn(`⚠️ Loại tin nhắn không hỗ trợ: ${type}`);
@@ -260,6 +264,11 @@ export const useWebSocketHandler = (ws) => {
       toast.info(`${memberName} has left the group "${groupName}"`);
     }
     fetchGroups(userData.id); // Cập nhật danh sách nhóm
+  }
+
+  // Handle settle up request
+  const handleSettleUpRequest = ({ groupName, userName, expenseTitle }) => {
+    toast.info(`💰 ${userName} has requested to settle up for the expense "${expenseTitle}" in group "${groupName}".`);
   }
 };
 

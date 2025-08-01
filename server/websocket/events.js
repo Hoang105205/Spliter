@@ -1,7 +1,7 @@
 const { createFriendRequest } = require('../services/friendService.js');
 const { createGroup, createGroupMemberRequest, deleteGroup } = require('../services/groupService.js');
 const { logActivity } = require('../services/activityService.js');
-const { Users, Groups, groupMembers } = require('../schemas');
+const { Users, Groups, groupMembers, Expenses, expenseItems } = require('../schemas');
 const { logNotification } = require('../services/notificationService.js');
 
 module.exports = function(ws, connectedClients) {
@@ -83,6 +83,14 @@ module.exports = function(ws, connectedClients) {
         // Handle Leave Group
         case 'LEAVE_GROUP':
           handleLeaveGroup(ws, connectedClients, jsonData.payload);
+          break;
+
+        case 'SETTLE_UP':
+          handleSettleUp(ws, connectedClients, jsonData.payload);
+          break;
+
+        case 'UPDATE_EXPENSE_ITEM_STATUS':
+          handleUpdateExpenseItemStatus(ws, connectedClients, jsonData.payload);
           break;
 
 
@@ -926,6 +934,130 @@ async function handleLeaveGroup(ws, connectedClients, payload) {
     ws.send(JSON.stringify({
       type: 'ERROR',
       message: err.message || 'Failed to process leave group.',
+    }));
+  }
+}
+
+// Handle SETTLE_UP
+async function handleSettleUp(ws, connectedClients, payload) {
+  const { expenseId, groupId, userId, paidbyId } = payload;
+  
+  if (!expenseId || !groupId || !userId || !paidbyId) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin expenseId, groupId, userId hoặc paidbyId.'
+    }));
+  }
+
+  try {
+    const group = await Groups.findOne({ where: { id: groupId } });
+    if (!group) {
+      throw new Error('Group not found');
+    }
+
+    const user = await Users.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const paidUser = await Users.findOne({ where: { id: paidbyId } });
+    if (!paidUser) {
+      throw new Error('Paid user not found');
+    }
+
+    const expense = await Expenses.findOne({ where: { id: expenseId, groupId } });
+
+    // Ghi nhận Activity: gửi yêu cầu settle up
+    await logActivity({
+      userId: userId,
+      title: 'Settle Up',
+      activityType: 'expense',
+      description: `Requested to settle up for expense ${expense.title} in group ${group.name}.`
+    });
+
+    // Log Notification: thông báo settle up
+    await logNotification({
+      userId: paidbyId,
+      description: `${user.username} has requested to settle up for the expense "${expense.title}" in group "${group.name}".`
+    });
+
+    // Gửi thông báo đến người trả tiền
+    const paidUserClient = connectedClients[paidbyId];
+    if (paidUserClient && paidUserClient.ws.readyState === ws.OPEN) {
+      paidUserClient.ws.send(JSON.stringify({
+        type: 'SETTLE_UP_REQUEST',
+        payload: {
+          groupName: group.name,
+          userName: user.username,
+          expenseTitle: expense.title,
+        }
+      }));
+    }
+
+  }
+  catch (error) {
+    console.error("Lỗi khi gửi tin nhắn WebSocket:", error);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: "Failed to settle up. Please try again."
+    }));
+  }
+
+}
+
+// Handle update expense item status  
+async function handleUpdateExpenseItemStatus(ws, connectedClients, payload) {
+  const { expenseId, groupId, itemId, userId, paidId, status } = payload;
+
+  if (!expenseId || !itemId || !groupId || !userId || !paidId || !status) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Thiếu thông tin expenseId, itemId, groupId, userId, paidId hoặc status.'
+    }));
+  }
+
+  try {
+    const user = await Users.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const group = await Groups.findOne({ where: { id: groupId } });
+    if (!group) {
+      throw new Error('Group not found');
+    }
+
+    const expense = await Expenses.findOne({ where: { id: expenseId } });
+    if (!expense) {
+      throw new Error('Expense not found');
+    }
+
+    // Cập nhật trạng thái của mục chi phí
+    const expenseItem = await expenseItems.findOne({ where: { id: itemId, expenseId: expenseId } });
+    if (!expenseItem) {
+      throw new Error('Expense item not found');
+    }
+
+    expenseItem.is_paid = status;
+    await expenseItem.save();
+
+    // Ghi nhận Activity: cập nhật trạng thái mục chi phí
+    // Chuyển đổi status thành chuỗi mô tả
+    let statusText = status === 'yes' ? 'Paid' : 'Unpaid';
+
+    await logActivity({
+      userId: paidId,
+      title: 'Update Expense Item Status',
+      activityType: 'expense',
+      description: `Updated the status of expense ${expense.title} in group ${group.name} to ${statusText}.`
+    });
+
+
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái mục chi phí:", error);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: "Failed to update expense item status. Please try again."
     }));
   }
 }
