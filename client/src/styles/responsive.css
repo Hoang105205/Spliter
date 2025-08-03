@@ -1,0 +1,106 @@
+/* Global responsive scaling system - Smaller overall scale */
+:root {
+  --base-width: 1500;
+  --scale-factor: 0.85; /* Toàn bộ app nhỏ 15% */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  zoom: var(--scale-factor);
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  transition: all 0.2s ease-out;
+}
+
+/* Responsive utility classes */
+.responsive-text {
+  font-size: clamp(0.8rem, 2.5vw, 1.2rem);
+}
+
+.responsive-container {
+  width: 100%;
+  max-width: 93.75rem; /* 1500px in rem */
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.scalable-component {
+  width: 100%;
+  padding: 1rem;
+  margin: 0.5rem 0;
+}
+
+/* Responsive scaling using CSS zoom - Smaller scale factors */
+@media (max-width: 1500px) and (min-width: 1200px) {
+  :root {
+    --scale-factor: calc(0.9 * 100vw / 1500); /* 10% nhỏ hơn */
+  }
+}
+
+@media (max-width: 1199px) and (min-width: 992px) {
+  :root {
+    --scale-factor: 0.7; /* Từ 0.8 xuống 0.7 */
+  }
+}
+
+@media (max-width: 991px) and (min-width: 768px) {
+  :root {
+    --scale-factor: 0.55; /* Từ 0.66 xuống 0.55 */
+  }
+  
+  .responsive-container {
+    max-width: 100%;
+    padding: 0 0.8rem;
+  }
+}
+
+@media (max-width: 767px) and (min-width: 576px) {
+  :root {
+    --scale-factor: 0.42; /* Từ 0.52 xuống 0.42 */
+  }
+}
+
+@media (max-width: 575px) and (min-width: 400px) {
+  :root {
+    --scale-factor: 0.3; /* Từ 0.38 xuống 0.3 */
+  }
+}
+
+@media (max-width: 399px) {
+  :root {
+    --scale-factor: 0.22; /* Từ 0.27 xuống 0.22 */
+  }
+}
+
+/* Responsive containers */
+.responsive-container {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (max-width: 1200px) {
+  .responsive-container {
+    max-width: 100%;
+    padding: 0 0.8rem;
+  }
+}
