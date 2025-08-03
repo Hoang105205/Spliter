@@ -407,7 +407,7 @@ function Dashboard_main() {
             </main>
 
             {/* Right Sidebar */}
-            <aside className="w-[269px] h-screen pl-4 border-l-4 border-[#4A73A8]">
+            <aside className="w-[269px] pl-4 border-l-4 border-[#4A73A8]">
               <div className="bg-[#cccccc]/30 rounded-[15px] bg-[100%_100%] h-[38px] flex items-center justify-between px-3.5">
                 <span className="[font-family:'Roboto',Helvetica] text-[#666666] text-xl">
                   Your friend

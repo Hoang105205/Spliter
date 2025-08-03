@@ -80,7 +80,7 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
 
 
   return (
-    <aside className="w-[342px] h-screen pr-4 border-r-4 border-[#4A73A8]">
+    <aside className="w-[342px] pr-4 border-r-4 border-[#4A73A8]">
       <nav className="mt-4 space-y-6">
         {/* Dashboard */}
         <div

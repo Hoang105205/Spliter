@@ -1179,7 +1179,7 @@ function Dashboard_group() {
 
             {/* Right Sidebar - Only show when group is selected */}
             {activeTab === 'group' && selectedGroup && (
-              <aside className="w-[269px] h-screen pl-4 border-l-4 border-[#4A73A8]">
+              <aside className="w-[269px] pl-4 border-l-4 border-[#4A73A8]">
                 <div className="bg-[#cccccc]/30 rounded-[15px] h-[38px] flex items-center justify-between px-3.5">
                   <span className="[font-family:'Roboto',Helvetica] text-[#666666] text-xl">
                     Group Members
@@ -1235,7 +1235,7 @@ function Dashboard_group() {
             )}
 
             {!selectedGroup && (
-              <aside className="w-[269px] h-screen pl-4 border-l-4 border-[#4A73A8]"/>
+              <aside className="w-[269px] pl-4 border-l-4 border-[#4A73A8]"/>
             )}
 
             {/* Context Menu for Kick Member */}
