@@ -71,7 +71,7 @@ function Admin_left_bar({ activeTab, setActiveTab, onGroupSelect }) {
           onClick={() => handleClick("activities", `/admin/dashboard/${userData.id}/activities`)}
         >
           <Calendar className="w-6 h-6 mr-2 inline-block" /> {/* Logo cho Activities */}
-          Activities
+          Users' activities
         </div>
 
         {/* Statistics */}

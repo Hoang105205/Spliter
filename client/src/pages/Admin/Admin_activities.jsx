@@ -3,8 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Admin_head_bar from "../../components/ui/admin_headbar.jsx";
 import Admin_left_bar from "../../components/ui/admin_leftbar.jsx";
-import UserTable from "../../components/ui/user_table.jsx";
-import GroupTable from "../../components/ui/group_table.jsx";
+import AdminActivityList from "../../components/ui/admin_activities_list.jsx";
 
 const AdminActivities = () => {
   const [tab, setTab] = useState("users");
@@ -24,25 +23,9 @@ const AdminActivities = () => {
 
             {/* Main Content */}
             <div className="w-full ml-[30px]">
-              {/* Nút chuyển đổi */}
-              <div className="mb-6 flex gap-2">
-                <button
-                  className={`px-4 py-2 rounded font-semibold ${tab === "users" ? "bg-blue-400 text-white" : "bg-gray-200 text-gray-700"}`}
-                  onClick={() => setTab("users")}
-                >
-                  Users
-                </button>
-                <button
-                  className={`px-4 py-2 rounded font-semibold ${tab === "groups" ? "bg-blue-400 text-white" : "bg-gray-200 text-gray-700"}`}
-                  onClick={() => setTab("groups")}
-                >
-                  Groups
-                </button>
-              </div>
-          
               {/* Hiển thị bảng */}
               <div className="w-full">
-                {tab === "users" ? <UserTable /> : <GroupTable />}
+                <AdminActivityList/>
               </div>
             </div>
           </div>

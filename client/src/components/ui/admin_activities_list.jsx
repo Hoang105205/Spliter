@@ -1,17 +1,33 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import Sort from "./sort";
+import BlockText from "./block_text";
+import { useActivity } from "../../hooks/useActivity";
 import { useUser } from "../../hooks/useUser";
 
-export default function UserTable() {
+const AdminActivityList = () => {
   const [search, setSearch] = useState("");
-  const [customersData, setCustomersData] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Loading states for individual users
   const [updatingUsers, setUpdatingUsers] = useState(new Set());
   
   // Local state for each user's status
-  const [userStatus, setUserStatus] = useState({});
   const { findAllUsers, updateStatus } = useUser();
+  const [sortType, setSortType] = React.useState("latest");
+  const { activities, fetchAllActivities } = useActivity();
+
+  // Fetch all users' activities on mount
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const users = await findAllUsers();
+        await fetchAllActivities(users);
+      } catch (err) {
+
+      }
+    };
+    fetchUsers();
+  }, [findAllUsers, fetchAllActivities]);
 
   // Fetch all users on mount
   useEffect(() => {
@@ -19,14 +35,7 @@ export default function UserTable() {
       try {
         setLoading(true);
         const users = await findAllUsers();
-        setCustomersData(users);
-        
-        // Set user status from fetched data
-        const statusMap = {};
-        users.forEach(user => {
-          statusMap[user.id] = user.status || "Unbanned";
-        });
-        setUserStatus(statusMap);
+        fetchAllActivities(users);
       } catch (error) {
         console.error("Failed to fetch users:", error);
       } finally {
@@ -34,11 +43,10 @@ export default function UserTable() {
       }
     };
     fetchUsers();
-  }, [findAllUsers]);
+  }, [findAllUsers, fetchAllActivities]);
 
   // Checkbox state
   const [selected, setSelected] = useState([]);
-
 
   // Pagination state
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -48,34 +56,40 @@ export default function UserTable() {
   const [expandedUserId, setExpandedUserId] = useState(null);
 
   // Sort state
-  const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
 
-  // Filter by username (case insensitive)
-  let filteredCustomers = customersData.filter(
-    c => c.username.toLowerCase().includes(search.toLowerCase())
-  );
+  // Filter by title (case insensitive)
+   let filteredActivities = activities.filter(
+    c => c.title.toLowerCase().includes(search.toLowerCase())
+  ); 
 
   // Sort logic
   if (sortConfig.key) {
-    filteredCustomers = [...filteredCustomers].sort((a, b) => {
+    filteredActivities = [...filteredActivities].sort((a, b) => {
       let aValue = a[sortConfig.key];
       let bValue = b[sortConfig.key];
-      if (sortConfig.key === 'id') {
+      if (sortConfig.key === 'userId') {
         aValue = Number(aValue);
         bValue = Number(bValue);
-      } else {
+      } 
+      else if (sortConfig.key === 'createdAt') {
+        aValue = new Date(aValue).getTime();
+        bValue = new Date(bValue).getTime();
+      }
+      else if (sortConfig.key === 'title') {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
       }
+
       if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
   }
 
-  const totalRows = filteredCustomers.length;
+  const totalRows = filteredActivities.length;
   const totalPages = Math.ceil(totalRows / rowsPerPage);
-  const paginatedCustomers = filteredCustomers.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const paginatedCustomers = filteredActivities.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   // Sort handler
   const handleSort = (key) => {
@@ -111,42 +125,6 @@ export default function UserTable() {
     setExpandedUserId(prev => (prev === id ? null : id));
   };
 
-  const handleToggleStatus = async (id) => {
-    try {
-      // Add to updating set
-      setUpdatingUsers(prev => new Set([...prev, id]));
-      
-      const currentStatus = userStatus[id];
-      const newStatus = currentStatus === "Banned" ? "Unbanned" : "Banned";
-      
-      // Update user status via API
-      await updateStatus(id, newStatus);
-      
-      // Update local state if API call successful
-      setUserStatus(prev => ({
-        ...prev,
-        [id]: newStatus
-      }));
-      
-      // Remove from updating set after completion
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
-    } catch (error) {
-      // Remove from updating set on error
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
-      
-      console.error("Failed to update user status:", error);
-      // You can add a toast notification here if needed
-    }
-  };
-
   // Animation state for notification bar
   const [showBar, setShowBar] = useState(false);
   const [barLeaving, setBarLeaving] = useState(false);
@@ -164,101 +142,6 @@ export default function UserTable() {
       return () => clearTimeout(timeout);
     }
   }, [selected.length]);
-
-  // Ban selected users
-  const handleBanSelected = async () => {
-    try {
-      // Filter selected users that are currently unbanned
-      const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
-      
-      // Add all users to ban to updating set
-      setUpdatingUsers(prev => new Set([...prev, ...usersToBan]));
-      
-      // Update each user via API
-      await Promise.all(
-        usersToBan.map(id => updateStatus(id, "Banned"))
-      );
-      
-      // Update local state if all API calls successful
-      setUserStatus(prev => {
-        const updated = { ...prev };
-        usersToBan.forEach(id => {
-          updated[id] = "Banned";
-        });
-        return updated;
-      });
-      
-      // Remove all banned users from updating set and clear selection
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        usersToBan.forEach(id => newSet.delete(id));
-        return newSet;
-      });
-      setSelected([]);
-      setExpandedUserId(null); // Close expanded details
-    } catch (error) {
-      // Remove all users from updating set on error
-      const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        usersToBan.forEach(id => newSet.delete(id));
-        return newSet;
-      });
-      
-      console.error("Failed to ban selected users:", error);
-      // You can add a toast notification here if needed
-    }
-  };
-
-  // Unban selected users
-  const handleUnbanSelected = async () => {
-    try {
-      // Filter selected users that are currently banned
-      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
-      
-      // Add all users to unban to updating set
-      setUpdatingUsers(prev => new Set([...prev, ...usersToUnban]));
-      
-      // Update each user via API
-      await Promise.all(
-        usersToUnban.map(id => updateStatus(id, "Unbanned"))
-      );
-      
-      // Update local state if all API calls successful
-      setUserStatus(prev => {
-        const updated = { ...prev };
-        usersToUnban.forEach(id => {
-          updated[id] = "Unbanned";
-        });
-        return updated;
-      });
-      
-      // Remove all unbanned users from updating set and clear selection
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        usersToUnban.forEach(id => newSet.delete(id));
-        return newSet;
-      });
-      setSelected([]);
-      setExpandedUserId(null); // Close expanded details
-    } catch (error) {
-      // Remove all users from updating set on error
-      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        usersToUnban.forEach(id => newSet.delete(id));
-        return newSet;
-      });
-      
-      console.error("Failed to unban selected users:", error);
-      // You can add a toast notification here if needed
-    }
-  };
-
-  // Check if any selected users are banned
-  const selectedUsers = selected.map(id => ({ id, status: userStatus[id] }));
-  const hasUnbannedUsers = selectedUsers.some(user => user.status === "Unbanned");
-  const hasBannedUsers = selectedUsers.some(user => user.status === "Banned");
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 shadow bg-white relative">
@@ -285,42 +168,10 @@ export default function UserTable() {
               &times;
             </button>
             <span className="text-blue-700 font-medium">
-              {selected.length} user{selected.length > 1 ? 's' : ''} selected
+              {selected.length} activities{selected.length > 1 ? 's' : ''} selected
             </span>
           </div>
           <div className="flex-1 flex justify-end gap-2">
-            {hasUnbannedUsers && (
-              <button
-                className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
-                  selected.some(id => updatingUsers.has(id))
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-red-500 hover:bg-red-600'
-                } text-white`}
-                onClick={handleBanSelected}
-                disabled={selected.some(id => updatingUsers.has(id))}
-              >
-                {selected.some(id => updatingUsers.has(id)) && (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                )}
-                {selected.some(id => updatingUsers.has(id)) ? 'Waiting...' : 'Ban'}
-              </button>
-            )}
-            {hasBannedUsers && (
-              <button
-                className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
-                  selected.some(id => updatingUsers.has(id))
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-500 hover:bg-green-600'
-                } text-white`}
-                onClick={handleUnbanSelected}
-                disabled={selected.some(id => updatingUsers.has(id))}
-              >
-                {selected.some(id => updatingUsers.has(id)) && (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                )}
-                {selected.some(id => updatingUsers.has(id)) ? 'Waiting...' : 'Unban'}
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -358,7 +209,7 @@ export default function UserTable() {
           </span>
           <input
             type="text"
-            placeholder="Search user name."
+            placeholder="Search user's ID"
             className="border pl-9 pr-3 py-2 rounded w-48"
             value={search}
             onChange={e => {
@@ -379,11 +230,11 @@ export default function UserTable() {
                 className="accent-blue-600 w-4 h-4 rounded"
               />
             </th>
-            <th className="px-4 py-3 text-center font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('id')}>
+            <th className="px-4 py-3 text-center font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('userId')}>
               <span className="inline-flex items-center">
-                ID
+                User ID
                 <span className="ml-1">
-                  {sortConfig.key === 'id' ? (
+                  {sortConfig.key === 'userId' ? (
                     sortConfig.direction === 'asc' ? (
                       <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
                     ) : (
@@ -395,11 +246,11 @@ export default function UserTable() {
                 </span>
               </span>
             </th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('username')}>
+            <th className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('title')}>
               <span className="inline-flex items-center">
-                Username
+                Title
                 <span className="ml-1">
-                  {sortConfig.key === 'username' ? (
+                  {sortConfig.key === 'title' ? (
                     sortConfig.direction === 'asc' ? (
                       <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
                     ) : (
@@ -411,11 +262,11 @@ export default function UserTable() {
                 </span>
               </span>
             </th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('email')}>
+            <th className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer select-none" onClick={() => handleSort('createdAt')}>
               <span className="inline-flex items-center">
-                Email
+                Create at
                 <span className="ml-1">
-                  {sortConfig.key === 'email' ? (
+                  {sortConfig.key === 'createdAt' ? (
                     sortConfig.direction === 'asc' ? (
                       <svg className="inline w-3 h-3 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
                     ) : (
@@ -427,8 +278,7 @@ export default function UserTable() {
                 </span>
               </span>
             </th>
-            <th className="px-4 py-3 text-left font-semibold text-gray-700">Phone</th>
-            <th className="px-4 py-3 text-center font-semibold text-gray-700">Status</th>
+            <th className="px-4 py-3 text-left font-semibold text-gray-700">Description</th>
           </tr>
         </thead>
         <tbody>
@@ -450,90 +300,49 @@ export default function UserTable() {
                     className="accent-blue-600 w-4 h-4 rounded"
                   />
                 </td>
-                <td className="px-4 py-2 text-center">{row.id}</td>
-                <td className="px-4 py-2 text-left">{row.username}</td>
-                <td className="px-4 py-2 text-left">{row.email}</td>
-                <td className="px-4 py-2 text-left">{row.phone}</td>
-                <td className="px-4 py-2 text-center">
-                  <span
-                    className={`w-24 px-3 py-1 rounded font-semibold inline-block ${userStatus[row.id] === "Banned" ? "bg-red-100 text-red-600 border border-red-400" : "bg-green-100 text-green-700 border border-green-400"}`}
-                  >
-                    {userStatus[row.id]}
-                  </span>
-                </td>
+                <td className="px-4 py-2 text-center">{row.userId}</td>
+                <td className="px-4 py-2 text-left">{row.title}</td>
+                <td className="px-4 py-2 text-left">
+                  {new Date(row.createdAt).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}</td>
+                <td className="px-4 py-2 text-left">{row.description}</td>
               </tr>
               {expandedUserId === row.id && (
                 <tr>
                   <td colSpan={6} className="bg-blue-50 border-t border-b border-blue-200 animate-fade-in">
                     <div className="p-4">
-                      <div className="font-semibold text-gray-700 mb-3">User Details</div>
+                      <div className="font-semibold text-gray-700 mb-3">Activity Details</div>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="font-medium text-gray-600">ID:</span>
-                          <span className="ml-2">{row.id}</span>
+                          <span className="font-medium text-gray-600">User ID:</span>
+                          <span className="ml-2">{row.userId}</span>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Username:</span>
-                          <span className="ml-2">{row.username}</span>
+                          <span className="font-medium text-gray-600">Title:</span>
+                          <span className="ml-2">{row.title}</span>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Email:</span>
-                          <span className="ml-2">{row.email}</span>
+                          <span className="font-medium text-gray-600">Type:</span>
+                          <span className="ml-2">{row.activityType}</span>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Phone:</span>
-                          <span className="ml-2">{row.phone}</span>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Status:</span>
-                          <span className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${userStatus[row.id] === "Banned" ? "bg-red-100 text-red-600" : "bg-green-100 text-green-700"}`}>
-                            {userStatus[row.id]}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Account Created:</span>
+                          <span className="font-medium text-gray-600">Create at:</span>
                           <span className="ml-2">
-                            {row.createdAt 
-                              ? new Date(row.createdAt).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric'
-                                })
-                              : 'N/A'
-                            }
-                          </span>
+                          {new Date(row.createdAt).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}</span>
                         </div>
-                      </div>
-                      <div className="mt-4 flex items-center gap-3">
-                        <button
-                          className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
-                            updatingUsers.has(row.id)
-                              ? 'bg-gray-400 cursor-not-allowed'
-                              : userStatus[row.id] === "Banned" 
-                                ? "bg-green-500 text-white hover:bg-green-600" 
-                                : "bg-red-500 text-white hover:bg-red-600"
-                          } text-white`}
-                          onClick={() => handleToggleStatus(row.id)}
-                          disabled={updatingUsers.has(row.id)}
-                        >
-                          {updatingUsers.has(row.id) && (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          )}
-                          {updatingUsers.has(row.id) 
-                            ? 'Waiting...' 
-                            : userStatus[row.id] === "Banned" ? "Unban" : "Ban"
-                          }
-                        </button>
-                        <span className="text-sm text-gray-500">
-                          {updatingUsers.has(row.id) 
-                            ? 'Processing...' 
-                            : `Click to ${userStatus[row.id] === "Banned" ? "unban" : "ban"} this user`
-                          }
-                        </span>
                       </div>
                       <div className="mt-3 pt-3 border-t border-blue-300">
-                        <span className="font-medium text-gray-600">Additional Info:</span>
-                        <p className="text-gray-500 text-sm mt-1">Click on this row to expand/collapse user details. You can add more information here as needed.</p>
+                        <span className="font-medium text-gray-600">Description:</span>
+                        <p className="text-sm mt-1">{row.description}</p>
                       </div>
                     </div>
                   </td>
@@ -543,7 +352,7 @@ export default function UserTable() {
           )) : (
             <tr>
               <td colSpan={6} className="text-center py-4 text-gray-500">
-                {loading ? "Loading..." : "No users found"}
+                {loading ? "Loading..." : "No activities found"}
               </td>
             </tr>
           )}
@@ -553,7 +362,7 @@ export default function UserTable() {
       {/* Pagination Controls */}
       <div className="flex justify-end px-4 py-2 border-t bg-white text-sm">
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
+          <div className="flex items-left gap-2">
             <span>Rows per page:</span>
             <select
               className="border rounded px-2 py-1"
@@ -605,7 +414,7 @@ export default function UserTable() {
                 >
                   {p}
                 </button>
-            ))}
+              ))}
             <button
               className="px-2 py-1 rounded disabled:opacity-50"
               onClick={() => {
@@ -622,3 +431,5 @@ export default function UserTable() {
     </div>
   );
 }
+
+export default AdminActivityList;
