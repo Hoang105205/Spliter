@@ -728,6 +728,121 @@ function Dashboard_group() {
     }
   };
 
+  // Handle Settle up
+  const handleSettleUp = async () => {
+    if (!selectedGroup || !selectedExpense) {
+      toast.error("Please select a group and an expense to settle up.");
+      return;
+    }
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      toast.error("There is a problem. Please refresh the page.");
+      return;
+    }
+
+    try {
+      await updateExpenseItemStatus({
+        expenseId: selectedExpense.id,
+        itemId: selectedItem.id,
+        userId: ownSelf.id,
+        status: 'pending',
+      });
+      const updatedExpense = await getExpenseById(selectedExpense.id);
+      setSelectedExpense(updatedExpense);
+
+      // Update Expenses state
+      setExpenses((prev) => {
+        return prev.map((exp) =>
+          exp.id === selectedExpense.id ? updatedExpense : exp
+        );
+      });
+
+      const message = {
+        type: "SETTLE_UP",
+        payload: {
+          expenseId: selectedExpense.id,
+          groupId: selectedGroup.id,
+          userId: userData.id,
+          paidbyId: selectedExpense.paidbyId,
+        },
+      };
+
+      ws.send(JSON.stringify(message));
+      
+      setSelectedItem(null);
+      setShowSettleModal(false);
+      setRefreshTrigger((prev) => prev + 1); // Kích hoạt lại useEffect
+      toast.success('Payment status updated successfully!');
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Failed to update payment status. Please try again.');
+    }
+  };
+    
+
+  // Handle confirm settle up
+  const handleConfirmSettleUp = async (status) => {
+    if (!selectedGroup || !selectedExpense || !selectedItem) {
+      toast.error("Please select a group, expense, and item to settle up.");
+      return;
+    }
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      toast.error("There is a problem. Please refresh the page.");
+      return;
+    }
+
+    try {
+      if (selectedItem && ownSelf.id === selectedExpense.paidbyId) {
+        await updateExpenseItemStatus({
+          expenseId: selectedExpense.id,
+          itemId: selectedItem.id,
+          userId: selectedItem.userId,
+          status, 
+        });
+        const updatedExpense = await getExpenseById(selectedExpense.id);
+        setSelectedExpense(updatedExpense);
+        setExpenses((prev) =>
+          prev.map((exp) =>
+            exp.id === selectedExpense.id ? updatedExpense : exp
+          )
+        );
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          const message = {
+            type: "UPDATE_EXPENSE_ITEM_STATUS",
+            payload: {
+              expenseId: selectedExpense.id,
+              groupId: selectedGroup.id,
+              itemId: selectedItem.id,
+              userId: selectedItem.userId,
+              paidId: selectedExpense.paidbyId,
+              status,
+            },
+          };
+          ws.send(JSON.stringify(message));
+        }
+
+        setShowConfirmModal(false);
+        setRefreshTrigger((prev) => prev + 1);
+      }
+    }
+    catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Failed to update payment status. Please try again.');
+    }
+
+    if (status === 'yes'){
+      toast.success('Payment status updated to "Paid" successfully!');
+    }
+    else if (status === 'no') {
+      toast.success('Payment status updated to "Not Paid" successfully!');
+    }
+
+  }
+
+  
+
   // Handle context menu click
   const handleContextMenu = (e, memberId) => {
     e.preventDefault();
@@ -999,31 +1114,7 @@ function Dashboard_group() {
                       <Button
                         className="bg-blue-500 text-white px-4 py-2 w-[125px] rounded-full hover:bg-blue-600 transition-colors"
                         onClick={async () => {
-                          try {
-                            await updateExpenseItemStatus({
-                              expenseId: selectedExpense.id,
-                              itemId: selectedItem.id,
-                              userId: ownSelf.id,
-                              status: 'pending',
-                            });
-                            const updatedExpense = await getExpenseById(selectedExpense.id);
-                            setSelectedExpense(updatedExpense);
-
-                            // Update Expenses state
-                            setExpenses((prev) => {
-                              return prev.map((exp) =>
-                                exp.id === selectedExpense.id ? updatedExpense : exp
-                              );
-                            });
-                            
-                            setSelectedItem(null);
-                            setShowSettleModal(false);
-                            setRefreshTrigger((prev) => prev + 1); // Kích hoạt lại useEffect
-                            toast.success('Payment status updated successfully!');
-                          } catch (error) {
-                            console.error('Error updating status:', error);
-                            toast.error('Failed to update payment status. Please try again.');
-                          }
+                          await handleSettleUp();
                         }}
                       >
                         Confirm
@@ -1057,29 +1148,7 @@ function Dashboard_group() {
                         <Button
                           className="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors"
                           onClick={async () => {
-                            try {
-                              if (selectedItem && ownSelf.id === selectedExpense.paidbyId) {
-                                await updateExpenseItemStatus({
-                                  expenseId: selectedExpense.id,
-                                  itemId: selectedItem.id,
-                                  userId: selectedItem.userId,
-                                  status: 'yes',
-                                });
-                                const updatedExpense = await getExpenseById(selectedExpense.id);
-                                setSelectedExpense(updatedExpense);
-                                setExpenses((prev) =>
-                                  prev.map((exp) =>
-                                    exp.id === selectedExpense.id ? updatedExpense : exp
-                                  )
-                                );
-                                setShowConfirmModal(false);
-                                setRefreshTrigger((prev) => prev + 1);
-                                toast.success('Payment status updated to "Paid" successfully!');
-                              }
-                            } catch (error) {
-                              console.error('Error updating status:', error);
-                              toast.error('Failed to update payment status. Please try again.');
-                            }
+                            await handleConfirmSettleUp('yes');
                           }}
                         >
                           Yes
@@ -1087,29 +1156,7 @@ function Dashboard_group() {
                         <Button
                           className="bg-yellow-500 text-white px-4 py-2 rounded-full hover:bg-yellow-600 transition-colors"
                           onClick={async () => {
-                            try {
-                              if (selectedItem && ownSelf.id === selectedExpense.paidbyId) {
-                                await updateExpenseItemStatus({
-                                  expenseId: selectedExpense.id,
-                                  itemId: selectedItem.id,
-                                  userId: selectedItem.userId,
-                                  status: 'no',
-                                });
-                                const updatedExpense = await getExpenseById(selectedExpense.id);
-                                setSelectedExpense(updatedExpense);
-                                setExpenses((prev) =>
-                                  prev.map((exp) =>
-                                    exp.id === selectedExpense.id ? updatedExpense : exp
-                                  )
-                                );
-                                setShowConfirmModal(false);
-                                setRefreshTrigger((prev) => prev + 1);
-                                toast.info('Payment status updated to "Not Paid" successfully!');
-                              }
-                            } catch (error) {
-                              console.error('Error updating status:', error);
-                              toast.error('Failed to update payment status. Please try again.');
-                            }
+                            await handleConfirmSettleUp('no');
                           }}
                         >
                           No
