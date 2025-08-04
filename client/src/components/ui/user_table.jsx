@@ -112,17 +112,14 @@ export default function UserTable() {
   };
 
   const handleToggleStatus = async (id) => {
-    // Only allow banning, not unbanning
     const currentStatus = userStatus[id];
-    if (currentStatus === "Banned") {
-      return; // Don't allow unbanning
-    }
-
+    
     try {
       // Add to updating set
       setUpdatingUsers(prev => new Set([...prev, id]));
       
-      const newStatus = "Banned";
+      // Toggle between Banned and Unbanned
+      const newStatus = currentStatus === "Banned" ? "Unbanned" : "Banned";
       
       // Update user status via API
       await updateStatus(id, newStatus);
@@ -169,19 +166,22 @@ export default function UserTable() {
     }
   }, [selected.length]);
 
-  // Ban selected users
+  // Ban/Unban selected users
   const handleBanSelected = async () => {
     try {
-      // Filter selected users that are currently unbanned
+      // Separate users to ban and unban
       const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
+      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
+      const allUsersToUpdate = [...usersToBan, ...usersToUnban];
       
-      // Add all users to ban to updating set
-      setUpdatingUsers(prev => new Set([...prev, ...usersToBan]));
+      // Add all users to updating set
+      setUpdatingUsers(prev => new Set([...prev, ...allUsersToUpdate]));
       
       // Update each user via API
-      await Promise.all(
-        usersToBan.map(id => updateStatus(id, "Banned"))
-      );
+      const banPromises = usersToBan.map(id => updateStatus(id, "Banned"));
+      const unbanPromises = usersToUnban.map(id => updateStatus(id, "Unbanned"));
+      
+      await Promise.all([...banPromises, ...unbanPromises]);
       
       // Update local state if all API calls successful
       setUserStatus(prev => {
@@ -189,13 +189,16 @@ export default function UserTable() {
         usersToBan.forEach(id => {
           updated[id] = "Banned";
         });
+        usersToUnban.forEach(id => {
+          updated[id] = "Unbanned";
+        });
         return updated;
       });
       
-      // Remove all banned users from updating set and clear selection
+      // Remove all updated users from updating set and clear selection
       setUpdatingUsers(prev => {
         const newSet = new Set(prev);
-        usersToBan.forEach(id => newSet.delete(id));
+        allUsersToUpdate.forEach(id => newSet.delete(id));
         return newSet;
       });
       setSelected([]);
@@ -203,13 +206,16 @@ export default function UserTable() {
     } catch (error) {
       // Remove all users from updating set on error
       const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
+      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
+      const allUsersToUpdate = [...usersToBan, ...usersToUnban];
+      
       setUpdatingUsers(prev => {
         const newSet = new Set(prev);
-        usersToBan.forEach(id => newSet.delete(id));
+        allUsersToUpdate.forEach(id => newSet.delete(id));
         return newSet;
       });
       
-      console.error("Failed to ban selected users:", error);
+      console.error("Failed to update selected users:", error);
       // You can add a toast notification here if needed
     }
   };
@@ -226,42 +232,74 @@ export default function UserTable() {
         </div>
       )}
       
-      {/* Notification bar for selected users */}
-      {showBar && (
-        <div className={`absolute left-0 right-0 top-0 z-20 flex items-center bg-blue-50 border-b border-blue-200 px-6 py-3 ${barLeaving ? 'animate-slide-down' : 'animate-slide-up'}`}>
-          <div className="flex items-center gap-2">
-            <button
-              className="text-gray-400 hover:text-gray-700 text-xl font-bold focus:outline-none"
-              title="Clear selection"
-              onClick={() => setSelected([])}
-              style={{ lineHeight: 1 }}
-            >
-              &times;
-            </button>
-            <span className="text-blue-700 font-medium">
-              {selected.length} user{selected.length > 1 ? 's' : ''} selected
-            </span>
-          </div>
-          <div className="flex-1 flex justify-end gap-2">
-            {hasUnbannedUsers && (
-              <button
-                className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
-                  selected.some(id => updatingUsers.has(id))
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-red-500 hover:bg-red-600'
-                } text-white`}
-                onClick={handleBanSelected}
-                disabled={selected.some(id => updatingUsers.has(id))}
-              >
-                {selected.some(id => updatingUsers.has(id)) && (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                )}
-                {selected.some(id => updatingUsers.has(id)) ? 'Waiting...' : 'Ban'}
-              </button>
+      {/* Check if selected users have different statuses to show appropriate button text */}
+      {(() => {
+        const hasUnbannedUsers = selected.some(id => userStatus[id] === "Unbanned");
+        const hasBannedUsers = selected.some(id => userStatus[id] === "Banned");
+        
+        const getActionButtonText = () => {
+          if (hasUnbannedUsers && hasBannedUsers) {
+            return "Toggle Status";
+          } else if (hasUnbannedUsers) {
+            return "Ban";
+          } else if (hasBannedUsers) {
+            return "Unban";
+          }
+          return "Action";
+        };
+
+        const getButtonColor = () => {
+          if (hasUnbannedUsers && hasBannedUsers) {
+            return 'bg-blue-500 hover:bg-blue-600';
+          } else if (hasUnbannedUsers) {
+            return 'bg-red-500 hover:bg-red-600';
+          } else if (hasBannedUsers) {
+            return 'bg-green-500 hover:bg-green-600';
+          }
+          return 'bg-gray-500 hover:bg-gray-600';
+        };
+        
+        return (
+          <>
+            {/* Notification bar for selected users */}
+            {showBar && (
+              <div className={`absolute left-0 right-0 top-0 z-20 flex items-center bg-blue-50 border-b border-blue-200 px-6 py-3 ${barLeaving ? 'animate-slide-down' : 'animate-slide-up'}`}>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="text-gray-400 hover:text-gray-700 text-xl font-bold focus:outline-none"
+                    title="Clear selection"
+                    onClick={() => setSelected([])}
+                    style={{ lineHeight: 1 }}
+                  >
+                    &times;
+                  </button>
+                  <span className="text-blue-700 font-medium">
+                    {selected.length} user{selected.length > 1 ? 's' : ''} selected
+                  </span>
+                </div>
+                <div className="flex-1 flex justify-end gap-2">
+                  {(hasUnbannedUsers || hasBannedUsers) && (
+                    <button
+                      className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
+                        selected.some(id => updatingUsers.has(id))
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : getButtonColor()
+                      } text-white`}
+                      onClick={handleBanSelected}
+                      disabled={selected.some(id => updatingUsers.has(id))}
+                    >
+                      {selected.some(id => updatingUsers.has(id)) && (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      )}
+                      {selected.some(id => updatingUsers.has(id)) ? 'Waiting...' : getActionButtonText()}
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
-          </div>
-        </div>
-      )}
+          </>
+        );
+      })()}
       <style>{`
         @keyframes slide-up {
           0% { opacity: 0; transform: translateY(40px); }
@@ -485,34 +523,35 @@ export default function UserTable() {
                         </div>
                       </div>
                       <div className="mt-4 flex items-center gap-3">
-                        {userStatus[row.id] === "Unbanned" ? (
-                          <>
-                            <button
-                              className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
-                                updatingUsers.has(row.id)
-                                  ? 'bg-gray-400 cursor-not-allowed'
-                                  : "bg-red-500 text-white hover:bg-red-600"
-                              } text-white`}
-                              onClick={() => handleToggleStatus(row.id)}
-                              disabled={updatingUsers.has(row.id)}
-                            >
-                              {updatingUsers.has(row.id) && (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              )}
-                              {updatingUsers.has(row.id) ? 'Waiting...' : 'Ban'}
-                            </button>
-                            <span className="text-sm text-gray-500">
-                              {updatingUsers.has(row.id) 
-                                ? 'Processing...' 
-                                : 'Click to ban this user'
-                              }
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-sm text-red-600 font-medium">
-                            This user has been permanently banned
-                          </span>
-                        )}
+                        <button
+                          className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
+                            updatingUsers.has(row.id)
+                              ? 'bg-gray-400 cursor-not-allowed'
+                              : userStatus[row.id] === "Unbanned"
+                                ? "bg-red-500 text-white hover:bg-red-600"
+                                : "bg-green-500 text-white hover:bg-green-600"
+                          } text-white`}
+                          onClick={() => handleToggleStatus(row.id)}
+                          disabled={updatingUsers.has(row.id)}
+                        >
+                          {updatingUsers.has(row.id) && (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          )}
+                          {updatingUsers.has(row.id) 
+                            ? 'Waiting...' 
+                            : userStatus[row.id] === "Unbanned" 
+                              ? 'Ban' 
+                              : 'Unban'
+                          }
+                        </button>
+                        <span className="text-sm text-gray-500">
+                          {updatingUsers.has(row.id) 
+                            ? 'Processing...' 
+                            : userStatus[row.id] === "Unbanned"
+                              ? 'Click to ban this user'
+                              : 'Click to unban this user'
+                          }
+                        </span>
                       </div>
                       <div className="mt-3 pt-3 border-t border-blue-300">
                         <span className="font-medium text-gray-600">Additional Info:</span>

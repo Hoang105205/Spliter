@@ -9,7 +9,8 @@ const {
     changePassword,
     loginUser,
     getAvatar,
-    updateAvatar
+    updateAvatar,
+    updateStatus
 } = require('../controllers/UsersController');
 const ensureAuthenticated = require('../middlewares/ensureAuthenticated');
 const upload = require('../middlewares/uploadMemory');
@@ -30,6 +31,9 @@ router.post('/', createUser);
 
 // Update a user
 router.put('/:id', updateUser);
+
+// Update user status (Ban/Unban)
+router.put('/:id/status', updateStatus);
 
 // Update user avatar
 router.put('/:id/avatar', upload, updateAvatar);
