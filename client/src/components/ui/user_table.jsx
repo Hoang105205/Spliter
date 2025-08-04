@@ -166,22 +166,20 @@ export default function UserTable() {
     }
   }, [selected.length]);
 
-  // Ban/Unban selected users
+  // Ban selected users
   const handleBanSelected = async () => {
     try {
-      // Separate users to ban and unban
+      // Filter only unbanned users
       const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
-      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
-      const allUsersToUpdate = [...usersToBan, ...usersToUnban];
       
-      // Add all users to updating set
-      setUpdatingUsers(prev => new Set([...prev, ...allUsersToUpdate]));
+      if (usersToBan.length === 0) return;
+      
+      // Add users to updating set
+      setUpdatingUsers(prev => new Set([...prev, ...usersToBan]));
       
       // Update each user via API
       const banPromises = usersToBan.map(id => updateStatus(id, "Banned"));
-      const unbanPromises = usersToUnban.map(id => updateStatus(id, "Unbanned"));
-      
-      await Promise.all([...banPromises, ...unbanPromises]);
+      await Promise.all(banPromises);
       
       // Update local state if all API calls successful
       setUserStatus(prev => {
@@ -189,34 +187,72 @@ export default function UserTable() {
         usersToBan.forEach(id => {
           updated[id] = "Banned";
         });
+        return updated;
+      });
+      
+      // Remove users from updating set and clear selection
+      setUpdatingUsers(prev => {
+        const newSet = new Set(prev);
+        usersToBan.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+      setSelected([]);
+      setExpandedUserId(null);
+    } catch (error) {
+      // Remove users from updating set on error
+      const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
+      setUpdatingUsers(prev => {
+        const newSet = new Set(prev);
+        usersToBan.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+      
+      console.error("Failed to ban selected users:", error);
+    }
+  };
+
+  // Unban selected users
+  const handleUnbanSelected = async () => {
+    try {
+      // Filter only banned users
+      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
+      
+      if (usersToUnban.length === 0) return;
+      
+      // Add users to updating set
+      setUpdatingUsers(prev => new Set([...prev, ...usersToUnban]));
+      
+      // Update each user via API
+      const unbanPromises = usersToUnban.map(id => updateStatus(id, "Unbanned"));
+      await Promise.all(unbanPromises);
+      
+      // Update local state if all API calls successful
+      setUserStatus(prev => {
+        const updated = { ...prev };
         usersToUnban.forEach(id => {
           updated[id] = "Unbanned";
         });
         return updated;
       });
       
-      // Remove all updated users from updating set and clear selection
+      // Remove users from updating set and clear selection
       setUpdatingUsers(prev => {
         const newSet = new Set(prev);
-        allUsersToUpdate.forEach(id => newSet.delete(id));
+        usersToUnban.forEach(id => newSet.delete(id));
         return newSet;
       });
       setSelected([]);
-      setExpandedUserId(null); // Close expanded details
+      setExpandedUserId(null);
     } catch (error) {
-      // Remove all users from updating set on error
-      const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
+      // Remove users from updating set on error
       const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
-      const allUsersToUpdate = [...usersToBan, ...usersToUnban];
-      
       setUpdatingUsers(prev => {
         const newSet = new Set(prev);
-        allUsersToUpdate.forEach(id => newSet.delete(id));
+        usersToUnban.forEach(id => newSet.delete(id));
         return newSet;
       });
       
-      console.error("Failed to update selected users:", error);
-      // You can add a toast notification here if needed
+      console.error("Failed to unban selected users:", error);
     }
   };
 
@@ -232,32 +268,10 @@ export default function UserTable() {
         </div>
       )}
       
-      {/* Check if selected users have different statuses to show appropriate button text */}
+      {/* Check if selected users have different statuses to show appropriate buttons */}
       {(() => {
         const hasUnbannedUsers = selected.some(id => userStatus[id] === "Unbanned");
         const hasBannedUsers = selected.some(id => userStatus[id] === "Banned");
-        
-        const getActionButtonText = () => {
-          if (hasUnbannedUsers && hasBannedUsers) {
-            return "Toggle Status";
-          } else if (hasUnbannedUsers) {
-            return "Ban";
-          } else if (hasBannedUsers) {
-            return "Unban";
-          }
-          return "Action";
-        };
-
-        const getButtonColor = () => {
-          if (hasUnbannedUsers && hasBannedUsers) {
-            return 'bg-blue-500 hover:bg-blue-600';
-          } else if (hasUnbannedUsers) {
-            return 'bg-red-500 hover:bg-red-600';
-          } else if (hasBannedUsers) {
-            return 'bg-green-500 hover:bg-green-600';
-          }
-          return 'bg-gray-500 hover:bg-gray-600';
-        };
         
         return (
           <>
@@ -278,12 +292,13 @@ export default function UserTable() {
                   </span>
                 </div>
                 <div className="flex-1 flex justify-end gap-2">
-                  {(hasUnbannedUsers || hasBannedUsers) && (
+                  {/* Ban button - only show if there are unbanned users */}
+                  {hasUnbannedUsers && (
                     <button
                       className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
                         selected.some(id => updatingUsers.has(id))
                           ? 'bg-gray-400 cursor-not-allowed'
-                          : getButtonColor()
+                          : 'bg-red-500 hover:bg-red-600'
                       } text-white`}
                       onClick={handleBanSelected}
                       disabled={selected.some(id => updatingUsers.has(id))}
@@ -291,7 +306,25 @@ export default function UserTable() {
                       {selected.some(id => updatingUsers.has(id)) && (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       )}
-                      {selected.some(id => updatingUsers.has(id)) ? 'Waiting...' : getActionButtonText()}
+                      {selected.some(id => updatingUsers.has(id)) ? 'Waiting...' : 'Ban'}
+                    </button>
+                  )}
+                  
+                  {/* Unban button - only show if there are banned users */}
+                  {hasBannedUsers && (
+                    <button
+                      className={`px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2 ${
+                        selected.some(id => updatingUsers.has(id))
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-green-500 hover:bg-green-600'
+                      } text-white`}
+                      onClick={handleUnbanSelected}
+                      disabled={selected.some(id => updatingUsers.has(id))}
+                    >
+                      {selected.some(id => updatingUsers.has(id)) && (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      )}
+                      {selected.some(id => updatingUsers.has(id)) ? 'Waiting...' : 'Unban'}
                     </button>
                   )}
                 </div>

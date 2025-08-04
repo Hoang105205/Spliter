@@ -32,8 +32,8 @@ const updateUserStatus = async (userId, status) => {
 
 const sendStatusChangeEmail = async (user, status) => {
     const emailSubject = status === 'Banned' 
-        ? 'Account Suspended - Spliter'
-        : 'Account Reactivated - Spliter';
+        ? 'Account Suspended'
+        : 'Account Reactivated';
         
     const emailHTML = status === 'Banned' 
         ? generateBannedEmailTemplate(user)
