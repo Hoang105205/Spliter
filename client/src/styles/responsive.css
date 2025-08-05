@@ -1,34 +1,74 @@
-/* Global responsive scaling system - Smaller overall scale */
+/* Global responsive scaling system - Desktop only */
 :root {
   --base-width: 1500;
-  --scale-factor: 0.85; /* Toàn bộ app nhỏ 15% */
+  --scale-factor: 1;
+  --min-width: 1024px; /* Desktop minimum */
+  --min-height: 768px; /* Desktop minimum */
+  --top-spacing: 10px; /* Khoảng trắng trên header */
+  --footer-height: 50px;
 }
 
 * {
   box-sizing: border-box;
 }
 
-html {
+html, body {
+  width: 100%;
   height: 100%;
   font-size: 16px;
-}
-
-body {
+  overflow: hidden; /* Không scroll */
   margin: 0;
   padding: 0;
-  height: 100%;
-  overflow-x: auto;
-  overflow-y: auto;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   zoom: var(--scale-factor);
 }
 
+/* Root container */
 #root {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
   margin: 0;
   padding: 0;
-  transition: all 0.2s ease-out;
+}
+
+/* App container */
+.app-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: calc(100% - var(--footer-height));
+  margin-top: var(--top-spacing);
+  overflow: hidden;
+}
+
+/* Content area - căn giữa và chiếm 80% */
+.content-area {
+  flex: 1;
+  overflow: hidden;
+  width: 80%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Footer luôn ở cuối và full width */
+.footer-container {
+  flex-shrink: 0;
+  height: var(--footer-height);
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 /* Responsive utility classes */
@@ -38,7 +78,7 @@ body {
 
 .responsive-container {
   width: 100%;
-  max-width: 93.75rem; /* 1500px in rem */
+  max-width: 93.75rem;
   margin: 0 auto;
   padding: 0 1rem;
 }
@@ -49,58 +89,164 @@ body {
   margin: 0.5rem 0;
 }
 
-/* Responsive scaling using CSS zoom - Smaller scale factors */
-@media (max-width: 1500px) and (min-width: 1200px) {
-  :root {
-    --scale-factor: calc(0.9 * 100vw / 1500); /* 10% nhỏ hơn */
-  }
+/* CSS cho các page components */
+.page-container {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-@media (max-width: 1199px) and (min-width: 992px) {
-  :root {
-    --scale-factor: 0.7; /* Từ 0.8 xuống 0.7 */
-  }
+.page-header {
+  flex-shrink: 0;
+  height: auto;
+  min-height: 80px;
 }
 
-@media (max-width: 991px) and (min-width: 768px) {
+.page-main-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  padding: 0 1rem;
+}
+
+.page-left-sidebar {
+  width: 269px;
+  flex-shrink: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.page-center-content {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  padding: 0 1.5rem;
+}
+
+.page-right-sidebar {
+  width: 269px;
+  flex-shrink: 0;
+  height: 100%;
+  border-left: 4px solid #4A73A8;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Desktop responsive scaling */
+@media (max-width: 1500px) and (min-width: 1400px) {
   :root {
-    --scale-factor: 0.55; /* Từ 0.66 xuống 0.55 */
+    --scale-factor: 0.95;
   }
   
-  .responsive-container {
-    max-width: 100%;
+  .content-area {
+    width: 80%;
+    padding: 0 0.9rem;
+  }
+}
+
+@media (max-width: 1399px) and (min-width: 1200px) {
+  :root {
+    --scale-factor: 0.9;
+  }
+  
+  .content-area {
+    width: 80%;
     padding: 0 0.8rem;
   }
 }
 
-@media (max-width: 767px) and (min-width: 576px) {
+@media (max-width: 1199px) and (min-width: 1024px) {
   :root {
-    --scale-factor: 0.42; /* Từ 0.52 xuống 0.42 */
+    --scale-factor: 0.85;
+  }
+  
+  .content-area {
+    width: 80%;
+    padding: 0 0.6rem;
+  }
+  
+  .page-main-content {
+    padding: 0 0.5rem;
+  }
+  
+  .page-center-content {
+    padding: 0 1rem;
   }
 }
 
-@media (max-width: 575px) and (min-width: 400px) {
-  :root {
-    --scale-factor: 0.3; /* Từ 0.38 xuống 0.3 */
-  }
-}
-
-@media (max-width: 399px) {
-  :root {
-    --scale-factor: 0.22; /* Từ 0.27 xuống 0.22 */
-  }
-}
-
-/* Responsive containers */
+/* Responsive containers cho desktop */
 .responsive-container {
   max-width: 1500px;
   margin: 0 auto;
   padding: 0 1rem;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1200px) and (min-width: 1024px) {
   .responsive-container {
     max-width: 100%;
     padding: 0 0.8rem;
+  }
+}
+
+/* Màn hình rất lớn */
+@media (min-width: 1600px) {
+  .content-area {
+    width: 75%;
+    max-width: 1600px;
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .content-area {
+    width: 70%;
+    max-width: 1800px;
+    padding: 0 2rem;
+  }
+}
+
+@media (min-width: 2560px) {
+  .content-area {
+    width: 60%;
+    max-width: 2000px;
+    padding: 0 2.5rem;
+  }
+}
+
+/* Aspect ratio adjustments */
+@media (max-aspect-ratio: 4/3) and (min-width: 1024px) {
+  .content-area {
+    width: 85%;
+  }
+  
+  .page-left-sidebar,
+  .page-right-sidebar {
+    width: 240px;
+  }
+}
+
+@media (min-aspect-ratio: 21/9) and (min-width: 1024px) {
+  .content-area {
+    width: 65%;
+  }
+}
+
+/* Điều chỉnh top spacing cho màn hình nhỏ */
+@media (max-height: 800px) {
+  :root {
+    --top-spacing: 5px;
+    --footer-height: 40px;
+  }
+  
+  .page-header {
+    min-height: 60px;
+  }
+}
+
+@media (max-height: 600px) {
+  :root {
+    --top-spacing: 0px;
   }
 }

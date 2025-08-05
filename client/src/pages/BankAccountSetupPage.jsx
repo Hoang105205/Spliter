@@ -44,85 +44,92 @@ function BankAccountSetupPage() {
   };
 
   return (
-    <div className="bg-white flex flex-row justify-center w-full min-h-screen">
-      <div className="bg-white w-full max-w-[1500px] relative py-12">
+    <div className="page-container">
+      {/* Header với Logo */}
+      <div className="page-header relative">
         <Button
-          className="absolute w-[230px] h-[130px] top-8 left-0 font-['Pompiere',Helvetica] font-normal text-center text-[64px]"
-          onClick={handleLogoClick}
-        >
+          className="absolute w-[230px] h-[130px] top-2 left-8 font-['Pompiere',Helvetica] font-normal text-center text-[64px]"
+          onClick={handleLogoClick}>
           <span className="text-[#4285f4] text-8xl">Spliter</span>
         </Button>
+      </div>
 
-        <div className="flex flex-col items-center justify-center mt-0 scale-80">
-          <Card className="w-full max-w-[489px] border-none shadow-none scale-80">
-            <div className="w-full text-center font-['Bree_Serif',Helvetica] font-normal text-black text-[50px] mb-4">
-              Bank Setup
-            </div>
-            <CardContent className="p-0 space-y-6">
-              <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                {/* Bank Account Number */}
-                <div className="flex flex-col gap-0">
-                  <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
-                    Bank Account Number
-                  </label>
-                  <Input
-                    type="text"
-                    className="h-[35px] rounded-xl border-[#66666659]"
-                    value={bankAccountNumber}
-                    onChange={e => setBankAccountNumber(e.target.value)}
-                    autoComplete="off"
-                  />
-                  <span className={`error-message text-[#ef0a0acc] ${errors.bankAccountNumber ? '' : 'invisible'}`}>
-                    {errors.bankAccountNumber || 'placeholder'}
-                  </span>
-                </div>
+      {/* Main Content */}
+      <div className="page-main-content">
+        {/* Center Content - Bank Setup Form */}
+        <div className="page-center-content flex items-start justify-center pt-16">
+          <div className="w-full max-w-[489px]">
+            <Card className="w-full border-none shadow-none">
+              {/* Bank Setup Header */}
+              <div className="w-full text-center font-['Bree_Serif',Helvetica] font-normal text-black text-[50px] mb-4">
+                Bank Setup
+              </div>
+              <CardContent className="p-0 space-y-6">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                  {/* Bank Account Number */}
+                  <div className="flex flex-col gap-0">
+                    <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
+                      Bank Account Number
+                    </label>
+                    <Input
+                      type="text"
+                      className="h-[35px] rounded-xl border-[#66666659]"
+                      value={bankAccountNumber}
+                      onChange={e => setBankAccountNumber(e.target.value)}
+                      autoComplete="off"
+                    />
+                    <span className={`error-message text-[#ef0a0acc] ${errors.bankAccountNumber ? '' : 'invisible'}`}>
+                      {errors.bankAccountNumber || 'placeholder'}
+                    </span>
+                  </div>
 
-                {/* Bank Account Name */}
-                <div className="flex flex-col gap-0">
-                  <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
-                    Bank Account Name
-                  </label>
-                  <Input
-                    type="text"
-                    className="h-[35px] rounded-xl border-[#66666659]"
-                    value={bankAccountName}
-                    onChange={e => setBankAccountName(e.target.value)}
-                    autoComplete="off"
-                  />
-                  <span className={`error-message text-[#ef0a0acc] ${errors.bankAccountName ? '' : 'invisible'}`}>
-                    {errors.bankAccountName || 'placeholder'}
-                  </span>
-                </div>
+                  {/* Bank Account Name */}
+                  <div className="flex flex-col gap-0">
+                    <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
+                      Bank Account Name
+                    </label>
+                    <Input
+                      type="text"
+                      className="h-[35px] rounded-xl border-[#66666659]"
+                      value={bankAccountName}
+                      onChange={e => setBankAccountName(e.target.value)}
+                      autoComplete="off"
+                    />
+                    <span className={`error-message text-[#ef0a0acc] ${errors.bankAccountName ? '' : 'invisible'}`}>
+                      {errors.bankAccountName || 'placeholder'}
+                    </span>
+                  </div>
 
-                {/* Bank Branch */}
-                <div className="flex flex-col gap-0">
-                  <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
-                    Bank
-                  </label>
-                  <Input
-                    type="text"
-                    className="h-[35px] rounded-xl border-[#66666659]"
-                    value={bankName}
-                    onChange={e => setBankName(e.target.value)}
-                    autoComplete="off"
-                  />
-                  <span className={`error-message text-[#ef0a0acc] ${errors.bankName ? '' : 'invisible'}`}>
-                    {errors.bankName || 'placeholder'}
-                  </span>
-                </div>
+                  {/* Bank Branch */}
+                  <div className="flex flex-col gap-0">
+                    <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
+                      Bank
+                    </label>
+                    <Input
+                      type="text"
+                      className="h-[35px] rounded-xl border-[#66666659]"
+                      value={bankName}
+                      onChange={e => setBankName(e.target.value)}
+                      autoComplete="off"
+                    />
+                    <span className={`error-message text-[#ef0a0acc] ${errors.bankName ? '' : 'invisible'}`}>
+                      {errors.bankName || 'placeholder'}
+                    </span>
+                  </div>
 
-                {/* Save Button */}
-                <Button
-                  type="submit"
-                  className="w-full h-10 bg-[#111111] hover:bg-[#3d3333] rounded-[20px] font-['Roboto_Flex',Helvetica] font-medium text-white text-[25px]"
-                  disabled={loading}
-                  id="bank-setup-btn"
-                >
-                  {loading ? 'Saving...' : 'Save'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                  {/* Save Button */}
+                  <Button
+                    type="submit"
+                    className="w-full h-10 bg-[#111111] hover:bg-[#3d3333] rounded-[20px] font-['Roboto_Flex',Helvetica] font-medium text-white text-[25px]"
+                    disabled={loading}
+                    id="bank-setup-btn"
+                  >
+                    {loading ? 'Saving...' : 'Save'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
