@@ -93,155 +93,159 @@ function Signup() {
   };
 
   return (
-    <div className="bg-white flex flex-row justify-center w-full min-h-screen">
-      <div className="bg-white w-full max-w-[1500px] relative py-12">
-        {/* Logo */}
+    <div className="page-container">
+      {/* Header với Logo */}
+      <div className="page-header relative">
         <Button
-          className="absolute w-[230px] h-[130px] top-8 left-0 font-['Pompiere',Helvetica] font-normal text-center text-[64px]"
+          className="absolute w-[230px] h-[130px] top-2 left-8 font-['Pompiere',Helvetica] font-normal text-center text-[64px]"
           onClick={handleLogoClick}>
           <span className="text-[#4285f4] text-8xl">Spliter</span>
         </Button>
-    
-        {/* SignUp Form Container */}
-        <div className="flex flex-col items-center justify-center mt-0 scale-80">
-        {/* Form Fields */}
-          
-          <Card className="w-full max-w-[489px] border-none shadow-none scale-80">
-            {/* SignUp Header */}
-            <div className="w-full text-center font-['Bree_Serif',Helvetica] font-normal text-black text-[50px] mb-4">
-              Sign Up
-            </div>
-            <CardContent className="p-0 space-y-6">
-              <form onSubmit={handleSubmit} className='flex flex-col gap-6'>
-                {/* Username Field */}
-                <div className="flex flex-col gap-0">
+      </div>
+
+      {/* Main Content */}
+      <div className="page-main-content">
+        {/* Center Content - Signup Form */}
+        <div className="page-center-content flex items-start justify-center pt-16">
+          <div className="w-full max-w-[489px]">
+            <Card className="w-full border-none shadow-none">
+              {/* SignUp Header */}
+              <div className="w-full text-center font-['Bree_Serif',Helvetica] font-normal text-black text-[50px] mb-4">
+                Sign Up
+              </div>
+              <CardContent className="p-0 space-y-6">
+                <form onSubmit={handleSubmit} className='flex flex-col gap-6'>
+                  {/* Username Field */}
+                  <div className="flex flex-col gap-0">
+                      <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
+                        Username
+                      </label>
+                    <Input
+                      type="text"
+                      className="h-[35px] rounded-xl border-[#66666659]"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      autoComplete="username"
+                    />
+                    <span className={`error-message text-[#ef0a0acc] ${errors.username ? '' : 'invisible'}`}>
+                      {errors.username || 'placeholder'} </span>
+                  </div>
+
+                  {/* Email Field */}
+                  <div className="flex flex-col gap-0">
                     <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
-                      Username
+                      Email
                     </label>
-                  <Input
-                    type="text"
-                    className="h-[35px] rounded-xl border-[#66666659]"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    autoComplete="username"
-                  />
-                  <span className={`error-message text-[#ef0a0acc] ${errors.username ? '' : 'invisible'}`}>
-                    {errors.username || 'placeholder'} </span>
-                </div>
-
-                {/* Email Field */}
-                <div className="flex flex-col gap-0">
-                  <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
-                    Email
-                  </label>
-                  <Input
-                    type="email"
-                    className="h-[35px] rounded-xl border-[#66666659]"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    autoComplete="email"
-                  />
-                  <span className={`error-message text-[#ef0a0acc] ${errors.email ? '' : 'invisible'}`}>
-                    {errors.email || 'placeholder'} </span>
-                </div>
-
-                {/* Password Field */}
-                <div className="flex flex-col gap-0">
-                  <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
-                    Password
-                  </label>
-                  <div className="relative">
                     <Input
-                      type={showPassword ? "text" : "password"}
-                      className="h-[35px] rounded-xl border-[#66666659] pr-20 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-strong-password-auto-fill-button]:hidden"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      autoComplete="current-password"
-                      style={{ 
-                        WebkitTextSecurity: showPassword ? 'none' : 'disc',
-                        WebkitAppearance: 'none',
-                        MozAppearance: 'none'
-                      }}
+                      type="email"
+                      className="h-[35px] rounded-xl border-[#66666659]"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      autoComplete="email"
                     />
-                    <style jsx>{`
-                      input[type="password"]::-ms-reveal,
-                      input[type="password"]::-ms-clear {
-                        display: none;
-                      }
-                      input[type="password"]::-webkit-credentials-auto-fill-button {
-                        display: none !important;
-                      }
-                      input[type="password"]::-webkit-strong-password-auto-fill-button {
-                        display: none !important;
-                      }
-                    `}</style>
-                  <button 
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded cursor-pointer" 
-                    onClick={togglePasswordVisibility}
-                    type="button"
+                    <span className={`error-message text-[#ef0a0acc] ${errors.email ? '' : 'invisible'}`}>
+                      {errors.email || 'placeholder'} </span>
+                  </div>
+
+                  {/* Password Field */}
+                  <div className="flex flex-col gap-0">
+                    <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        className="h-[35px] rounded-xl border-[#66666659] pr-20 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-strong-password-auto-fill-button]:hidden"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="current-password"
+                        style={{ 
+                          WebkitTextSecurity: showPassword ? 'none' : 'disc',
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none'
+                        }}
+                      />
+                      <style jsx>{`
+                        input[type="password"]::-ms-reveal,
+                        input[type="password"]::-ms-clear {
+                          display: none;
+                        }
+                        input[type="password"]::-webkit-credentials-auto-fill-button {
+                          display: none !important;
+                        }
+                        input[type="password"]::-webkit-strong-password-auto-fill-button {
+                          display: none !important;
+                        }
+                      `}</style>
+                    <button 
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded cursor-pointer" 
+                      onClick={togglePasswordVisibility}
+                      type="button"
+                    >
+                      {showPassword ? (
+                          <EyeOffIcon className="w-4 h-4 text-gray-600" />
+                        ) : (
+                          <EyeIcon className="w-4 h-4 text-gray-600" />
+                        )}
+                      <span className="font-['Poppins',Helvetica] font-normal text-[#666666cc] text-sm whitespace-nowrap">
+                        {showPassword ? 'Hide' : 'Show'}
+                      </span>
+                    </button>
+                  </div>
+                    <span className={`error-message text-[#ef0a0acc] ${errors.password ? '' : 'invisible'}`}>
+                      {errors.password || 'placeholder'} </span>
+                  </div>
+                  
+                  {/* Confirm Password Field */}
+                  <div className="flex flex-col gap-0">
+                    <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? "text" : "password"}
+                        className="h-[35px] rounded-xl border-[#66666659] pr-20 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-strong-password-auto-fill-button]:hidden"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        autoComplete="new-password"
+                        style={{ 
+                          WebkitTextSecurity: showConfirmPassword ? 'none' : 'disc',
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none'
+                        }}
+                      />
+                    <button 
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded cursor-pointer" 
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      type="button"
+                    >
+                      {showConfirmPassword ? (
+                          <EyeOffIcon className="w-4 h-4 text-gray-600" />
+                        ) : (
+                          <EyeIcon className="w-4 h-4 text-gray-600" />
+                        )}
+                      <span className="font-['Poppins',Helvetica] font-normal text-[#666666cc] text-sm whitespace-nowrap">
+                        {showConfirmPassword ? 'Hide' : 'Show'}
+                      </span>
+                    </button>
+                  </div>
+                    <span className={`error-message text-[#ef0a0acc] ${errors.confirmPassword ? '' : 'invisible'}`}>
+                      {errors.confirmPassword || 'placeholder'} </span>
+                  </div>
+
+                  {/* Sign Up Button */}
+                  <Button
+                    type="submit"
+                    className="w-full h-10 bg-[#111111] hover:bg-[#3d3333] rounded-[20px] font-['Roboto_Flex',Helvetica] font-medium text-white text-[25px]"
+                    disabled={isLoading}
+                    id="signup-btn"
                   >
-                    {showPassword ? (
-                        <EyeOffIcon className="w-4 h-4 text-gray-600" />
-                      ) : (
-                        <EyeIcon className="w-4 h-4 text-gray-600" />
-                      )}
-                    <span className="font-['Poppins',Helvetica] font-normal text-[#666666cc] text-sm whitespace-nowrap">
-                      {showPassword ? 'Hide' : 'Show'}
-                    </span>
-                  </button>
-                </div>
-                  <span className={`error-message text-[#ef0a0acc] ${errors.password ? '' : 'invisible'}`}>
-                    {errors.password || 'placeholder'} </span>
-                </div>
-                
-                {/* Confirm Password Field */}
-                <div className="flex flex-col gap-0">
-                  <label className="font-['Poppins',Helvetica] font-normal text-[#666666] text-2xl">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type={showConfirmPassword ? "text" : "password"}
-                      className="h-[35px] rounded-xl border-[#66666659] pr-20 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-strong-password-auto-fill-button]:hidden"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      autoComplete="new-password"
-                      style={{ 
-                        WebkitTextSecurity: showConfirmPassword ? 'none' : 'disc',
-                        WebkitAppearance: 'none',
-                        MozAppearance: 'none'
-                      }}
-                    />
-                  <button 
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded cursor-pointer" 
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    type="button"
-                  >
-                    {showConfirmPassword ? (
-                        <EyeOffIcon className="w-4 h-4 text-gray-600" />
-                      ) : (
-                        <EyeIcon className="w-4 h-4 text-gray-600" />
-                      )}
-                    <span className="font-['Poppins',Helvetica] font-normal text-[#666666cc] text-sm whitespace-nowrap">
-                      {showConfirmPassword ? 'Hide' : 'Show'}
-                    </span>
-                  </button>
-                </div>
-                  <span className={`error-message text-[#ef0a0acc] ${errors.confirmPassword ? '' : 'invisible'}`}>
-                    {errors.confirmPassword || 'placeholder'} </span>
-                </div>
-                {/* Sign Up Button */}
-                <Button
-                  type="submit"
-                  className="w-full h-10 bg-[#111111] hover:bg-[#3d3333] rounded-[20px] font-['Roboto_Flex',Helvetica] font-medium text-white text-[25px]"
-                  disabled={isLoading}
-                  id="signup-btn"
-                >
-                  {isLoading ? 'Signing up...' : 'Sign Up'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                    {isLoading ? 'Signing up...' : 'Sign Up'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
