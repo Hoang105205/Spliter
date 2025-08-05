@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Head_bar from "../../components/ui/headbar.jsx";
 import Left_bar from "../../components/ui/leftbar.jsx";
+import MainInfo from "../../components/ui/main_user.jsx";
 import { toast } from "sonner"
 
 // API
@@ -291,20 +292,6 @@ function Dashboard_main() {
     }
   };
 
-  // Data for people you owe
-  const youOweList = [
-    { id: 1, name: "Friend's name", amount: "... đ" },
-    { id: 2, name: "Friend's name", amount: "... đ" },
-    { id: 3, name: "Friend's name", amount: "... đ" },
-  ];
-
-  // Data for people who owe you
-  const owesYouList = [
-    { id: 1, name: "Friend's name", amount: "... đ" },
-    { id: 2, name: "Friend's name", amount: "... đ" },
-    { id: 3, name: "Friend's name", amount: "... đ" },
-  ];
-
   // Handle tab clicks
   const [activeTab, setActiveTab] = useState("dashboard"); // or "recently", etc.
 
@@ -322,88 +309,7 @@ function Dashboard_main() {
 
             {/* Main Content Area */}
             <main className="flex-1 px-4">
-
-              {/* Header Row: Welcome Text + Buttons */}
-              <div className="flex justify-between items-center mb-8 pl-4 border-b-2 border-[#4A73A8]">
-                {/* Welcome Text */}
-                <h1 className="[font-family:'Rouge_Script',Helvetica] font-normal text-black text-8xl">
-                  Welcome
-                </h1>
-
-                {/* Action Buttons */}
-                <div className="flex gap-4">
-                  <Button className="h-[57px] bg-[#ed5050] hover:bg-[#ed5050]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-3xl"
-                          onClick={() => setShowExpenseModal(true)}>
-                    New expense
-                  </Button>
-                  <Button className="h-[57px] bg-[#3acd5a] hover:bg-[#3acd5a]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-3xl">
-                    Settle up
-                  </Button>
-                </div>
-              </div>
-
-              {/* Tabs */}
-              <div className="flex gap-8 mb-8">
-                <Button className="flex-1 h-[53px] bg-[#ed5050] hover:bg-[#ed5050]/90 rounded-[50px] [font-family:'Roboto_Condensed',Helvetica] text-white text-3xl">
-                  You owe
-                </Button>
-
-                <Button className="flex-1 h-[53px] bg-[#3bce5a] hover:bg-[#3bce5a]/90 rounded-[50px] [font-family:'Roboto_Condensed',Helvetica] text-white text-3xl">
-                  You lend
-                </Button>
-              </div>
-
-              {/* Amounts */}
-              <div className="flex justify-around mb-8">
-                <div className="[font-family:'Roboto',Helvetica] font-normal text-[#ed5050] text-[50px] text-center">
-                  ... đ
-                </div>
-
-                <div className="[font-family:'Roboto',Helvetica] font-normal text-[#3bce5a] text-[50px] text-center">
-                  ... đ
-                </div>
-              </div>
-
-              {/* Lists */}
-              <div className="flex gap-8">
-                {/* You Owe List */}
-                <div className="flex-1 space-y-6">
-                  {youOweList.map((friend) => (
-                    <div key={friend.id} className="flex items-center">
-                      <Avatar className="w-[51px] h-[51px] bg-[#d9d9d9]">
-                        <AvatarFallback></AvatarFallback>
-                      </Avatar>
-                      <div className="ml-4">
-                        <div className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-2xl">
-                          {friend.name}
-                        </div>
-                        <div className="[font-family:'Roboto',Helvetica] font-normal text-[#ed5050] text-base">
-                          you owe ... đ
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Owes You List */}
-                <div className="flex-1 space-y-6">
-                  {owesYouList.map((friend) => (
-                    <div key={friend.id} className="flex items-center">
-                      <Avatar className="w-[51px] h-[51px] bg-[#d9d9d9]">
-                        <AvatarFallback></AvatarFallback>
-                      </Avatar>
-                      <div className="ml-4">
-                        <div className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-2xl">
-                          {friend.name}
-                        </div>
-                        <div className="[font-family:'Roboto',Helvetica] font-normal text-[#3bce5a] text-base">
-                          owes you ... đ
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <MainInfo />
             </main>
 
             {/* Right Sidebar */}

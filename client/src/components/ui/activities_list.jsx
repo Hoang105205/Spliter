@@ -30,6 +30,14 @@ const ActivityList = () => {
         return arr
           .filter(act => act.description && /group/i.test(act.description))
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      case "expense":
+        return arr
+          .filter(act => act.activityType === "expense")
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      case "report":
+        return arr
+          .filter(act => act.activityType === "report")
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       default:
         return arr;
     }

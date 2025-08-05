@@ -68,6 +68,7 @@ const getAllLend = async (req, res) => {
 
         // Object lưu tổng lend từng tháng: { '07/2025': số tiền, ... }
         const monthlyLend = {};
+        const userLend = {} // Lưu tổng tiền cho vay của tung userId
         let unpaidLend = 0; // Tổng số tiền chưa được trả
 
         expenses.forEach(expense => {
@@ -84,6 +85,8 @@ const getAllLend = async (req, res) => {
                         totalPaidbyAmount += Number(item.shared_amount || 0);
                     }
                     else if (item.is_paid === 'no' || item.is_paid === 'pending') {
+                        const uid = item.userId;
+                        userLend[uid] = (userLend[uid] || 0) + Number(item.shared_amount || 0);
                         unpaidLend += Number(item.shared_amount || 0);
                     }
                 });
@@ -101,7 +104,8 @@ const getAllLend = async (req, res) => {
 
         res.status(200).json({ 
             monthlyLend,      // Tổng số tiền cho vay từng tháng
-            unpaidLend        // Tổng số tiền cho vay chưa được trả
+            unpaidLend,        // Tổng số tiền cho vay chưa được trả
+            userLend           // Tổng tiền cho vay của từng userId
         });
     } catch (error) {
         console.error('Error fetching expenses:', error);
@@ -142,6 +146,7 @@ const getAllOwe = async (req, res) => {
         //Tính toán tổng hợp
         const monthlyOwe = {};
         let unPaidOwe = 0;
+        const userOwe = {}; // Lưu tổng tiền nợ của từng userId
 
         items.forEach(item => {
             const expense = expenseMap[item.expenseId];
@@ -155,12 +160,15 @@ const getAllOwe = async (req, res) => {
 
             if (item.is_paid === 'no' || item.is_paid === 'pending') {
                 unPaidOwe += Number(item.shared_amount || 0);
+                const uid = expense.paidbyId;
+                userOwe[uid] = (userOwe[uid] || 0) + Number(item.shared_amount || 0);
             }
         });
 
         res.status(200).json({ 
             monthlyOwe,    // Tổng số tiền đã nợ từng tháng
-            unPaidOwe      // Tổng số tiền nợ chưa trả
+            unPaidOwe,      // Tổng số tiền nợ chưa 
+            userOwe        // Tổng tiền nợ của từng userId
         });
     } catch (error) {
         console.error('Error fetching owe items:', error);
@@ -178,8 +186,8 @@ const getUserExpenses = async (req, res) => {
         });
 
         //Count paid and unpaid expenses
-        const unpaidExpenses = userExpenses.filter(expense => expense.is_paid === 'no' || expense.is_paid === 'pending').length;
-        const paidExpenses = userExpenses.filter(expense => expense.is_paid === 'yes').length;
+        const unpaidExpenses = userExpenses.filter(expense => expense.is_paid === 'no' || expense.is_paid === 'pending');
+        const paidExpenses = userExpenses.filter(expense => expense.is_paid === 'yes');
 
         res.status(200).json({
             unpaidExpenses,

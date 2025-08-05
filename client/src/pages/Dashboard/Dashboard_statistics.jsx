@@ -31,10 +31,6 @@ function Dashboard_statistics() {
             <main className="flex-1 px-4">
               <StatisticInfo />
             </main>
-
-            {/* Right Sidebar */}
-            <aside className="w-[269px] pl-4 border-l-4 border-[#4A73A8]">
-            </aside>
           </div>
 
         </div>
