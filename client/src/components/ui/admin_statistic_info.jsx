@@ -208,10 +208,12 @@ const AdminStatisticInfo = () => {
       <div
         style={{
           width: "100%",
-          marginTop: "45px",
-          maxHeight: "520px",
+          marginTop: "20px",
+          maxHeight: "calc(100vh - 160px)",
           overflowY: "auto",
-          paddingRight: "8px",
+          paddingRight: "12px",
+          paddingBottom: "40px",
+          marginBottom: "30px"  
         }}
       >
         <div
@@ -220,7 +222,7 @@ const AdminStatisticInfo = () => {
             flexDirection: "column",
             alignItems: "center",
             width: "100%",
-            gap: "30px"
+            gap: "25px"
           }}
         >
           <BlockText
@@ -270,13 +272,22 @@ const AdminStatisticInfo = () => {
           />
 
           {/* Chọn số tháng hiển thị */}
-          <div style={{ width: "100%", maxWidth: 700, marginBottom: 8 }}>
-            <label htmlFor="monthCount" style={{ fontWeight: 500, marginRight: 8 }}>Server growth in last:</label>
+          <div style={{ width: "100%", maxWidth: 800, marginBottom: 12 }}>
+            <label htmlFor="monthCount" style={{ fontWeight: 500, marginRight: 10, fontSize: 16 }}>
+              Server growth in last:
+            </label>
             <select
               id="monthCount"
               value={monthCount}
               onChange={e => setMonthCount(Number(e.target.value))}
-              style={{ padding: "6px 12px", borderRadius: 4, border: "1px solid #bbb", fontSize: 15 }}
+              style={{ 
+                padding: "8px 16px", 
+                borderRadius: 6, 
+                border: "1px solid #ddd", 
+                fontSize: 15,
+                backgroundColor: "#fff",
+                cursor: "pointer"
+              }}
             >
               {MONTH_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -285,11 +296,11 @@ const AdminStatisticInfo = () => {
           </div>
 
           {/* Biểu đồ AreaChart với users (blue), expenses (green) */}
-          <div style={{ width: "100%", maxWidth: 700, background: "#fff", borderRadius: 16, boxShadow: "0 2px 8px rgba(32,50,91,0.08)", padding: 24 }}>
-            <h2 style={{ fontWeight: 600, fontSize: 18, marginBottom: 8, color: "#20325b" }}>
+          <div style={{ width: "100%", maxWidth: 800, background: "#fff", borderRadius: 16, boxShadow: "0 2px 8px rgba(32,50,91,0.08)", padding: 24 }}>
+            <h2 style={{ fontWeight: 600, fontSize: 18, marginBottom: 16, color: "#20325b" }}>
               Users & Expenses Growth ({monthCount} months)
             </h2>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={280}>
               <AreaChart
                 data={data}
                 margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
@@ -316,12 +327,12 @@ const AdminStatisticInfo = () => {
           </div>
 
           {/* Biểu đồ Amount Distribution - Pie Chart */}
-          <div style={{ display: "flex", gap: 30, width: "100%" }}>
-            <div style={{ flex: 1, background: "#fff", borderRadius: 16, boxShadow: "0 2px 8px rgba(32,50,91,0.08)", padding: 24 }}>
-              <h2 style={{ fontWeight: 600, fontSize: 18, marginBottom: 8, color: "#20325b" }}>
+          <div style={{ display: "flex", gap: 24, width: "100%", maxWidth: 1000 }}>
+            <div style={{ flex: 1, background: "#fff", borderRadius: 16, boxShadow: "0 2px 8px rgba(32,50,91,0.08)", padding: 20 }}>
+              <h2 style={{ fontWeight: 600, fontSize: 18, marginBottom: 12, color: "#20325b" }}>
                 Amount Distribution
               </h2>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
                     data={amountData}
@@ -329,7 +340,7 @@ const AdminStatisticInfo = () => {
                     cy="50%"
                     labelLine={false}
                     label={({ name, value, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
-                    outerRadius={80}
+                    outerRadius={75}
                     fill="#8884d8"
                     dataKey="value"
                   >
@@ -344,11 +355,11 @@ const AdminStatisticInfo = () => {
             </div>
 
             {/* Biểu đồ Amount Comparison - Bar Chart */}
-            <div style={{ flex: 1, background: "#fff", borderRadius: 16, boxShadow: "0 2px 8px rgba(32,50,91,0.08)", padding: 24 }}>
-              <h2 style={{ fontWeight: 600, fontSize: 18, marginBottom: 8, color: "#20325b" }}>
+            <div style={{ flex: 1, background: "#fff", borderRadius: 16, boxShadow: "0 2px 8px rgba(32,50,91,0.08)", padding: 20 }}>
+              <h2 style={{ fontWeight: 600, fontSize: 18, marginBottom: 12, color: "#20325b" }}>
                 Amount Breakdown
               </h2>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart
                   data={amountBarData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
