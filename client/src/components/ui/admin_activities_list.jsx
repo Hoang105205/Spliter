@@ -37,7 +37,7 @@ const AdminActivityList = () => {
         const users = await findAllUsers();
         fetchAllActivities(users);
       } catch (error) {
-        console.error("Failed to fetch users:", error);
+        console.error("Failed to fetch activities:", error);
       } finally {
         setLoading(false);
       }
@@ -168,7 +168,7 @@ const AdminActivityList = () => {
               &times;
             </button>
             <span className="text-blue-700 font-medium">
-              {selected.length} activities{selected.length > 1 ? 's' : ''} selected
+              {selected.length} activitie{selected.length > 1 ? 's' : ''} selected
             </span>
           </div>
           <div className="flex-1 flex justify-end gap-2">
@@ -308,7 +308,9 @@ const AdminActivityList = () => {
                     month: 'short',
                     day: 'numeric'
                   })}</td>
-                <td className="px-4 py-2 text-left">{row.description}</td>
+                <td className="px-4 py-2 text-left">  {row.description.length > 40
+                                                        ? row.description.slice(0, 40) + '...'
+                                                        : row.description}</td>
               </tr>
               {expandedUserId === row.id && (
                 <tr>
@@ -373,7 +375,7 @@ const AdminActivityList = () => {
                 setExpandedUserId(null); // Close expanded details when changing rows per page
               }}
             >
-              {[5, 10, 15].map(n => (
+              {[5, 10].map(n => (
                 <option key={n} value={n}>{n}</option>
               ))}
             </select>
@@ -414,8 +416,8 @@ const AdminActivityList = () => {
                 >
                   {p}
                 </button>
-              ))}
-            <button
+            ))}
+            <button 
               className="px-2 py-1 rounded disabled:opacity-50"
               onClick={() => {
                 setPage(page + 1);

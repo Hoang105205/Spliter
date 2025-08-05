@@ -728,6 +728,121 @@ function Dashboard_group() {
     }
   };
 
+  // Handle Settle up
+  const handleSettleUp = async () => {
+    if (!selectedGroup || !selectedExpense) {
+      toast.error("Please select a group and an expense to settle up.");
+      return;
+    }
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      toast.error("There is a problem. Please refresh the page.");
+      return;
+    }
+
+    try {
+      await updateExpenseItemStatus({
+        expenseId: selectedExpense.id,
+        itemId: selectedItem.id,
+        userId: ownSelf.id,
+        status: 'pending',
+      });
+      const updatedExpense = await getExpenseById(selectedExpense.id);
+      setSelectedExpense(updatedExpense);
+
+      // Update Expenses state
+      setExpenses((prev) => {
+        return prev.map((exp) =>
+          exp.id === selectedExpense.id ? updatedExpense : exp
+        );
+      });
+
+      const message = {
+        type: "SETTLE_UP",
+        payload: {
+          expenseId: selectedExpense.id,
+          groupId: selectedGroup.id,
+          userId: userData.id,
+          paidbyId: selectedExpense.paidbyId,
+        },
+      };
+
+      ws.send(JSON.stringify(message));
+      
+      setSelectedItem(null);
+      setShowSettleModal(false);
+      setRefreshTrigger((prev) => prev + 1); // Kích hoạt lại useEffect
+      toast.success('Payment status updated successfully!');
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Failed to update payment status. Please try again.');
+    }
+  };
+    
+
+  // Handle confirm settle up
+  const handleConfirmSettleUp = async (status) => {
+    if (!selectedGroup || !selectedExpense || !selectedItem) {
+      toast.error("Please select a group, expense, and item to settle up.");
+      return;
+    }
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      toast.error("There is a problem. Please refresh the page.");
+      return;
+    }
+
+    try {
+      if (selectedItem && ownSelf.id === selectedExpense.paidbyId) {
+        await updateExpenseItemStatus({
+          expenseId: selectedExpense.id,
+          itemId: selectedItem.id,
+          userId: selectedItem.userId,
+          status, 
+        });
+        const updatedExpense = await getExpenseById(selectedExpense.id);
+        setSelectedExpense(updatedExpense);
+        setExpenses((prev) =>
+          prev.map((exp) =>
+            exp.id === selectedExpense.id ? updatedExpense : exp
+          )
+        );
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          const message = {
+            type: "UPDATE_EXPENSE_ITEM_STATUS",
+            payload: {
+              expenseId: selectedExpense.id,
+              groupId: selectedGroup.id,
+              itemId: selectedItem.id,
+              userId: selectedItem.userId,
+              paidId: selectedExpense.paidbyId,
+              status,
+            },
+          };
+          ws.send(JSON.stringify(message));
+        }
+
+        setShowConfirmModal(false);
+        setRefreshTrigger((prev) => prev + 1);
+      }
+    }
+    catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Failed to update payment status. Please try again.');
+    }
+
+    if (status === 'yes'){
+      toast.success('Payment status updated to "Paid" successfully!');
+    }
+    else if (status === 'no') {
+      toast.success('Payment status updated to "Not Paid" successfully!');
+    }
+
+  }
+
+  
+
   // Handle context menu click
   const handleContextMenu = (e, memberId) => {
     e.preventDefault();
@@ -767,1040 +882,978 @@ function Dashboard_group() {
   }, [contextMenu.visible]);
 
   return (
-    <div className="bg-white flex flex-row justify-center w-full">
-      <div className="bg-white w-full max-w-[1500px] min-h-[1000px] p-5">
-        <div className="relative w-full max-w-[1409px] mx-auto">
-          {/* Header */}
-          <Head_bar />
+  <div className="page-container">
+    {/* Header */}
+    <div className="page-header">
+      <Head_bar />
+    </div>
 
-          {/* Main Content */}
-          <div className="flex mt-4">
-            {/* Left Sidebar */}
-            <Left_bar activeTab={activeTab} setActiveTab={setActiveTab} onGroupSelect={setSelectedGroup} />
-            {!selectedGroup && (
-              <div className="mt-6 mx-8">
-                <div className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-blue-900 text-[25px] flex justify-between items-center w-full mb-4">
-                  Please join or select a group to get started.
-                </div>
-                <div className="[font-family:'Roboto_Condensed',Helvetica] text-gray-900 text-[22px] flex justify-between items-center w-full mb-4">
-                  No groups yet? Click {" "}
-                  <span className="w-10 h-10 rounded-full bg-[#cccccc]/50 flex items-center justify-center text-[#5a96f0] mx-2">
-                    <PlusIcon className="w-5 h-5" />
-                  </span>{" "}
-                  button to create your first group!
+    {/* Main Content */}
+    <div className="page-main-content">
+      {/* Left Sidebar */}
+      <div className="page-left-sidebar"> 
+        <Left_bar activeTab={activeTab} setActiveTab={setActiveTab} onGroupSelect={setSelectedGroup} />
+      </div>
+
+      {/* Center Content Area */}
+      <div className="page-center-content">
+        {!selectedGroup && (
+          <div className="mt-6">
+            <div className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-blue-900 text-[25px] flex justify-between items-center w-full mb-4">
+              Please join or select a group to get started.
+            </div>
+            <div className="[font-family:'Roboto_Condensed',Helvetica] text-gray-900 text-[22px] flex items-center w-full mb-4">
+              No groups yet? Click {" "}
+              <span className="w-10 h-10 rounded-full bg-[#cccccc]/50 flex items-center justify-center text-[#5a96f0] mx-1">
+                <PlusIcon className="w-5 h-5" />
+              </span>{" "}
+              button to create your first group!
+            </div>
+          </div>
+        )}
+
+        {/* Main Content Area */}
+        <motion.div
+          className="flex-1"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: isReloading ? 0.3 : 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          {activeTab === 'group' && selectedGroup && (
+            <div className="mt-4">
+              <div className="flex justify-between items-center w-full mb-4">
+                <h2 className="[font-family:'Roboto',Helvetica] text-3xl font-bold text-[#193865]">
+                  {selectedGroup.name}
+                </h2>
+                <div className="flex space-x-2">
+                  <Button
+                    className="h-[50px] bg-[#ed5050] hover:bg-[#ed5050]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-2xl"
+                    onClick={() => {
+                      setShowExpenseModal(true);
+                      setSelectedDate(new Date());
+                    }}
+                  >
+                    New expense
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-[50px] text-gray-600 hover:text-gray-800"
+                    onClick={async () => {
+                      setIsReloading(true);
+                      try {
+                        const expenses = await getExpenses(selectedGroup.id);
+                        if (expenses) {
+                          setExpenses(expenses);
+                          toast.success('Expenses refreshed successfully!');
+                        }
+                      } catch (error) {
+                        console.error('Error refreshing expenses:', error);
+                        toast.error('Failed to refresh expenses. Please try again.');
+                      } finally {
+                        setIsReloading(false);
+                      }
+                    }}
+                  >
+                    <motion.div
+                      animate={{ rotate: isReloading ? 360 : 0 }}
+                      transition={{ duration: 1, repeat: isReloading ? Infinity : 0, ease: "linear" }}
+                    >
+                      <RefreshCwIcon className="w-6 h-6" />
+                    </motion.div>
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent w-9 h-[50px] text-gray-600 hover:text-gray-800"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const mouseX = e.clientX;
+                      const mouseY = e.clientY;
+                      setContextMenuPosition({
+                        x: mouseX,
+                        y: mouseY,
+                      });
+                      setShowSettingsModal(true);
+                    }}
+                  >
+                    <SettingsIcon className="w-6 h-6" />
+                  </Button>
                 </div>
               </div>
-            )}
-            {/* Main Content Area */}
-            <motion.main
-              className="flex-1 px-4"
-              initial={{ opacity: 1 }}
-              animate={{ opacity: isReloading ? 0.3 : 1 }} // Fade ra khi reload, fade vào khi hoàn tất
-              transition={{ duration: 0.5 }}
-            >
-              {activeTab === 'group' && selectedGroup && (
-                <div className="mt-4">
-                  <div className="flex justify-between items-center w-full mb-4">
-                    <h2 className="[font-family:'Roboto',Helvetica] text-3xl font-bold text-[#193865]">
-                      {selectedGroup.name}
-                    </h2>
-                    <div className="flex space-x-2">
-                      <Button
-                        className="h-[50px] bg-[#ed5050] hover:bg-[#ed5050]/90 rounded-[10px] [font-family:'Roboto_Condensed',Helvetica] text-white text-2xl"
-                        onClick={() => {
-                          setShowExpenseModal(true);
-                          setSelectedDate(new Date());
-                        }}
-                      >
-                        New expense
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-[50px] text-gray-600 hover:text-gray-800"
-                        onClick={async () => {
-                          setIsReloading(true); // Bắt đầu hiệu ứng reload
-                          try {
-                            const expenses = await getExpenses(selectedGroup.id);
-                            if (expenses) {
-                              setExpenses(expenses);
-                              toast.success('Expenses refreshed successfully!');
-                            }
-                          } catch (error) {
-                            console.error('Error refreshing expenses:', error);
-                            toast.error('Failed to refresh expenses. Please try again.');
-                          } finally {
-                            setIsReloading(false); // Kết thúc hiệu ứng reload
-                          }
-                        }}
-                      >
-                        <motion.div
-                          animate={{ rotate: isReloading ? 360 : 0 }} // Quay icon khi reload
-                          transition={{ duration: 1, repeat: isReloading ? Infinity : 0, ease: "linear" }}
+              
+              <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "600px" }}>
+                {expenses.length > 0 && (
+                  <div className="mt-4">
+                    {[...expenses].reverse().map((expense) => {
+                      const paidByUser = groupMembers.find(member => member.id === expense.paidbyId);
+                      return (
+                        <div
+                          key={expense.id}
+                          className="p-2 mb-2 rounded-[20px] bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer text-[#13183c] [font-family:'Roboto_Condensed',Helvetica] text-lg"
+                          onClick={(e) => {
+                            setSelectedExpense(expense);
+                            setMousePosition({ x: e.clientX + 10, y: e.clientY + 10 });
+                          }}
                         >
-                          <RefreshCwIcon className="w-6 h-6" />
-                        </motion.div>
-                      </Button>
-                      
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent w-9 h-[50px] text-gray-600 hover:text-gray-800"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation(); // Prevent event bubbling
-                          const mouseX = e.clientX; // Tọa độ x của chuột
-                          const mouseY = e.clientY; // Tọa độ y của chuột
-                          setContextMenuPosition({
-                            x: mouseX,
-                            y: mouseY,
-                          });
-                          setShowSettingsModal(true);
-                        }}
-                      >
-                        <SettingsIcon className="w-6 h-6" />
-                      </Button>
-                       
-                    </div>
+                          <p><span className="font-semibold">Title:</span> {expense.title}</p>
+                          <p><span className="font-semibold">Amount:</span> {formatWithCommas(expense.amount)} ₫</p>
+                          <p><span className="font-semibold">Paid by:</span> {paidByUser ? paidByUser.username : 'Unknown'}</p>
+                          <p><span className="font-semibold">Due Date:</span> {new Date(expense.expDate).toLocaleDateString()}</p>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "600px" }}>
-                    {expenses.length > 0 && (
-                      <div className="mt-4">
-                        {[...expenses].reverse().map((expense) => {
-                          const paidByUser = groupMembers.find(member => member.id === expense.paidbyId);
+                )}
+              </div>
+              
+              {selectedExpense && (
+                <AnimatePresence>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.6 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.6 }}
+                    className="fixed bg-white p-4 rounded-[15px] shadow-xl min-w-[290px] z-50 text-gray-900 [font-family:'Roboto_Condensed',Helvetica]"
+                    style={{
+                      top: mousePosition.y > window.innerHeight / 2 ? undefined : mousePosition.y,
+                      bottom: mousePosition.y > window.innerHeight / 2 ? window.innerHeight - mousePosition.y - 5 : undefined,
+                      left: mousePosition.x - 6,
+                      transform: "translate(0, 0)",
+                    }}
+                  >
+                    <button
+                      className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                      onClick={() => setSelectedExpense(null)}
+                    >
+                      ✕
+                    </button>
+                    <p className="font-semibold text-gray">Description:</p>
+                    <textarea className="w-[275px] min-h-[50px] max-h-[100px] resize-none pointer-events-none focus:outline-none border-none bg-transparent">{selectedExpense.description || 'no description'}</textarea>
+                    <p className="font-semibold text-black mt-2">Members:</p>
+                    <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "100px" }}>
+                      {selectedExpense.items
+                        .slice()
+                        .sort((a, b) => (a.userId === ownSelf.id ? -1 : b.userId === ownSelf.id ? 1 : 0))
+                        .map((item) => {
+                          const member = groupMembers.find((m) => m.id === item.userId);
                           return (
-                            <div
-                              key={expense.id}
-                              className="p-2 mb-2 rounded-[20px] bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer text-[#13183c] [font-family:'Roboto_Condensed',Helvetica] text-lg"
-                              onClick={(e) => {
-                                setSelectedExpense(expense);
-                                setMousePosition({ x: e.clientX + 10, y: e.clientY + 10 });
-                              }}
-                            >
-                              <p><span className="font-semibold">Title:</span> {expense.title}</p>
-                              <p><span className="font-semibold">Amount:</span> {formatWithCommas(expense.amount)} ₫</p>
-                              <p><span className="font-semibold">Paid by:</span> {paidByUser ? paidByUser.username : 'Unknown'}</p>
-                              <p><span className="font-semibold">Due Date:</span> {new Date(expense.expDate).toLocaleDateString()}</p>
-                            </div>
+                            <p key={item.id}>
+                              {member ? member.username : 'Unknown'}: {`${formatWithCommas(item.shared_amount)} ₫`}
+                              {ownSelf.id === selectedExpense.paidbyId ? (
+                                item.userId !== ownSelf.id && (
+                                  <>
+                                    {item.is_paid === 'no' && (
+                                      <span className="ml-4 text-yellow-500">Not Paid</span>
+                                    )}
+                                    {item.is_paid === 'yes' && (
+                                      <span className="ml-4 text-green-500">Paid</span>
+                                    )}
+                                    {item.is_paid === 'pending' && (
+                                      <Button
+                                        className="bg-orange-500 text-white hover:bg-orange-600 rounded-[15px] ml-4 h-[22px] text-[14px]"
+                                        onClick={() => {
+                                          setSelectedItem(item);
+                                          setShowConfirmModal(true);
+                                        }}
+                                      >
+                                        Pending
+                                      </Button>
+                                    )}
+                                  </>
+                                )
+                              ) : (
+                                item.userId === ownSelf.id ? (
+                                  <>
+                                    {item.is_paid === 'no' && (
+                                      <Button
+                                        className="bg-blue-500 text-white hover:bg-blue-700 rounded-[15px] ml-4 h-[22px] text-[14px]"
+                                        onClick={() => {
+                                          setSelectedItem(item);
+                                          setShowSettleModal(true);
+                                        }}
+                                      >
+                                        Settle up
+                                      </Button>
+                                    )}
+                                    {item.is_paid === 'yes' && (
+                                      <span className="ml-4 text-teal-400">Settled</span>
+                                    )}
+                                    {item.is_paid === 'pending' && (
+                                      <span className="ml-4 text-gray-500">Pending</span>
+                                    )}
+                                  </>
+                                ) : null
+                              )}
+                            </p>
                           );
                         })}
-                      </div>
-                    )}
-                  </div>
-                  {selectedExpense && (
-                    <AnimatePresence>
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.6 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.6 }}
-                        className="fixed bg-white p-4 rounded-[15px] shadow-xl min-w-[290px] z-50 text-gray-900 [font-family:'Roboto_Condensed',Helvetica]"
-                        style={{
-                          top: mousePosition.y > window.innerHeight / 2 ? undefined : mousePosition.y,
-                          bottom: mousePosition.y > window.innerHeight / 2 ? window.innerHeight - mousePosition.y - 5 : undefined,
-                          left: mousePosition.x - 6,
-                          transform: "translate(0, 0)",
-                        }}
-                      >
-                        <button
-                          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                          onClick={() => setSelectedExpense(null)}
-                        >
-                          ✕
-                        </button>
-                        <p className="font-semibold text-gray">Description:</p>
-                        <textarea className="w-[275px] min-h-[50px] max-h-[100px] resize-none pointer-events-none focus:outline-none border-none bg-transparent">{selectedExpense.description || 'no description'}</textarea>
-                        <p className="font-semibold text-black mt-2">Members:</p>
-                        <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "100px" }}>
-                          {selectedExpense.items
-                            .slice()
-                            .sort((a, b) => (a.userId === ownSelf.id ? -1 : b.userId === ownSelf.id ? 1 : 0))
-                            .map((item) => {
-                              const member = groupMembers.find((m) => m.id === item.userId);
-                              return (
-                                <p key={item.id}>
-                                  {member ? member.username : 'Unknown'}: {`${formatWithCommas(item.shared_amount)} ₫`}
-                                  {ownSelf.id === selectedExpense.paidbyId ? (
-                                    item.userId !== ownSelf.id && (
-                                      <>
-                                        {item.is_paid === 'no' && (
-                                          <span className="ml-4 text-yellow-500">Not Paid</span>
-                                        )}
-                                        {item.is_paid === 'yes' && (
-                                          <span className="ml-4 text-green-500">Paid</span>
-                                        )}
-                                        {item.is_paid === 'pending' && (
-                                          <Button
-                                            className="bg-orange-500 text-white hover:bg-orange-600 rounded-[15px] ml-4 h-[22px] text-[14px]"
-                                            onClick={() => {
-                                              setSelectedItem(item); // Đặt item để cập nhật trạng thái
-                                              setShowConfirmModal(true);
-                                            }}
-                                          >
-                                            Pending
-                                          </Button>
-                                          )}
-                                      </>
-                                    )
-                                  ) : (
-                                    item.userId === ownSelf.id ? (
-                                      <>
-                                        {item.is_paid === 'no' && (
-                                          <Button
-                                            className="bg-blue-500 text-white hover:bg-blue-700 rounded-[15px] ml-4 h-[22px] text-[14px]"
-                                            onClick={() => {
-                                              setSelectedItem(item);
-                                              setShowSettleModal(true);
-                                            }}
-                                          >
-                                            Settle up
-                                          </Button>
-                                        )}
-                                        {item.is_paid === 'yes' && (
-                                          <span className="ml-4 text-teal-400">Settled</span>
-                                        )}
-                                        {item.is_paid === 'pending' && (
-                                          <span className="ml-4 text-gray-500">Pending</span>
-                                        )}
-                                      </>
-                                    ) : null
-                                  )}
-                                </p>
-                              );
-                            })}
-                        </div>
-                        <p className="mt-3"><span className="font-semibold text-gray">Paid by:</span> {groupMembers.find(m => m.id === selectedExpense.paidbyId)?.username || 'Unknown'}</p>
-                        <p><span className="font-semibold text-gray">Due Date:</span> {new Date(selectedExpense.expDate).toLocaleDateString()}</p>
-                      </motion.div>
-                    </AnimatePresence>
-                  )}
-                </div>
-              )}
-
-
-            {/* Settle up Modal */}
-            <AnimatePresence>
-              {showSettleModal && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[999]"
-                >
-                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[600px] h-[350px] flex flex-col text-gray-900">
-                    <h2 className="text-xl font-bold mb-2">Settle Up Payment</h2>
-                    <p>You owe: {formatWithCommas(paymentSelf)} ₫</p>
-                    <div className="mt-4 p-3 border rounded-[15px] bg-gray-50 text-">
-                      <p>Name: {paidMemberInfo?.username || 'Unknown'}</p>
-                      <p>Account Name: {paidMemberInfo?.bankAccountName || 'null'}</p>
-                      <p>Account Number: {paidMemberInfo?.bankAccountNumber || 'null'}</p>
-                      <p>Bank Name: {paidMemberInfo?.bankName || 'null'}</p>
                     </div>
-                    <div className="mt-auto pt-2 space-x-8">
-                      <Button
-                        className="bg-blue-500 text-white px-4 py-2 w-[125px] rounded-full hover:bg-blue-600 transition-colors"
-                        onClick={async () => {
-                          try {
-                            await updateExpenseItemStatus({
-                              expenseId: selectedExpense.id,
-                              itemId: selectedItem.id,
-                              userId: ownSelf.id,
-                              status: 'pending',
-                            });
-                            const updatedExpense = await getExpenseById(selectedExpense.id);
-                            setSelectedExpense(updatedExpense);
-
-                            // Update Expenses state
-                            setExpenses((prev) => {
-                              return prev.map((exp) =>
-                                exp.id === selectedExpense.id ? updatedExpense : exp
-                              );
-                            });
-                            
-                            setSelectedItem(null);
-                            setShowSettleModal(false);
-                            setRefreshTrigger((prev) => prev + 1); // Kích hoạt lại useEffect
-                            toast.success('Payment status updated successfully!');
-                          } catch (error) {
-                            console.error('Error updating status:', error);
-                            toast.error('Failed to update payment status. Please try again.');
-                          }
-                        }}
-                      >
-                        Confirm
-                      </Button>
-                      <Button
-                        className="bg-gray-300 text-black px-4 py-2 w-[125px] rounded-full hover:bg-gray-400 transition-colors"
-                        onClick={() => setShowSettleModal(false)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>  
-                  </div>
-                </motion.div>
-                )}
-              </AnimatePresence>
-
-
-              {/* Confirm Modal */}
-              <AnimatePresence>
-                {showConfirmModal && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]"
-                  >
-                    <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] flex flex-col text-gray-900">
-                      <h2 className="text-xl font-bold mb-4">Confirm Payment Status</h2>
-                      <p>Has {groupMembers.find(m => m.id === selectedItem.userId)?.username || 'Unknown'} paid their share?</p>
-                      <div className="mt-6 space-x-4">
-                        <Button
-                          className="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors"
-                          onClick={async () => {
-                            try {
-                              if (selectedItem && ownSelf.id === selectedExpense.paidbyId) {
-                                await updateExpenseItemStatus({
-                                  expenseId: selectedExpense.id,
-                                  itemId: selectedItem.id,
-                                  userId: selectedItem.userId,
-                                  status: 'yes',
-                                });
-                                const updatedExpense = await getExpenseById(selectedExpense.id);
-                                setSelectedExpense(updatedExpense);
-                                setExpenses((prev) =>
-                                  prev.map((exp) =>
-                                    exp.id === selectedExpense.id ? updatedExpense : exp
-                                  )
-                                );
-                                setShowConfirmModal(false);
-                                setRefreshTrigger((prev) => prev + 1);
-                                toast.success('Payment status updated to "Paid" successfully!');
-                              }
-                            } catch (error) {
-                              console.error('Error updating status:', error);
-                              toast.error('Failed to update payment status. Please try again.');
-                            }
-                          }}
-                        >
-                          Yes
-                        </Button>
-                        <Button
-                          className="bg-yellow-500 text-white px-4 py-2 rounded-full hover:bg-yellow-600 transition-colors"
-                          onClick={async () => {
-                            try {
-                              if (selectedItem && ownSelf.id === selectedExpense.paidbyId) {
-                                await updateExpenseItemStatus({
-                                  expenseId: selectedExpense.id,
-                                  itemId: selectedItem.id,
-                                  userId: selectedItem.userId,
-                                  status: 'no',
-                                });
-                                const updatedExpense = await getExpenseById(selectedExpense.id);
-                                setSelectedExpense(updatedExpense);
-                                setExpenses((prev) =>
-                                  prev.map((exp) =>
-                                    exp.id === selectedExpense.id ? updatedExpense : exp
-                                  )
-                                );
-                                setShowConfirmModal(false);
-                                setRefreshTrigger((prev) => prev + 1);
-                                toast.info('Payment status updated to "Not Paid" successfully!');
-                              }
-                            } catch (error) {
-                              console.error('Error updating status:', error);
-                              toast.error('Failed to update payment status. Please try again.');
-                            }
-                          }}
-                        >
-                          No
-                        </Button>
-                        <Button
-                          className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
-                          onClick={() => setShowConfirmModal(false)}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
+                    <p className="mt-3"><span className="font-semibold text-gray">Paid by:</span> {groupMembers.find(m => m.id === selectedExpense.paidbyId)?.username || 'Unknown'}</p>
+                    <p><span className="font-semibold text-gray">Due Date:</span> {new Date(selectedExpense.expDate).toLocaleDateString()}</p>
                   </motion.div>
-                )}
-              </AnimatePresence>
+                </AnimatePresence>
+              )}
+            </div>
+          )}
+        </motion.div>
+      </div>
 
-              {/* Hiển thị chung chung ở đây khi không có nhóm được chọn và activeTab là "group" */}
-            </motion.main>
+      {/* Right Sidebar - Only show when group is selected */}
+      {activeTab === 'group' && selectedGroup && (
+        <div className="page-right-sidebar">
+          <div className="bg-[#cccccc]/30 rounded-[15px] h-[38px] flex items-center justify-between px-3.5">
+            <span className="[font-family:'Roboto',Helvetica] text-[#666666] text-xl">
+              Group Members
+            </span>
+            {isOwner && (
+              <Button variant="ghost" size="icon" className="p-0" onClick={() => setShowAddMemberModal(true)}>
+                <PlusIcon className="w-6 h-6" />
+              </Button>
+            )}
+          </div>
 
-
-            {/* Right Sidebar - Only show when group is selected */}
-            {activeTab === 'group' && selectedGroup && (
-              <aside className="w-[269px] h-screen pl-4 border-l-4 border-[#4A73A8]">
-                <div className="bg-[#cccccc]/30 rounded-[15px] h-[38px] flex items-center justify-between px-3.5">
-                  <span className="[font-family:'Roboto',Helvetica] text-[#666666] text-xl">
-                    Group Members
-                  </span>
-                  {isOwner && (
-                    <Button variant="ghost" size="icon" className="p-0" onClick={() => setShowAddMemberModal(true)}>
-                      <PlusIcon className="w-6 h-6" />
-                    </Button>
+          <div className="mt-4 space-y-6">
+            {membersLoading ? (
+              <p className="text-center text-gray-500">Loading...</p>
+            ) : membersError ? (
+              <p className="text-center text-red-500">Error: {membersError}</p>
+            ) : groupMembers.length > 0 ? (
+              groupMembers.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex items-center relative group"
+                  onContextMenu={(e) => handleContextMenu(e, member.id)}
+                >
+                  <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[10px] z-10"></div>
+                  <div className="relative flex items-center z-20 px-1 py-1">
+                    <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
+                      {memberAvatars[member.id] ? (
+                        <img
+                          src={memberAvatars[member.id]}
+                          alt={member.username}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <AvatarFallback>
+                          {member.username?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                  </div>
+                  <div className="ml-2 [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg">
+                    {member.username}
+                  </div>
+                  {member.id === selectedGroup?.ownerId && (
+                    <CrownIcon className="w-5 h-5 text-yellow-500 ml-2" />
                   )}
                 </div>
-
-                <div className="mt-4 space-y-6">
-                  {membersLoading ? (
-                    <p className="text-center text-gray-500">Loading...</p>
-                  ) : membersError ? (
-                    <p className="text-center text-red-500">Error: {membersError}</p>
-                  ) : groupMembers.length > 0 ? (
-                    groupMembers.map((member) => (
-                      <div
-                        key={member.id}
-                        className="flex items-center relative group"
-                        onContextMenu={(e) => handleContextMenu(e, member.id)}
-                      >
-                        <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[10px] z-10"></div>
-                        <div className="relative flex items-center z-20 px-1 py-1">
-                          <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
-                            {memberAvatars[member.id] ? (
-                              <img
-                                src={memberAvatars[member.id]}
-                                alt={member.username}
-                                className="w-full h-full rounded-full object-cover"
-                              />
-                            ) : (
-                              <AvatarFallback>
-                                {member.username?.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                        </div>
-                        <div className="ml-2 [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg">
-                          {member.username}
-                        </div>
-                        {member.id === selectedGroup?.ownerId && (
-                          <CrownIcon className="w-5 h-5 text-yellow-500 ml-2" /> // Biểu tượng vương miện
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-center text-gray-500">No members found.</p>
-                  )}
-                </div>
-              </aside>
+              ))
+            ) : (
+              <p className="text-center text-gray-500">No members found.</p>
             )}
+          </div>
+        </div>
+      )}
 
-            {!selectedGroup && (
-              <aside className="w-[269px] h-screen pl-4 border-l-4 border-[#4A73A8]"/>
-            )}
+      {/* {!selectedGroup && (
+        <div className="w-[269px] border-l-4 border-[#4A73A8]"/>
+      )} */}
+    </div>
 
-            {/* Context Menu for Kick Member */}
-            {contextMenu.visible && isOwner && (
-              <div
-                className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg py-2 px-4 context-menu"
-                style={{ top: contextMenu.y, left: contextMenu.x, minWidth: 120, maxWidth: '90vw', maxHeight: '90vh', overflow: 'auto' }}
+    {/* All existing modals remain the same... */}
+    
+    {/* Context Menu for Kick Member */}
+    {contextMenu.visible && isOwner && (
+      <div
+        className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg py-2 px-4 context-menu"
+        style={{ top: contextMenu.y, left: contextMenu.x, minWidth: 120, maxWidth: '90vw', maxHeight: '90vh', overflow: 'auto' }}
+      >
+        <button
+          className="w-full text-left text-red-600 hover:bg-red-50 hover:text-red-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
+          onClick={handleKickMember}
+        >
+          Kick Member
+        </button>
+      </div>
+    )}
+
+    {/* Keep all your existing modals here unchanged */}
+    {/* Settle up Modal, Confirm Modal, Add Member Modal, Expense Modal, Settings Modal, etc. */}
+    {/* Settle up Modal */}
+    <AnimatePresence>
+      {showSettleModal && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[999]"
+      >
+        <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[600px] h-[350px] flex flex-col text-gray-900">
+          <h2 className="text-xl font-bold mb-2">Settle Up Payment</h2>
+          <p>You owe: {formatWithCommas(paymentSelf)} ₫</p>
+          <div className="mt-4 p-3 border rounded-[15px] bg-gray-50 text-">
+            <p>Name: {paidMemberInfo?.username || 'Unknown'}</p>
+            <p>Account Name: {paidMemberInfo?.bankAccountName || 'null'}</p>
+            <p>Account Number: {paidMemberInfo?.bankAccountNumber || 'null'}</p>
+            <p>Bank Name: {paidMemberInfo?.bankName || 'null'}</p>
+          </div>
+          <div className="mt-auto pt-2 space-x-8">
+            <Button
+              className="bg-blue-500 text-white px-4 py-2 w-[125px] rounded-full hover:bg-blue-600 transition-colors"
+              onClick={async () => {
+                await handleSettleUp();
+              }}
+            >
+              Confirm
+            </Button>
+            <Button
+              className="bg-gray-300 text-black px-4 py-2 w-[125px] rounded-full hover:bg-gray-400 transition-colors"
+              onClick={() => setShowSettleModal(false)}
+            >
+              Cancel
+            </Button>
+          </div>  
+        </div>
+      </motion.div>
+      )}
+    </AnimatePresence>
+
+
+    {/* Confirm Modal */}
+    <AnimatePresence>
+      {showConfirmModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]"
+        >
+          <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] flex flex-col text-gray-900">
+            <h2 className="text-xl font-bold mb-4">Confirm Payment Status</h2>
+            <p>Has {groupMembers.find(m => m.id === selectedItem.userId)?.username || 'Unknown'} paid their share?</p>
+            <div className="mt-6 space-x-4">
+              <Button
+                className="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors"
+                onClick={async () => {
+                  await handleConfirmSettleUp('yes');
+                }}
               >
-                <button
-                  className="w-full text-left text-red-600 hover:bg-red-50 hover:text-red-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
-                  onClick={handleKickMember}
-                >
-                  Kick Member
-                </button>
+                Yes
+              </Button>
+              <Button
+                className="bg-yellow-500 text-white px-4 py-2 rounded-full hover:bg-yellow-600 transition-colors"
+                onClick={async () => {
+                  await handleConfirmSettleUp('no');
+                }}
+              >
+                No
+              </Button>
+              <Button
+                className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
 
+    <AnimatePresence>
+      {showAddMemberModal && activeTab === "group" && selectedGroup && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[999]"
+        >
+          <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[700px] h-[500px] flex flex-col">
+            <h2 className="text-xl font-bold mb-2">Add a Friend</h2>
+            {/* Display friend list from useFriend */}
+            <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "350px" }}>
+              {friendsLoading ? (
+                <p className="text-gray-500">Loading friends...</p>
+              ) : friendsError ? (
+                <p className="text-red-500">Error: {friendsError}</p>
+              ) : friends.length > 0 ? (
+                friends.map((friend) => (
+                  <div
+                    key={friend.id}
+                    className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
+                  >
+                    <span>{friend.username}</span>
+                    <Button
+                      size="sm"
+                      className="bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded-[20px]"
+                      onClick={() => handleAddMember(friend.id)}
+                      disabled={groupMembers.some((member) => member.id === friend.id)} // Disable if already a member
+                    >
+                      + Member
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No friends available.</p>
+              )}
+            </div>
+            <div className="mt-auto pt-2">
+              <Button
+                className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
+                onClick={() => setShowAddMemberModal(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/*Add Expense Tab*/}
+    <AnimatePresence>
+      {showExpenseModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[999]"
+        >
+          <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] h-[500px] -translate-x-5 flex flex-col">
+            <h2 className="text-xl font-bold mb-2">Split settings</h2>
+            {/* Manual buttons */}
+            <div className="flex gap-2">
+              <Button
+                className={`w-1/3 mx-auto py-2 rounded-full ${
+                  !checkedEqually
+                    ? (splitMode === "d"
+                        ? 'hover:bg-blue-600 bg-blue-500 text-white'      // when dong is selected
+                        : 'hover:bg-gray-300 bg-gray-100 text-gray-700')  // when % is selected
+                    : 'hover:bg-gray-500 bg-gray-400 text-gray-100'       // when split equally is on
+                }`}
+                onClick={() => {
+                  setCheckedEqually(false);
+                  const prevSplit = splitMode;
+                  setPrevSplitMode(prevSplit);
+                  setSplitMode("d");
+                }}
+              >
+                ₫
+              </Button>
+              <Button
+                className={`[font-family:'Roboto_Condensed',Helvetica] w-1/3 mx-auto py-2 rounded-full ${
+                  !checkedEqually
+                    ? (splitMode === "%"
+                        ? 'hover:bg-blue-600 bg-blue-500 text-white'      // when % is selected
+                        : 'hover:bg-gray-300 bg-gray-100 text-gray-700')  // when dong is selected
+                    : 'hover:bg-gray-500 bg-gray-400 text-gray-100'       // when split equally is on
+                }`}
+                onClick={() => {
+                  setCheckedEqually(false);
+                  const prevSplit = splitMode;
+                  setPrevSplitMode(prevSplit);
+                  setSplitMode("%");
+                }}
+              >
+                %
+              </Button>
+              {/* Checkbox for auto split */}
+              <label className="flex items-center gap-2">
+                <span className="[font-family:'Roboto_Condensed',Helvetica] text-base">Split equally</span>
+                <input
+                  type="checkbox"
+                  checked={checkedEqually}
+                  onChange={(e) => {
+                    const isChecked = e.target.checked
+                    setCheckedEqually(isChecked);
+                    const prevSplit = splitMode;
+                    setPrevSplitMode(prevSplit);
+                    setSplitMode(isChecked ? "equally" : "d");
+                  }}
+                  className="accent-blue-500 w-4 h-4 rounded focus:ring-0"
+                />
+              </label>
+            </div>
+            <div className="pt-4 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
+                  style={{ maxHeight: "320px" }}>
+              {selectedMember.map((member) => (
+              <div
+                key={member.id}
+                className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
+              >
+                <span>{member.username}</span>
+                <div className="flex items-center gap-1">
+                  {splitMode === "%" && <input
+                    size="sm"
+                    value={member.percentRaw ?? member.percent?.toString() ?? ""}
+                    className="text-black [font-family:'Roboto_Condensed',Helvetica] text-sm px-3 py-1 w-[48px] text-right rounded-[20px]"
+                    onChange={(e) => {
+                      if (splitMode !== "equally") {
+                        const value = e.target.value;
+
+                        // Allow empty input
+                        if (value === "") {
+                          setSelectedMember((prev) =>
+                            prev.map((m) =>
+                              m.id === member.id
+                                ? { ...m, percentRaw: "", percent: 0, debt: 0 }
+                                : m
+                            )
+                          );
+                          return;
+                        }
+                        const regex = /^\d*(\.\d?)?$/;
+
+                        if (regex.test(value)) {
+                          // Valid input, update raw string
+                          const newPercent = parseFloat(value);
+                          if (newPercent >= 0 && newPercent <= 100 && !isNaN(newPercent)) {
+                            setSelectedMember((prev) =>
+                              prev.map((m) =>
+                                m.id === member.id
+                                  ? {
+                                      ...m,
+                                      percentRaw: value,
+                                      percent: newPercent,
+                                      debt: Math.round(((newPercent / 100) * moneyExpense)),
+                                    }
+                                  : m
+                              )
+                            );
+                          }
+                        }
+                      }
+                    }}
+                  />}
+                  {splitMode === "%" && <span className="[font-family:'Roboto_Condensed',Helvetica] text-sm">%</span>}
+                  <input
+                    size="sm"
+                    value={member.debt}
+                    className="text-black [font-family:'Roboto_Condensed',Helvetica] text-sm px-3 py-1 w-[105px] text-right rounded-[20px]"
+                    disabled={splitMode !== "d"}
+                    onChange={(e) => {
+                      const newDebt = parseFloat(e.target.value) || 0;
+                      setSelectedMember((prev) =>
+                        prev.map((m) =>
+                          m.id === member.id ? { ...m, debt: newDebt } : m
+                        )
+                      );
+                    }}
+                  />
+                  <span className="[font-family:'Roboto_Condensed',Helvetica] text-sm">₫</span>
+                </div>
               </div>
-            )}
+              ))}
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[600px] h-[530px] gap-4 flex flex-col">
+            <h2 className="big-header">Add a new Expense</h2>
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col w-full">
+                <input
+                  onChange={(e) => setTitleExpense(e.target.value)}
+                  type="text"
+                  value={titleExpense}
+                  placeholder="Enter a title"
+                  className="border-b border-gray-300 focus:outline-none text-center [font-family:'Roboto_Condensed',Helvetica] font-bold mb-2 text-lg"
+                />
+                <div className="flex items-center justify-center text-lg font-medium border-b border-dotted border-gray-400 pb-1">
+                  <input
+                    onPaste={preventPasteInvalid}
+                    onKeyDown={preventInvalidKey}
+                    onChange={handleChangeMoney}
+                    type="text"
+                    value={formatWithCommas(moneyExpense)}
+                    placeholder="0"
+                    className="text-center w-[120px] focus:outline-none"
+                  />
+                  <span className="ml-1">đ</span>
+                </div>
+                <textarea 
+                      onChange={(e) => setDescriptionExpense(e.target.value)}
+                      value={descriptionExpense}
+                      placeholder={"Enter description of the expense"}
+                      className="resize-none w-[554px] h-[92px] p-2 focus:border-0 focus:outline-none
+                              [font-family:'Roboto_Condensed',Helvetica] font-normal text-[#242323] text-base">
+                </textarea>
+              </div>
+            </div>
 
-            <AnimatePresence>
-              {showAddMemberModal && activeTab === "group" && selectedGroup && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[999]"
-                >
-                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[700px] h-[500px] flex flex-col">
-                    <h2 className="text-xl font-bold mb-2">Add a Friend</h2>
+            {/* Paid by and split */}
+            <div className="flex flex-wrap justify-center	text-sm text-gray-700 gap-x-1">
+              Paid by <span onClick={() => setShowPaidMemberModal(!showAddMemberModal)} className="inline-block bg-gray-200 hover:bg-gray-300 px-2 text-sm rounded-full min-w-[50px] min-h-[10px]">{paidMember?.username || "null"}</span>
+              and splited by
+              <div className="relative inline-block">
+                <span className="inline-block bg-gray-200 px-2 text-sm rounded-full min-w-[25px] min-h-[10px]">{selectedMember.length}</span>
+                {showPaidMemberModal && (
+                  <div className="absolute bottom-full left-1/2 translate-x-[-50%] mb-2 bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] h-[350px] gap-4 flex flex-col z-10">
+                    <h2 className="text-xl font-bold mb-2">Select a paid Member</h2>
                     {/* Display friend list from useFriend */}
                     <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "350px" }}>
-                      {friendsLoading ? (
-                        <p className="text-gray-500">Loading friends...</p>
-                      ) : friendsError ? (
-                        <p className="text-red-500">Error: {friendsError}</p>
-                      ) : friends.length > 0 ? (
-                        friends.map((friend) => (
+                      {selectedMember.length > 0 ? (
+                        selectedMember.map((member) => (
                           <div
-                            key={friend.id}
+                            key={member.id}
                             className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
                           >
-                            <span>{friend.username}</span>
+                            <span>{member.username}</span>
                             <Button
                               size="sm"
                               className="bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded-[20px]"
-                              onClick={() => handleAddMember(friend.id)}
-                              disabled={groupMembers.some((member) => member.id === friend.id)} // Disable if already a member
+                              onClick={() => {
+                                setShowPaidMemberModal(false);
+                                setPaidMember(member);
+                              }}
+                              disabled={paidMember?.id === member.id} // Disable if already a member
                             >
-                              + Member
+                              + Set
                             </Button>
                           </div>
                         ))
                       ) : (
-                        <p className="text-gray-500">No friends available.</p>
+                        <p className="text-gray-500">No selected member.</p>
                       )}
                     </div>
                     <div className="mt-auto pt-2">
                       <Button
                         className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
-                        onClick={() => setShowAddMemberModal(false)}
+                        onClick={() => setShowPaidMemberModal(false)}
                       >
                         Cancel
                       </Button>
                     </div>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                )}
+              </div>
+              due <span onClick={() => setShowDateModal(true)} className="inline-block bg-gray-200 hover:bg-gray-300 px-2 text-sm rounded-full min-w-[25px] min-h-[10px]">{selectedDate.toLocaleDateString()}</span>
+              <div className="text-xs text-gray-500 mt-1 w-full">{splitMode === "equally" ? `(${formatWithCommas(eachDebt)} đ / person)` : "Custom by user"}</div>
+            </div>
 
-            {/*Add Expense Tab*/}
-            <AnimatePresence>
-              {showExpenseModal && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[999]"
-                >
-                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] h-[500px] -translate-x-5 flex flex-col">
-                    <h2 className="text-xl font-bold mb-2">Split settings</h2>
-                    {/* Manual buttons */}
-                    <div className="flex gap-2">
-                      <Button
-                        className={`w-1/3 mx-auto py-2 rounded-full ${
-                          !checkedEqually
-                            ? (splitMode === "d"
-                                ? 'hover:bg-blue-600 bg-blue-500 text-white'      // when dong is selected
-                                : 'hover:bg-gray-300 bg-gray-100 text-gray-700')  // when % is selected
-                            : 'hover:bg-gray-500 bg-gray-400 text-gray-100'       // when split equally is on
-                        }`}
-                        onClick={() => {
-                          setCheckedEqually(false);
-                          const prevSplit = splitMode;
-                          setPrevSplitMode(prevSplit);
-                          setSplitMode("d");
-                        }}
-                      >
-                        ₫
-                      </Button>
-                      <Button
-                        className={`[font-family:'Roboto_Condensed',Helvetica] w-1/3 mx-auto py-2 rounded-full ${
-                          !checkedEqually
-                            ? (splitMode === "%"
-                                ? 'hover:bg-blue-600 bg-blue-500 text-white'      // when % is selected
-                                : 'hover:bg-gray-300 bg-gray-100 text-gray-700')  // when dong is selected
-                            : 'hover:bg-gray-500 bg-gray-400 text-gray-100'       // when split equally is on
-                        }`}
-                        onClick={() => {
-                          setCheckedEqually(false);
-                          const prevSplit = splitMode;
-                          setPrevSplitMode(prevSplit);
-                          setSplitMode("%");
-                        }}
-                      >
-                        %
-                      </Button>
-                      {/* Checkbox for auto split */}
-                      <label className="flex items-center gap-2">
-                        <span className="[font-family:'Roboto_Condensed',Helvetica] text-base">Split equally</span>
-                        <input
-                          type="checkbox"
-                          checked={checkedEqually}
-                          onChange={(e) => {
-                            const isChecked = e.target.checked
-                            setCheckedEqually(isChecked);
-                            const prevSplit = splitMode;
-                            setPrevSplitMode(prevSplit);
-                            setSplitMode(isChecked ? "equally" : "d");
-                          }}
-                          className="accent-blue-500 w-4 h-4 rounded focus:ring-0"
-                        />
-                      </label>
-                    </div>
-                    <div className="pt-4 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
-                          style={{ maxHeight: "320px" }}>
-                      {selectedMember.map((member) => (
-                      <div
-                        key={member.id}
-                        className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
-                      >
-                        <span>{member.username}</span>
-                        <div className="flex items-center gap-1">
-                          {splitMode === "%" && <input
-                            size="sm"
-                            value={member.percentRaw ?? member.percent?.toString() ?? ""}
-                            className="text-black [font-family:'Roboto_Condensed',Helvetica] text-sm px-3 py-1 w-[48px] text-right rounded-[20px]"
-                            onChange={(e) => {
-                              if (splitMode !== "equally") {
-                                const value = e.target.value;
-
-                                // Allow empty input
-                                if (value === "") {
-                                  setSelectedMember((prev) =>
-                                    prev.map((m) =>
-                                      m.id === member.id
-                                        ? { ...m, percentRaw: "", percent: 0, debt: 0 }
-                                        : m
-                                    )
-                                  );
-                                  return;
-                                }
-                                const regex = /^\d*(\.\d?)?$/;
-
-                                if (regex.test(value)) {
-                                  // Valid input, update raw string
-                                  const newPercent = parseFloat(value);
-                                  if (newPercent >= 0 && newPercent <= 100 && !isNaN(newPercent)) {
-                                    setSelectedMember((prev) =>
-                                      prev.map((m) =>
-                                        m.id === member.id
-                                          ? {
-                                              ...m,
-                                              percentRaw: value,
-                                              percent: newPercent,
-                                              debt: Math.round(((newPercent / 100) * moneyExpense)),
-                                            }
-                                          : m
-                                      )
-                                    );
-                                  }
-                                }
-                              }
-                            }}
-                          />}
-                          {splitMode === "%" && <span className="[font-family:'Roboto_Condensed',Helvetica] text-sm">%</span>}
-                          <input
-                            size="sm"
-                            value={member.debt}
-                            className="text-black [font-family:'Roboto_Condensed',Helvetica] text-sm px-3 py-1 w-[105px] text-right rounded-[20px]"
-                            disabled={splitMode !== "d"}
-                            onChange={(e) => {
-                              const newDebt = parseFloat(e.target.value) || 0;
-                              setSelectedMember((prev) =>
-                                prev.map((m) =>
-                                  m.id === member.id ? { ...m, debt: newDebt } : m
-                                )
-                              );
-                            }}
-                          />
-                          <span className="[font-family:'Roboto_Condensed',Helvetica] text-sm">₫</span>
-                        </div>
-                      </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[600px] h-[530px] gap-4 flex flex-col">
-                    <h2 className="big-header">Add a new Expense</h2>
-                    <div className="flex items-center gap-4">
-                      <div className="flex flex-col w-full">
-                        <input
-                          onChange={(e) => setTitleExpense(e.target.value)}
-                          type="text"
-                          value={titleExpense}
-                          placeholder="Enter a title"
-                          className="border-b border-gray-300 focus:outline-none text-center [font-family:'Roboto_Condensed',Helvetica] font-bold mb-2 text-lg"
-                        />
-                        <div className="flex items-center justify-center text-lg font-medium border-b border-dotted border-gray-400 pb-1">
-                          <input
-                            onPaste={preventPasteInvalid}
-                            onKeyDown={preventInvalidKey}
-                            onChange={handleChangeMoney}
-                            type="text"
-                            value={formatWithCommas(moneyExpense)}
-                            placeholder="0"
-                            className="text-center w-[120px] focus:outline-none"
-                          />
-                          <span className="ml-1">đ</span>
-                        </div>
-                        <textarea 
-                              onChange={(e) => setDescriptionExpense(e.target.value)}
-                              value={descriptionExpense}
-                              placeholder={"Enter description of the expense"}
-                              className="resize-none w-[554px] h-[92px] p-2 focus:border-0 focus:outline-none
-                                      [font-family:'Roboto_Condensed',Helvetica] font-normal text-[#242323] text-base">
-                        </textarea>
-                      </div>
-                    </div>
-
-                    {/* Paid by and split */}
-                    <div className="flex flex-wrap justify-center	text-sm text-gray-700 gap-x-1">
-                      Paid by <span onClick={() => setShowPaidMemberModal(!showAddMemberModal)} className="inline-block bg-gray-200 hover:bg-gray-300 px-2 text-sm rounded-full min-w-[50px] min-h-[10px]">{paidMember?.username || "null"}</span>
-                      and splited by
-                      <div className="relative inline-block">
-                        <span className="inline-block bg-gray-200 px-2 text-sm rounded-full min-w-[25px] min-h-[10px]">{selectedMember.length}</span>
-                        {showPaidMemberModal && (
-                          <div className="absolute bottom-full left-1/2 translate-x-[-50%] mb-2 bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] h-[350px] gap-4 flex flex-col z-10">
-                            <h2 className="text-xl font-bold mb-2">Select a paid Member</h2>
-                            {/* Display friend list from useFriend */}
-                            <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "350px" }}>
-                              {selectedMember.length > 0 ? (
-                                selectedMember.map((member) => (
-                                  <div
-                                    key={member.id}
-                                    className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
-                                  >
-                                    <span>{member.username}</span>
-                                    <Button
-                                      size="sm"
-                                      className="bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded-[20px]"
-                                      onClick={() => {
-                                        setShowPaidMemberModal(false);
-                                        setPaidMember(member);
-                                      }}
-                                      disabled={paidMember?.id === member.id} // Disable if already a member
-                                    >
-                                      + Set
-                                    </Button>
-                                  </div>
-                                ))
-                              ) : (
-                                <p className="text-gray-500">No selected member.</p>
-                              )}
-                            </div>
-                            <div className="mt-auto pt-2">
-                              <Button
-                                className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
-                                onClick={() => setShowPaidMemberModal(false)}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      due <span onClick={() => setShowDateModal(true)} className="inline-block bg-gray-200 hover:bg-gray-300 px-2 text-sm rounded-full min-w-[25px] min-h-[10px]">{selectedDate.toLocaleDateString()}</span>
-                      <div className="text-xs text-gray-500 mt-1 w-full">{splitMode === "equally" ? `(${formatWithCommas(eachDebt)} đ / person)` : "Custom by user"}</div>
-                    </div>
-
-                    {/* Buttons */}
-                    <div className="relative inline-block">
-                      <Button onClick={() => setShowDateModal(true)} className="w-1/3 mx-auto bg-gray-200 hover:bg-gray-300 pt-2 rounded-full">
-                        Calendar
-                      </Button>
-                      {showDateModal && (
-                        <div className="absolute bottom-full left-1/2 ml-8 mb-8">
-                            <CalendarPopup
-                              value={selectedDate}
-                              onChange={setSelectedDate}
-                              open={showDateModal}
-                              onClose={() => setShowDateModal(false)}
-                              minDate ={new Date()}
-                            />
-                        </div>)}
-                    </div>
-                    <div className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-red-500 min-h-[18px] text-[12px]">
-                      {moneyExpense === 0 
-                      ? (titleExpense.trim() === "" 
-                        ? "Total bill has not been entered, title cannot be empty!" 
-                        : "Total bill has not been entered!")
-                      : (titleExpense.trim() === "" 
-                        ? "Title cannot be empty!" 
-                        : (!expenseValid 
-                        ? 
-                        `${splitMode === "%"
-                          ? `Percentages don't add up correctly, ${
-                              moneyRemainder < 0
-                                ? `missing ${(Math.abs(moneyRemainder)).toFixed(1)} %`
-                                : `excess ${(Math.abs(moneyRemainder)).toFixed(1)} %`
-                            }`
-                          : `Amounts don't add up correctly, ${
-                              moneyRemainder < 0
-                                ? `missing ${(Math.abs(moneyRemainder))} ₫`
-                                : `excess ${(Math.abs(moneyRemainder))} ₫`
-                            }`}` 
-                        : "")
-                        )
-                      }
-                    </div>
-                    <Button
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 pb-2 rounded-full transition-colors"
-                      onClick={() => { 
-                        handleAddExpense();
-                        resetAllState();
-                      }}
-                      disabled={!expenseValid || titleExpense.trim() === "" || moneyExpense === 0} // expenseValid - False -> Disable, True -> Through
-                    >
-                      Create
-                    </Button>
-                    <Button
-                      className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded-full transition-colors"
-                      onClick={() => resetAllState()}>
-                      Cancel
-                    </Button>
-                  </div>
-                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] h-[500px] translate-x-5 flex flex-col">
-                    <h2 className="text-xl font-bold mb-2">Add expense with Friend(s)</h2>
-                    <input
-                      type="text"
-                      placeholder="Enter friend's name"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleExpenseUserSearch();
-                        }
-                      }}
+            {/* Buttons */}
+            <div className="relative inline-block">
+              <Button onClick={() => setShowDateModal(true)} className="w-1/3 mx-auto bg-gray-200 hover:bg-gray-300 pt-2 rounded-full">
+                Calendar
+              </Button>
+              {showDateModal && (
+                <div className="absolute bottom-full left-1/2 ml-8 mb-8">
+                    <CalendarPopup
+                      value={selectedDate}
+                      onChange={setSelectedDate}
+                      open={showDateModal}
+                      onClose={() => setShowDateModal(false)}
+                      minDate ={new Date()}
                     />
-                    <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
-                          style={{ maxHeight: "320px" }}>
-                      {search === "" && (groupExpenseMembers.map((member) => (
-                        <div
-                          key={member.id}
-                          className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
-                        >
-                          
-                          <span>{member.username}</span>
-                          <Button
-                            size="sm"
-                            className={member.flag ? "bg-red-500 text-white hover:bg-red-600 px-3 py-1 text-sm rounded-[20px]" : 
-                                                     "bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded-[20px]"}
-                            onClick={() => toggleFlag(member.id)}
-                            disabled={member.id === paidMember.id}
-                            >
-                            {member.flag ? "Remove" : "Add"}
-                          </Button>
-                        </div>
-                      )))}
-                      {search !== "" && expenseUsers.length === 0 && (
-                        <p className="text-gray-500">No matching users</p>
-                      )}
-                      {search !== "" && (expenseUsers.map((member) => (
-                        <div
-                          key={member.id}
-                          className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
-                        >
-                          <span>{member.username}</span>
-                          <Button
-                            size="sm"
-                            className={member.flag ? "bg-red-500 text-white hover:bg-red-600 px-3 py-1 text-sm rounded-[20px]" : 
-                                                     "bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded-[20px]"}
-                            onClick={() => toggleFlag(member.id)}
-                            disabled={member.id === paidMember.id}
-                            >
-                            {member.flag ? "Remove" : "Add"}
-                          </Button>
-                        </div>
-                      )))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-
-            {/* Settings Modal */}
-            <AnimatePresence>
-              {showSettingsModal && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="fixed bg-white border border-gray-300 rounded-lg shadow-lg py-2 px-4 z-[2000] settings-modal"
-                  style={{
-                    top: contextMenuPosition.y > window.innerHeight / 2 ? 'auto' : `${contextMenuPosition.y}px`,
-                    bottom: contextMenuPosition.y > window.innerHeight / 2 ? `${window.innerHeight - contextMenuPosition.y}px` : 'auto',
-                    left: `${Math.min(contextMenuPosition.x, window.innerWidth - 150)}px`, // Giới hạn rìa phải
-                    minWidth: '120px',
-                    maxWidth: '90vw',
-                    maxHeight: '90vh',
-                    overflow: 'auto',
-                  }}
-                >
-                
-                  {isOwner ? (
-                    <>
-                      <button
-                        className="w-full text-left text-blue-600 hover:bg-blue-50 hover:text-blue-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
-                        onClick={() => {
-                          setShowSettingsModal(false);
-                          setNewGroupName(selectedGroup.name); // Default value
-                          setShowRenameModal(true); // Hiển thị modal rename
-                        }}
-                      >
-                        Rename Group
-                      </button>
-                      <button
-                        className="w-full text-left text-red-600 hover:bg-red-50 hover:text-red-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
-                        onClick={() => {
-                          setShowSettingsModal(false);
-                          setShowDeleteModal(true);
-                        }}
-                      >
-                        Delete Group
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      className="w-full text-left text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
-                      onClick={() => {
-                        setShowSettingsModal(false); // Đóng modal Settings
-                        setShowLeaveModal(true); // Mở modal Leave
-                      }}
-                    >
-                      Leave Group
-                    </button>
-                  )}
-
-
-                  <div className="mt-2">
-                    <Button
-                      className="bg-gray-300 text-black px-2 py-1 rounded hover:bg-gray-400 transition-colors w-full"
-                      onClick={() => setShowSettingsModal(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Delete Group Modal */}
-            <AnimatePresence>
-              {showDeleteModal && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]"
-                >
-                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] flex flex-col text-gray-900">
-                    <h2 className="text-xl font-bold mb-4">Confirm Group Deletion</h2>
-                    <p className="mb-4">This is a permanent action. You cannot UNDO</p>
-                    <div className="mt-auto pt-2 space-x-4">
-                      <Button
-                        className="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 transition-colors"
-                        onClick={async () => {
-                          try {
-                            await handleDeleteGroup();
-
-                            setShowDeleteModal(false);
-                          } catch (error) {
-                            console.error('Error deleting group:', error);
-                            toast.error('Failed to delete group. Please try again.');
-                          }
-                        }}
-                      >
-                        Confirm
-                      </Button>
-                      <Button
-                        className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
-                        onClick={() => setShowDeleteModal(false)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>  
-
-            {/* Rename Group Modal */}
-            <AnimatePresence>
-              {showRenameModal && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]"
-                >
-                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] flex flex-col text-gray-900">
-                    <h2 className="text-xl font-bold mb-4">Rename Group</h2>
-                    <input
-                      type="text"
-                      value={newGroupName}
-                      onChange={(e) => setNewGroupName(e.target.value)}
-                      placeholder="Enter new group name"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    />
-                    <div className="mt-auto pt-2 space-x-4">
-                      <Button
-                        className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors"
-                        onClick={async () => {
-                          try {
-                            await handleRenameGroup();
-
-                            setShowRenameModal(false); // Đóng modal
-                            setShowSettingsModal(false); // Đảm bảo Settings Modal cũng đóng
-                            setNewGroupName(""); // Reset state
-                          } catch (error) {
-                            console.error("Error renaming group:", error);
-                            toast.error("Failed to rename group. Please try again.");
-                          }
-                        }}
-                        disabled={!newGroupName.trim() || newGroupName === selectedGroup.name} // Vô hiệu hóa nếu tên trống hoặc không đổi
-                      >
-                        Confirm
-                      </Button>
-                      <Button
-                        className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
-                        onClick={() => {
-                          setShowRenameModal(false); // Đóng modal
-                          setNewGroupName(""); // Reset state
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Leave Group Modal */}
-            <AnimatePresence>
-              {showLeaveModal && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]"
-                >
-                  <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] flex flex-col text-gray-900">
-                    <h2 className="text-xl font-bold mb-4">Confirm Leaving Group</h2>
-                    <p className="mb-4">Are you sure you want to leave <strong>{selectedGroup?.name}</strong>? This action cannot be undone, and you will lose access to this group.</p>
-                    <div className="mt-auto pt-2 space-x-4">
-                      <Button
-                        className="bg-yellow-500 text-white px-4 py-2 rounded-full hover:bg-yellow-600 transition-colors"
-                        onClick={async () => {
-                          try {
-                            await handleLeaveGroup();
-
-                            setShowLeaveModal(false); // Đóng modal
-                            setShowSettingsModal(false); // Đảm bảo Settings Modal cũng đóng
-                            setSelectedGroup(null); // Reset selected group
-                              
-                          } catch (error) {
-                            console.error("Error leaving group:", error);
-                            toast.error("Failed to leave group. Please try again.");
-                          }
-                        }}
-                      >
-                        Confirm
-                      </Button>
-                      <Button
-                        className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
-                        onClick={() => {
-                          setShowLeaveModal(false); // Đóng modal
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
+                </div>)}
+            </div>
+            <div className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-red-500 min-h-[18px] text-[12px]">
+              {moneyExpense === 0 
+              ? (titleExpense.trim() === "" 
+                ? "Total bill has not been entered, title cannot be empty!" 
+                : "Total bill has not been entered!")
+              : (titleExpense.trim() === "" 
+                ? "Title cannot be empty!" 
+                : (!expenseValid 
+                ? 
+                `${splitMode === "%"
+                  ? `Percentages don't add up correctly, ${
+                      moneyRemainder < 0
+                        ? `missing ${(Math.abs(moneyRemainder)).toFixed(1)} %`
+                        : `excess ${(Math.abs(moneyRemainder)).toFixed(1)} %`
+                    }`
+                  : `Amounts don't add up correctly, ${
+                      moneyRemainder < 0
+                        ? `missing ${(Math.abs(moneyRemainder))} ₫`
+                        : `excess ${(Math.abs(moneyRemainder))} ₫`
+                    }`}` 
+                : "")
+                )
+              }
+            </div>
+            <Button
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 pb-2 rounded-full transition-colors"
+              onClick={() => { 
+                handleAddExpense();
+                resetAllState();
+              }}
+              disabled={!expenseValid || titleExpense.trim() === "" || moneyExpense === 0} // expenseValid - False -> Disable, True -> Through
+            >
+              Create
+            </Button>
+            <Button
+              className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded-full transition-colors"
+              onClick={() => resetAllState()}>
+              Cancel
+            </Button>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+          <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] h-[500px] translate-x-5 flex flex-col">
+            <h2 className="text-xl font-bold mb-2">Add expense with Friend(s)</h2>
+            <input
+              type="text"
+              placeholder="Enter friend's name"
+              className="w-full px-4 py-2 border border-gray-300 rounded-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleExpenseUserSearch();
+                }
+              }}
+            />
+            <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow"
+                  style={{ maxHeight: "320px" }}>
+              {search === "" && (groupExpenseMembers.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
+                >
+                  
+                  <span>{member.username}</span>
+                  <Button
+                    size="sm"
+                    className={member.flag ? "bg-red-500 text-white hover:bg-red-600 px-3 py-1 text-sm rounded-[20px]" : 
+                                              "bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded-[20px]"}
+                    onClick={() => toggleFlag(member.id)}
+                    disabled={member.id === paidMember.id}
+                    >
+                    {member.flag ? "Remove" : "Add"}
+                  </Button>
+                </div>
+              )))}
+              {search !== "" && expenseUsers.length === 0 && (
+                <p className="text-gray-500">No matching users</p>
+              )}
+              {search !== "" && (expenseUsers.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex justify-between items-center px-2 py-1 border rounded-[20px]"
+                >
+                  <span>{member.username}</span>
+                  <Button
+                    size="sm"
+                    className={member.flag ? "bg-red-500 text-white hover:bg-red-600 px-3 py-1 text-sm rounded-[20px]" : 
+                                              "bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 text-sm rounded-[20px]"}
+                    onClick={() => toggleFlag(member.id)}
+                    disabled={member.id === paidMember.id}
+                    >
+                    {member.flag ? "Remove" : "Add"}
+                  </Button>
+                </div>
+              )))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
 
+
+    {/* Settings Modal */}
+    <AnimatePresence>
+      {showSettingsModal && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          className="fixed bg-white border border-gray-300 rounded-lg shadow-lg py-2 px-4 z-[2000] settings-modal"
+          style={{
+            top: contextMenuPosition.y > window.innerHeight / 2 ? 'auto' : `${contextMenuPosition.y}px`,
+            bottom: contextMenuPosition.y > window.innerHeight / 2 ? `${window.innerHeight - contextMenuPosition.y}px` : 'auto',
+            left: `${Math.min(contextMenuPosition.x, window.innerWidth - 150)}px`, // Giới hạn rìa phải
+            minWidth: '120px',
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            overflow: 'auto',
+          }}
+        >
+        
+          {isOwner ? (
+            <>
+              <button
+                className="w-full text-left text-blue-600 hover:bg-blue-50 hover:text-blue-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
+                onClick={() => {
+                  setShowSettingsModal(false);
+                  setNewGroupName(selectedGroup.name); // Default value
+                  setShowRenameModal(true); // Hiển thị modal rename
+                }}
+              >
+                Rename Group
+              </button>
+              <button
+                className="w-full text-left text-red-600 hover:bg-red-50 hover:text-red-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
+                onClick={() => {
+                  setShowSettingsModal(false);
+                  setShowDeleteModal(true);
+                }}
+              >
+                Delete Group
+              </button>
+            </>
+          ) : (
+            <button
+              className="w-full text-left text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
+              onClick={() => {
+                setShowSettingsModal(false); // Đóng modal Settings
+                setShowLeaveModal(true); // Mở modal Leave
+              }}
+            >
+              Leave Group
+            </button>
+          )}
+
+
+          <div className="mt-2">
+            <Button
+              className="bg-gray-300 text-black px-2 py-1 rounded hover:bg-gray-400 transition-colors w-full"
+              onClick={() => setShowSettingsModal(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* Delete Group Modal */}
+    <AnimatePresence>
+      {showDeleteModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]"
+        >
+          <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] flex flex-col text-gray-900">
+            <h2 className="text-xl font-bold mb-4">Confirm Group Deletion</h2>
+            <p className="mb-4">This is a permanent action. You cannot UNDO</p>
+            <div className="mt-auto pt-2 space-x-4">
+              <Button
+                className="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 transition-colors"
+                onClick={async () => {
+                  try {
+                    await handleDeleteGroup();
+
+                    setShowDeleteModal(false);
+                  } catch (error) {
+                    console.error('Error deleting group:', error);
+                    toast.error('Failed to delete group. Please try again.');
+                  }
+                }}
+              >
+                Confirm
+              </Button>
+              <Button
+                className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>  
+
+    {/* Rename Group Modal */}
+    <AnimatePresence>
+      {showRenameModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]"
+        >
+          <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] flex flex-col text-gray-900">
+            <h2 className="text-xl font-bold mb-4">Rename Group</h2>
+            <input
+              type="text"
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              placeholder="Enter new group name"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <div className="mt-auto pt-2 space-x-4">
+              <Button
+                className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors"
+                onClick={async () => {
+                  try {
+                    await handleRenameGroup();
+
+                    setShowRenameModal(false); // Đóng modal
+                    setShowSettingsModal(false); // Đảm bảo Settings Modal cũng đóng
+                    setNewGroupName(""); // Reset state
+                  } catch (error) {
+                    console.error("Error renaming group:", error);
+                    toast.error("Failed to rename group. Please try again.");
+                  }
+                }}
+                disabled={!newGroupName.trim() || newGroupName === selectedGroup.name} // Vô hiệu hóa nếu tên trống hoặc không đổi
+              >
+                Confirm
+              </Button>
+              <Button
+                className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
+                onClick={() => {
+                  setShowRenameModal(false); // Đóng modal
+                  setNewGroupName(""); // Reset state
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* Leave Group Modal */}
+    <AnimatePresence>
+      {showLeaveModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[1000]"
+        >
+          <div className="bg-white p-6 rounded-[20px] shadow-lg text-center w-[400px] flex flex-col text-gray-900">
+            <h2 className="text-xl font-bold mb-4">Confirm Leaving Group</h2>
+            <p className="mb-4">Are you sure you want to leave <strong>{selectedGroup?.name}</strong>? This action cannot be undone, and you will lose access to this group.</p>
+            <div className="mt-auto pt-2 space-x-4">
+              <Button
+                className="bg-yellow-500 text-white px-4 py-2 rounded-full hover:bg-yellow-600 transition-colors"
+                onClick={async () => {
+                  try {
+                    await handleLeaveGroup();
+
+                    setShowLeaveModal(false); // Đóng modal
+                    setShowSettingsModal(false); // Đảm bảo Settings Modal cũng đóng
+                    setSelectedGroup(null); // Reset selected group
+                      
+                  } catch (error) {
+                    console.error("Error leaving group:", error);
+                    toast.error("Failed to leave group. Please try again.");
+                  }
+                }}
+              >
+                Confirm
+              </Button>
+              <Button
+                className="bg-gray-300 text-black px-4 py-2 rounded-full hover:bg-gray-400 transition-colors"
+                onClick={() => {
+                  setShowLeaveModal(false); // Đóng modal
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+  </div>
+);
+};
 export default Dashboard_group;
+
+  

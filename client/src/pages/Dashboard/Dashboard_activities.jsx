@@ -33,7 +33,7 @@ function Dashboard_activities() {
             </main>
 
             {/* Right Sidebar */}
-            <aside className="w-[269px] h-screen pl-4 border-l-4 border-[#4A73A8]">
+            <aside className="w-[269px] pl-4 border-l-4 border-[#4A73A8]">
             </aside>
           </div>
 

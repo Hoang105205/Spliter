@@ -8,13 +8,11 @@ import { toast } from "sonner";
 import { useUser } from '../../hooks/useUser.js';
 import { useGroupMember } from '../../hooks/useGroupMember.js';
 
-
 // WebSocket context
 import { WebSocketContext } from '../../websocket/WebSocketProvider.jsx';
 
 // Import Modals 
 import CreateGroupPopup from "../popup/CreateGroupPopup.jsx";
-
 
 function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
   const navigate = useNavigate();
@@ -55,7 +53,6 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
     }
   };
 
-
   // Handle group creation
   const handleCreateGroup = (newGroup) => {
     console.log("Group created:", newGroup);
@@ -78,10 +75,17 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
     }
   };
 
-
   return (
-    <aside className="w-[342px] h-screen pr-4 border-r-4 border-[#4A73A8]">
-      <nav className="mt-4 space-y-6">
+    <aside 
+      className="w-[269px] pr-4 border-r-4 border-[#4A73A8] h-full flex flex-col overflow-hidden"
+      style={{ 
+        minWidth: '269px',
+        maxWidth: '269px',
+        overflowX: 'hidden',
+        overflowY: 'auto'
+      }}
+    >
+      <nav className="mt-4 space-y-6 flex-shrink-0">
         {/* Dashboard */}
         <div
           className={`${
@@ -143,11 +147,10 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
         </div>
       </nav>
 
-
       {activeTab === "group" && (
-        <>
+        <div className="flex flex-col flex-1 overflow-hidden">
           {/* + Button */}
-          <div className="flex justify-center mt-6">
+          <div className="flex justify-center mt-6 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -158,8 +161,8 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
             </Button>
           </div>
 
-          {/* Group list */}
-          <div className="mt-4 space-y-2">
+          {/* Group list - Scrollable content */}
+          <div className="mt-4 space-y-2 flex-1 overflow-y-auto overflow-x-hidden pr-2">
             {loading && <p className="text-center text-sm text-gray-500">Loading groups...</p>}
             {error && <p className="text-center text-sm text-red-500">Failed to load groups</p>}
             {!loading && groups.length === 0 && (
@@ -170,12 +173,17 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
                 key={group.id}
                 className={`flex items-center gap-2 px-2 py-2 rounded cursor-pointer ${
                   selectedGroupId === group.id
-                    ? "bg-[#83abe7] text-white font-bold" // Hiệu ứng khi được chọn: nền xanh đậm, chữ trắng, đậm
+                    ? "bg-[#83abe7] text-white font-bold"
                     : "hover:bg-[#f0f8ff]"
                 }`}
                 onClick={() => handleGroupClick(group)}
+                style={{ 
+                  minWidth: '0',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word'
+                }}
               >
-                <span className="[font-family:'Roboto_Condensed',Helvetica] text-lg">
+                <span className="[font-family:'Roboto_Condensed',Helvetica] text-lg truncate">
                   {group.name}
                 </span>
               </div>
@@ -187,14 +195,9 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
             onClose={() => setShowCreateModal(false)}
             onCreate={handleCreateGroup}
           />
-        </>
-
-        
+        </div>
       )}   
     </aside>
-
-
-    
   );
 }
 

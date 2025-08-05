@@ -42,8 +42,16 @@ function Admin_left_bar({ activeTab, setActiveTab, onGroupSelect }) {
 
 
   return (
-    <aside className="w-[330px] h-screen pr-4 border-r-4 border-[#4A73A8]">
-      <nav className="mt-4 space-y-6">
+    <aside 
+      className="w-[269px] pr-4 border-r-4 border-[#4A73A8] h-full flex flex-col overflow-hidden"
+      style={{ 
+        minWidth: '269px',
+        maxWidth: '269px',
+        overflowX: 'hidden',
+        overflowY: 'auto'
+      }}
+    >
+      <nav className="mt-4 space-y-6 flex-shrink-0">
         {/* Dashboard */}
         <div
           className={`${

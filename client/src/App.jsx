@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import { Toaster } from 'sonner';
 
+// Import the Footer component
+import Footer from './components/ui/Footer.jsx';
+
 import { useUser } from './hooks/useUser.js';
 
 // Import pages (User)
@@ -29,12 +32,13 @@ function App() {
   const { userData } = useUser();
 
   return (
-      <div className="App">
+    <div className="app-container">
+      {/* Content Area */}
+      <div className="content-area">
         {/* ✅ Hiển thị thông báo toast */}
         <Toaster position="bottom-right" richColors />
 
         <Routes>
-
           {/* Routes without authenticated */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
@@ -103,7 +107,6 @@ function App() {
                 } 
               />
               
-              {/* Thêm các route admin khác nếu cần */}
               <Route
                 path="/admin/dashboard/:id/activities"
                 element={
@@ -131,18 +134,15 @@ function App() {
             </>
           )}
 
-          
-
-          
-          
-
-
-          {/* Redirect any unknown paths to the login page */}
           <Route path="*" element={<Navigate to="/login" replace />} />
-
-          
         </Routes>
       </div>
+
+      {/* Footer */}
+      <div className="footer-container">
+        <Footer />
+      </div>
+    </div>
   );
 }
 
