@@ -7,6 +7,7 @@
   --top-spacing: 10px; /* Khoảng trắng trên header */
   --footer-height: 50px;
   --sidebar-width: 220px; /* Giảm từ 269px xuống 220px */
+  --sidebar-width-left: 250px; /* Sidebar trái */
 }
 
 * {
@@ -112,7 +113,7 @@ html, body {
 }
 
 .page-left-sidebar {
-  width: var(--sidebar-width); /* 220px */
+  width: var(--sidebar-width-left); /* 250px */
   flex-shrink: 0;
   height: 100%;
   overflow: hidden;
@@ -140,6 +141,7 @@ html, body {
 @media (max-width: 1500px) and (min-width: 1400px) {
   :root {
     --scale-factor: 0.95;
+    --sidebar-width-left: 240px; /* Giảm thêm */
     --sidebar-width: 200px; /* Giảm thêm */
   }
   
@@ -152,6 +154,7 @@ html, body {
 @media (max-width: 1399px) and (min-width: 1200px) {
   :root {
     --scale-factor: 0.9;
+    --sidebar-width-left: 220px; /* Giảm thêm */
     --sidebar-width: 180px; /* Giảm thêm */
   }
   
@@ -164,6 +167,7 @@ html, body {
 @media (max-width: 1199px) and (min-width: 1024px) {
   :root {
     --scale-factor: 0.85;
+    --sidebar-width-left: 200px; /* Giảm thêm */
     --sidebar-width: 160px; /* Giảm nhiều nhất */
   }
   
@@ -231,6 +235,7 @@ html, body {
 /* Aspect ratio adjustments */
 @media (max-aspect-ratio: 4/3) and (min-width: 1024px) {
   :root {
+    --sidebar-width: 180px; /* Sidebar
     --sidebar-width: 140px; /* Sidebar nhỏ hơn cho màn hình vuông */
   }
   
