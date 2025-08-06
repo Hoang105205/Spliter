@@ -30,6 +30,18 @@ const AdminStatisticInfo = () => {
   const [monthCount, setMonthCount] = useState(6); // Mặc định 6 tháng
   const [months, setMonths] = useState(getLastNMonths(6));
   const [data, setData] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const { findAllUsers } = useUser();
   const { fetchAllGroups } = useGroup();
@@ -204,16 +216,14 @@ const AdminStatisticInfo = () => {
   };
 
   return (
-    <div>
+    <div style={{ overflow: "visible" }}>
       <div
         style={{
           width: "100%",
-          marginTop: "20px",
-          maxHeight: "calc(100vh - 160px)",
-          overflowY: "auto",
-          paddingRight: "12px",
-          paddingBottom: "40px",
-          marginBottom: "30px"  
+          marginTop: "16px",
+          padding: "0 16px 32px",
+          marginBottom: "24px",
+          overflow: "visible"
         }}
       >
         <div
@@ -222,13 +232,20 @@ const AdminStatisticInfo = () => {
             flexDirection: "column",
             alignItems: "center",
             width: "100%",
-            gap: "25px"
+            maxWidth: "1400px",
+            margin: "0 auto",
+            gap: "20px"
           }}
         >
           <BlockText
             title="Users Overview"
             description={
-              <div style={{ display: "flex", gap: 80 }}>
+              <div style={{ 
+                display: "flex", 
+                gap: "clamp(20px, 5vw, 80px)",
+                flexWrap: "wrap",
+                justifyContent: "center"
+              }}>
                 <span>Total Users: <CountUp end={totalUsers} duration={1.2} /></span>
                 <span style={{ color: "#4caf50", fontWeight: 600 }}>
                   Active: <CountUp end={activeUsers} duration={1.2} />
@@ -244,11 +261,23 @@ const AdminStatisticInfo = () => {
             title="Platform Activity"
             description={
               <>
-                <div style={{ display: "flex", gap: 80, marginBottom: 16 }}>
+                <div style={{ 
+                  display: "flex", 
+                  gap: "clamp(20px, 5vw, 80px)", 
+                  marginBottom: 16,
+                  flexWrap: "wrap",
+                  justifyContent: "center"
+                }}>
                   <span>Total Groups: <CountUp end={totalGroups} duration={1.2} /></span>
                   <span>Total Expenses: <CountUp end={totalExpenses} duration={1.2} /></span>
                 </div>
-                <div style={{ display: "flex", gap: 80, marginBottom: 16 }}>
+                <div style={{ 
+                  display: "flex", 
+                  gap: "clamp(20px, 5vw, 80px)", 
+                  marginBottom: 16,
+                  flexWrap: "wrap",
+                  justifyContent: "center"
+                }}>
                   <span style={{ color: "#4caf50", fontWeight: 600 }}>
                     Paid: <CountUp end={paidExpenses} duration={1.2} />
                     <br />
@@ -264,7 +293,7 @@ const AdminStatisticInfo = () => {
                     </span>
                   </span>
                 </div>
-                <div>
+                <div style={{ textAlign: "center" }}>
                   <span>Total Amount: <CountUp end={totalExpenseAmount} duration={1.2} separator="." suffix="đ" /></span>
                 </div>
               </>
@@ -272,8 +301,21 @@ const AdminStatisticInfo = () => {
           />
 
           {/* Chọn số tháng hiển thị */}
-          <div style={{ width: "100%", maxWidth: 800, marginBottom: 12 }}>
-            <label htmlFor="monthCount" style={{ fontWeight: 500, marginRight: 10, fontSize: 16 }}>
+          <div style={{ 
+            width: "100%", 
+            maxWidth: "min(800px, 90vw)", 
+            marginBottom: 12,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexWrap: "wrap",
+            gap: "10px"
+          }}>
+            <label htmlFor="monthCount" style={{ 
+              fontWeight: 500, 
+              fontSize: "clamp(14px, 2.5vw, 16px)",
+              whiteSpace: "nowrap"
+            }}>
               Server growth in last:
             </label>
             <select
@@ -284,9 +326,10 @@ const AdminStatisticInfo = () => {
                 padding: "8px 16px", 
                 borderRadius: 6, 
                 border: "1px solid #ddd", 
-                fontSize: 15,
+                fontSize: "clamp(13px, 2.2vw, 15px)",
                 backgroundColor: "#fff",
-                cursor: "pointer"
+                cursor: "pointer",
+                minWidth: "120px"
               }}
             >
               {MONTH_OPTIONS.map(opt => (
@@ -296,8 +339,21 @@ const AdminStatisticInfo = () => {
           </div>
 
           {/* Biểu đồ AreaChart với users (blue), expenses (green) */}
-          <div style={{ width: "100%", maxWidth: 800, background: "#fff", borderRadius: 16, boxShadow: "0 2px 8px rgba(32,50,91,0.08)", padding: 24 }}>
-            <h2 style={{ fontWeight: 600, fontSize: 18, marginBottom: 16, color: "#20325b" }}>
+          <div style={{ 
+            width: "100%", 
+            maxWidth: "min(900px, 95vw)", 
+            background: "#fff", 
+            borderRadius: 16, 
+            boxShadow: "0 2px 8px rgba(32,50,91,0.08)", 
+            padding: "clamp(16px, 3vw, 24px)" 
+          }}>
+            <h2 style={{ 
+              fontWeight: 600, 
+              fontSize: "clamp(16px, 3vw, 18px)", 
+              marginBottom: 16, 
+              color: "#20325b",
+              textAlign: "center"
+            }}>
               Users & Expenses Growth ({monthCount} months)
             </h2>
             <ResponsiveContainer width="100%" height={280}>
@@ -327,9 +383,28 @@ const AdminStatisticInfo = () => {
           </div>
 
           {/* Biểu đồ Amount Distribution - Pie Chart */}
-          <div style={{ display: "flex", gap: 24, width: "100%", maxWidth: 1000 }}>
-            <div style={{ flex: 1, background: "#fff", borderRadius: 16, boxShadow: "0 2px 8px rgba(32,50,91,0.08)", padding: 20 }}>
-              <h2 style={{ fontWeight: 600, fontSize: 18, marginBottom: 12, color: "#20325b" }}>
+          <div style={{ 
+            display: "flex", 
+            gap: "clamp(16px, 3vw, 24px)", 
+            width: "100%", 
+            maxWidth: "min(1200px, 95vw)",
+            flexDirection: isMobile ? "column" : "row"
+          }}>
+            <div style={{ 
+              flex: 1, 
+              minWidth: "300px",
+              background: "#fff", 
+              borderRadius: 16, 
+              boxShadow: "0 2px 8px rgba(32,50,91,0.08)", 
+              padding: "clamp(16px, 3vw, 20px)"
+            }}>
+              <h2 style={{ 
+                fontWeight: 600, 
+                fontSize: "clamp(16px, 3vw, 18px)", 
+                marginBottom: 12, 
+                color: "#20325b",
+                textAlign: "center"
+              }}>
                 Amount Distribution
               </h2>
               <ResponsiveContainer width="100%" height={260}>
@@ -355,8 +430,21 @@ const AdminStatisticInfo = () => {
             </div>
 
             {/* Biểu đồ Amount Comparison - Bar Chart */}
-            <div style={{ flex: 1, background: "#fff", borderRadius: 16, boxShadow: "0 2px 8px rgba(32,50,91,0.08)", padding: 20 }}>
-              <h2 style={{ fontWeight: 600, fontSize: 18, marginBottom: 12, color: "#20325b" }}>
+            <div style={{ 
+              flex: 1, 
+              minWidth: "300px",
+              background: "#fff", 
+              borderRadius: 16, 
+              boxShadow: "0 2px 8px rgba(32,50,91,0.08)", 
+              padding: "clamp(16px, 3vw, 20px)"
+            }}>
+              <h2 style={{ 
+                fontWeight: 600, 
+                fontSize: "clamp(16px, 3vw, 18px)", 
+                marginBottom: 12, 
+                color: "#20325b",
+                textAlign: "center"
+              }}>
                 Amount Breakdown
               </h2>
               <ResponsiveContainer width="100%" height={260}>
