@@ -6,6 +6,7 @@
   --min-height: 768px; /* Desktop minimum */
   --top-spacing: 10px; /* Khoảng trắng trên header */
   --footer-height: 50px;
+  --sidebar-width: 220px; /* Giảm từ 269px xuống 220px */
 }
 
 * {
@@ -38,11 +39,11 @@ html, body {
 
 /* App container */
 .app-container {
-  flex: 1;
+  /* flex: 1; */
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: calc(100% - var(--footer-height));
+  height: 100%;
   margin-top: var(--top-spacing);
   overflow: hidden;
 }
@@ -62,10 +63,10 @@ html, body {
   flex-shrink: 0;
   height: var(--footer-height);
   width: 100%;
-  position: fixed;
+  /* position: fixed;
   bottom: 0;
   left: 0;
-  z-index: 1000;
+  z-index: 1000; */
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -111,25 +112,26 @@ html, body {
 }
 
 .page-left-sidebar {
-  width: 269px;
+  width: var(--sidebar-width); /* 220px */
   flex-shrink: 0;
   height: 100%;
   overflow: hidden;
+  padding-right: 0.75rem; /* Giảm padding */
 }
 
 .page-center-content {
   flex: 1;
   height: 100%;
   overflow-y: auto;
-  padding: 0 1.5rem;
+  padding: 0 1rem; /* Giảm padding horizontal */
 }
 
 .page-right-sidebar {
-  width: 269px;
+  width: var(--sidebar-width); /* 220px */
   flex-shrink: 0;
   height: 100%;
   border-left: 4px solid #4A73A8;
-  padding-left: 1rem;
+  padding-left: 0.75rem; /* Giảm padding */
   display: flex;
   flex-direction: column;
 }
@@ -138,6 +140,7 @@ html, body {
 @media (max-width: 1500px) and (min-width: 1400px) {
   :root {
     --scale-factor: 0.95;
+    --sidebar-width: 200px; /* Giảm thêm */
   }
   
   .content-area {
@@ -149,6 +152,7 @@ html, body {
 @media (max-width: 1399px) and (min-width: 1200px) {
   :root {
     --scale-factor: 0.9;
+    --sidebar-width: 180px; /* Giảm thêm */
   }
   
   .content-area {
@@ -160,6 +164,7 @@ html, body {
 @media (max-width: 1199px) and (min-width: 1024px) {
   :root {
     --scale-factor: 0.85;
+    --sidebar-width: 160px; /* Giảm nhiều nhất */
   }
   
   .content-area {
@@ -172,7 +177,15 @@ html, body {
   }
   
   .page-center-content {
-    padding: 0 1rem;
+    padding: 0 0.75rem; /* Giảm padding */
+  }
+  
+  .page-left-sidebar {
+    padding-right: 0.5rem;
+  }
+  
+  .page-right-sidebar {
+    padding-left: 0.5rem;
   }
 }
 
@@ -217,13 +230,12 @@ html, body {
 
 /* Aspect ratio adjustments */
 @media (max-aspect-ratio: 4/3) and (min-width: 1024px) {
-  .content-area {
-    width: 85%;
+  :root {
+    --sidebar-width: 140px; /* Sidebar nhỏ hơn cho màn hình vuông */
   }
   
-  .page-left-sidebar,
-  .page-right-sidebar {
-    width: 240px;
+  .content-area {
+    width: 85%;
   }
 }
 

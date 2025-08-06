@@ -1104,8 +1104,8 @@ function Dashboard_group() {
       {activeTab === 'group' && selectedGroup && (
         <div className="page-right-sidebar">
           <div className="bg-[#cccccc]/30 rounded-[15px] h-[38px] flex items-center justify-between px-3.5">
-            <span className="[font-family:'Roboto',Helvetica] text-[#666666] text-xl">
-              Group Members
+            <span className="[font-family:'Roboto',Helvetica] text-[#666666] text-sm sm:text-base md:text-lg lg:text-xl">
+              Members
             </span>
             {isOwner && (
               <Button variant="ghost" size="icon" className="p-0" onClick={() => setShowAddMemberModal(true)}>

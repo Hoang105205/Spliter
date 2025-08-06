@@ -77,84 +77,82 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
 
   return (
     <aside 
-      className="w-[269px] pr-4 border-r-4 border-[#4A73A8] h-full flex flex-col overflow-hidden"
+      className="w-full h-full flex flex-col overflow-hidden border-r-4 border-[#4A73A8]"
       style={{ 
-        minWidth: '269px',
-        maxWidth: '269px',
         overflowX: 'hidden',
         overflowY: 'auto'
       }}
     >
-      <nav className="mt-4 space-y-6 flex-shrink-0">
+      <nav className="mt-4 space-y-4 flex-shrink-0 px-3">
         {/* Dashboard */}
         <div
           className={`${
             activeTab === "dashboard"
-              ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
-              : ""
-          } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
+              ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center px-4"
+              : "h-[53px] flex items-center px-4"
+          } [font-family:'Bree_Serif',Helvetica] font-normal text-xl cursor-pointer transition-all duration-200 ${
             activeTab === "dashboard" ? "text-[#5a96f0]" : "text-[#193865]"
-          } `}
+          } hover:bg-[#f0f8ff] rounded-[15px]`}
           onClick={() => handleClick("dashboard", `/dashboard/${userData.id}`)}
         >
-          <Home className="w-6 h-6 mr-2 inline-block" /> {/* Logo cho Dashboard */}
-          Dashboard
+          <Home className="w-5 h-5 mr-3 flex-shrink-0" />
+          <span className="truncate">Dashboard</span>
         </div>
 
-        {/* Recently */}
+        {/* Activities */}
         <div
           className={`${
             activeTab === "activities"
-              ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
-              : ""
-          } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
+              ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center px-4"
+              : "h-[53px] flex items-center px-4"
+          } [font-family:'Bree_Serif',Helvetica] font-normal text-xl cursor-pointer transition-all duration-200 ${
             activeTab === "activities" ? "text-[#5a96f0]" : "text-[#193865]"
-          } `}
+          } hover:bg-[#f0f8ff] rounded-[15px]`}
           onClick={() => handleClick("activities", `/dashboard/${userData.id}/activities`)}
         >
-          <Calendar className="w-6 h-6 mr-2 inline-block" /> {/* Logo cho Activities */}
-          Activities
+          <Calendar className="w-5 h-5 mr-3 flex-shrink-0" />
+          <span className="truncate">Activities</span>
         </div>
 
         {/* Statistics */}
         <div
           className={`${
             activeTab === "statistics"
-              ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
-              : ""
-          } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
+              ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center px-4"
+              : "h-[53px] flex items-center px-4"
+          } [font-family:'Bree_Serif',Helvetica] font-normal text-xl cursor-pointer transition-all duration-200 ${
             activeTab === "statistics" ? "text-[#5a96f0]" : "text-[#193865]"
-          } `}
+          } hover:bg-[#f0f8ff] rounded-[15px]`}
           onClick={() => handleClick("statistics", `/dashboard/${userData.id}/statistics`)}
         >
-          <BarChart2 className="w-6 h-6 mr-2 inline-block" /> {/* Logo cho Statistics */}
-          Statistics
+          <BarChart2 className="w-5 h-5 mr-3 flex-shrink-0" />
+          <span className="truncate">Statistics</span>
         </div>
 
         {/* Your Group */}
         <div
           className={`${
             activeTab === "group"
-              ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center"
-              : ""
-          } [font-family:'Bree_Serif',Helvetica] font-normal text-2xl pl-[53px] cursor-pointer ${
+              ? "bg-[#cccccc]/30 rounded-[15px] h-[53px] flex items-center px-4"
+              : "h-[53px] flex items-center px-4"
+          } [font-family:'Bree_Serif',Helvetica] font-normal text-xl cursor-pointer transition-all duration-200 ${
             activeTab === "group" ? "text-[#5a96f0]" : "text-[#193865]"
-          } `}
+          } hover:bg-[#f0f8ff] rounded-[15px]`}
           onClick={() => handleClick("group", `/dashboard/${userData.id}/group`)}
         >
-          <Users className="w-6 h-6 mr-2 inline-block" /> {/* Logo cho Your Group */}
-          Your group
+          <Users className="w-5 h-5 mr-3 flex-shrink-0" />
+          <span className="truncate">Your group</span>
         </div>
       </nav>
 
       {activeTab === "group" && (
-        <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="flex flex-col flex-1 overflow-hidden px-3">
           {/* + Button */}
           <div className="flex justify-center mt-6 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
-              className="w-10 h-10 rounded-full bg-[#cccccc]/50 hover:bg-[#cccccc]/70 text-[#5a96f0]"
+              className="w-10 h-10 rounded-full bg-[#cccccc]/50 hover:bg-[#cccccc]/70 text-[#5a96f0] transition-colors duration-200"
               onClick={() => setShowCreateModal(true)}
             >
               <PlusIcon className="w-5 h-5" />
@@ -163,27 +161,22 @@ function Left_bar({ activeTab, setActiveTab, onGroupSelect }) {
 
           {/* Group list - Scrollable content */}
           <div className="mt-4 space-y-2 flex-1 overflow-y-auto overflow-x-hidden pr-2">
-            {loading && <p className="text-center text-sm text-gray-500">Loading groups...</p>}
-            {error && <p className="text-center text-sm text-red-500">Failed to load groups</p>}
+            {loading && <p className="text-center text-sm text-gray-500 py-4">Loading groups...</p>}
+            {error && <p className="text-center text-sm text-red-500 py-4">Failed to load groups</p>}
             {!loading && groups.length === 0 && (
-              <p className="text-center text-sm text-gray-500">You have no groups yet.</p>
+              <p className="text-center text-sm text-gray-500 py-4">You have no groups yet.</p>
             )}
             {groups.map((group) => (
               <div
                 key={group.id}
-                className={`flex items-center gap-2 px-2 py-2 rounded cursor-pointer ${
+                className={`flex items-center px-3 py-3 rounded-[10px] cursor-pointer transition-all duration-200 ${
                   selectedGroupId === group.id
-                    ? "bg-[#83abe7] text-white font-bold"
-                    : "hover:bg-[#f0f8ff]"
+                    ? "bg-[#83abe7] text-white font-bold shadow-sm"
+                    : "hover:bg-[#f0f8ff] text-[#193865]"
                 }`}
                 onClick={() => handleGroupClick(group)}
-                style={{ 
-                  minWidth: '0',
-                  wordWrap: 'break-word',
-                  overflowWrap: 'break-word'
-                }}
               >
-                <span className="[font-family:'Roboto_Condensed',Helvetica] text-lg truncate">
+                <span className="[font-family:'Roboto_Condensed',Helvetica] text-lg truncate w-full">
                   {group.name}
                 </span>
               </div>
