@@ -320,296 +320,299 @@ function AccountPage() {
   }
 
   return (
-    <main className="bg-white flex flex-row justify-center w-full">
-      <div className="bg-white overflow-x-hidden w-[1500px] relative py-5">
-        <div className="mx-auto w-[1409px] relative">
-          {/* Header */}
-          <Head_bar />
+    <div className="page-container">
+      {/* Header */}
+      <div className="page-header">
+        <Head_bar />
+      </div>
 
-          {/* Main content */}
-          <div className="flex mt-8">
-            {/* Left section */}
-            <div className="flex flex-col items-center w-[400px]">
-              <h1 className="username-header">
-                Your Account
-              </h1>
+      {/* Main Content */}
+      <div className="page-main-content">
+        {/* Center Content */}
+        <div className="page-center-content flex">
+          
+          {/* Nội dung chính của page */}
+          {/* Left section */}
+          <div className="flex flex-col items-center w-[400px]">
+            <h1 className="username-header">
+              Your Account
+            </h1>
 
-              <div className="relative w-[216px] h-[216px]">
-                <Avatar className="w-full h-full bg-[#d9d9d9]">
-                  <AvatarImage src={avatarUrl || localData.avatarURL} />
-                  <AvatarFallback></AvatarFallback>
-                </Avatar>
+            <div className="relative w-[216px] h-[216px]">
+              <Avatar className="w-full h-full bg-[#d9d9d9]">
+                <AvatarImage src={avatarUrl || localData.avatarURL} />
+                <AvatarFallback></AvatarFallback>
+              </Avatar>
 
-                <button
-                  onClick={() => setShowPopup(true)}
-                  className="absolute bottom-2 right-2 bg-white hover:bg-gray-100 
-                            border border-gray-300 rounded-full p-2 shadow-md">
-                  <Camera className="w-5 h-5 text-gray-600" />
-                </button>
+              <button
+                onClick={() => setShowPopup(true)}
+                className="absolute bottom-2 right-2 bg-white hover:bg-gray-100 
+                          border border-gray-300 rounded-full p-2 shadow-md">
+                <Camera className="w-5 h-5 text-gray-600" />
+              </button>
 
-                {showPopup && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-6 shadow-xl space-y-5 w-[400px] h-[160px] flex flex-col">
-                      <h2 className="font-bold normal-header text-center">Change Avatar</h2>
-                      <div className="flex flex-row items-center gap-4">
-                        <InputFile
-                          onChange={async (e) => {
-                            await handleImageChange(e);
-                            setShowPopup(false);
-                          }}
-                          label="Upload image"
-                        />
-                        <button
-                          onClick={() => setShowPopup(false)}
-                          className="mx-auto w-[110px] h-12 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors 
-                                    duration-200 border border-transparent hover:border-white">
-                          <span className="button-blue-data">
-                            Cancel
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <Button onClick={onEditBioClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
-                                                        transition-colors duration-200 border border-transparent hover:border-white">
-                <span className="button-blue-data">
-                  {editText}
-                </span>
-              </Button>
-
-              <Card className="mt-5 w-[319px] h-[174px] rounded-[15px] border-2 border-solid border-[#d1d1d1]">
-                <CardContent className="p-3">
-                  {!editState &&
-                  <p className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-[#b3b3b3] text-base">
-                    {defaultBio}
-                  </p>}
-
-                  {editState &&
-                  <textarea onChange={setBio} className="resize-none w-[300px] h-[150px] focus:border-0 focus:outline-none
-                                                      [font-family:'Roboto_Condensed',Helvetica] font-normal text-[#b3b3b3] text-base" 
-                                              value = {localData.bio}
-                                              placeholder = {"There is still nothing here, how about you spice something up?"}>
-                  </textarea>}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Middle section */}
-            <div className="flex flex-col w-[350px] ml-16 space-y-8">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="normal-header">
-                    Your name
-                  </label>
-                  {!editIState && 
-                  <p className="normal-data min-h-[30px]">
-                    {localData.username}
-                  </p>}
-                  {editIState && <input onChange={setName} className="normal-input" value = {localData.username}></input>}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="normal-header">
-                    Your email address
-                  </label>
-                  {!editIState && 
-                  <p className="normal-data min-h-[30px]">
-                    {localData.email}
-                  </p>}
-                  {editIState && <input onChange={setEmail} className="normal-input" value = {localData.email}></input>}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="normal-header">
-                    Your phone number
-                  </label>
-                  {!editIState &&
-                  <p className="normal-data min-h-[30px]">
-                    {localData.phone_number}
-                  </p>}
-                  {editIState && <input onChange={setPhone} className="normal-input" value = {localData.phone_number}></input>}
-                </div>
-
-                <div className="flex items-center text-[#5a96f0]">
-                  {!editIState && !editPassword &&
-                  <button onClick = {onEditIClick} className="data">
-                    Change information
-                  </button>}
-                  {!editIState && !editPassword &&
-                  <PencilIcon onClick={onEditIClick} className="w-6 h-6 ml-2" />}
-                  {editIState &&
-                  <Button onClick={onEditIClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
-                                                          transition-colors duration-200 border border-transparent hover:border-white">
-                    <span className="button-blue-data">
-                      Confirm
-                    </span>
-                  </Button>}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2 pd-[35px]">
-                  {!editIState &&
-                  <label className="normal-header">
-                    Your password
-                  </label>}
-
-                  {!editIState && !editPassword &&
-                  <p className="normal-data">
-                    *****************
-                  </p>}
-
-                  <div className="flex items-center text-[#5a96f0]">
-                    {!editIState && !editPassword &&
-                    <button onClick = {onEditPasswordClick} className="data">
-                      Change password
-                    </button>}
-                    {!editIState && !editPassword &&
-                    <PencilIcon onClick={onEditPasswordClick} className="w-6 h-6 ml-2" />}
-                  </div>
-
-                  <div className="space-y-2">
-                    <div>
-                      {!editIState && editPassword &&
-                      <p className="normal-input-header"> Current password </p>}
-                      {!editIState && editPassword &&
-                      <input onChange={setCurrentPassword} className={errorCurrent ? "error-input" : "normal-input"} value = {currentPass}></input>}
-                      {!editIState && editPassword &&
-                      <p className="error-text min-h-[20px]"> {warningCurrentPass} </p>}
-                    </div>
-
-                    <div>
-                      {!editIState && editPassword &&
-                      <p className="normal-input-header"> New password </p>}
-                      {!editIState && editPassword &&
-                      <input onChange={setNewPassword} className={errorNew ? "error-input" : "normal-input"} value = {newPass}></input>}
-                      {!editIState && editPassword &&
-                      <p className="error-text min-h-[20px]"> {warningNewPass} </p>}
-                    </div>
-
-                    <div className="flex gap-x-6">
-                      {editPassword &&
-                      <Button onClick={onEditPasswordClick} className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
-                                                                    transition-colors duration-200 border border-transparent hover:border-white">
-                        <span className="button-blue-data">
-                          Confirm
-                        </span>
-                      </Button>}
-                      {editPassword &&
-                      <Button onClick={() => {setEditPassword(false)}} className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
-                                                                    transition-colors duration-200 border border-transparent hover:border-white">
+              {showPopup && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-xl p-6 shadow-xl space-y-5 w-[400px] h-[160px] flex flex-col">
+                    <h2 className="font-bold normal-header text-center">Change Avatar</h2>
+                    <div className="flex flex-row items-center gap-4">
+                      <InputFile
+                        onChange={async (e) => {
+                          await handleImageChange(e);
+                          setShowPopup(false);
+                        }}
+                        label="Upload image"
+                      />
+                      <button
+                        onClick={() => setShowPopup(false)}
+                        className="mx-auto w-[110px] h-12 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0] transition-colors 
+                                  duration-200 border border-transparent hover:border-white">
                         <span className="button-blue-data">
                           Cancel
                         </span>
-                      </Button>}
+                      </button>
                     </div>
-                  </div>    
+                  </div>
                 </div>
+              )}
+            </div>
+
+            <Button onClick={onEditBioClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
+                                                      transition-colors duration-200 border border-transparent hover:border-white">
+              <span className="button-blue-data">
+                {editText}
+              </span>
+            </Button>
+
+            <Card className="mt-5 w-[319px] h-[174px] rounded-[15px] border-2 border-solid border-[#d1d1d1]">
+              <CardContent className="p-3">
+                {!editState &&
+                <p className="[font-family:'Roboto_Condensed',Helvetica] font-normal text-[#b3b3b3] text-base">
+                  {defaultBio}
+                </p>}
+
+                {editState &&
+                <textarea onChange={setBio} className="resize-none w-[300px] h-[150px] focus:border-0 focus:outline-none
+                                                    [font-family:'Roboto_Condensed',Helvetica] font-normal text-[#b3b3b3] text-base" 
+                                            value = {localData.bio}
+                                            placeholder = {"There is still nothing here, how about you spice something up?"}>
+                </textarea>}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Middle section */}
+          <div className="flex flex-col w-[370px] ml-16 space-y-8">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="normal-header">
+                  Your name
+                </label>
+                {!editIState && 
+                <p className="normal-data min-h-[30px]">
+                  {localData.username}
+                </p>}
+                {editIState && <input onChange={setName} className="normal-input" value = {localData.username}></input>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="normal-header">
+                  Your email address
+                </label>
+                {!editIState && 
+                <p className="normal-data min-h-[30px]">
+                  {localData.email}
+                </p>}
+                {editIState && <input onChange={setEmail} className="normal-input" value = {localData.email}></input>}
+              </div>
+
+              <div className="space-y-1">
+                <label className="normal-header">
+                  Your phone number
+                </label>
+                {!editIState &&
+                <p className="normal-data min-h-[30px]">
+                  {localData.phone_number}
+                </p>}
+                {editIState && <input onChange={setPhone} className="normal-input" value = {localData.phone_number}></input>}
+              </div>
+
+              <div className="flex items-center text-[#5a96f0]">
+                {!editIState && !editPassword &&
+                <button onClick = {onEditIClick} className="data">
+                  Change information
+                </button>}
+                {!editIState && !editPassword &&
+                <PencilIcon onClick={onEditIClick} className="w-6 h-6 ml-2" />}
+                {editIState &&
+                <Button onClick={onEditIClick} className="mt-5 w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
+                                                        transition-colors duration-200 border border-transparent hover:border-white">
+                  <span className="button-blue-data">
+                    Confirm
+                  </span>
+                </Button>}
               </div>
             </div>
 
-            <Separator orientation="vertical" className="mx-6"/>
+            <div className="space-y-4">
+              <div className="space-y-2 pd-[35px]">
+                {!editIState &&
+                <label className="normal-header">
+                  Your password
+                </label>}
 
-            {/* Right section */}
-            <div className="flex flex-col mt-8 w-[450px]">
-              <div className="flex flex-col h-[350px]">
-                <h2 className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[24px] text-left pb-2">
-                  Payment method
-                </h2>
+                {!editIState && !editPassword &&
+                <p className="normal-data">
+                  *****************
+                </p>}
 
-                {!editPaymentState &&
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="normal-input-header">
-                      Bank account's name
-                    </label>
-                    <p className="normal-data min-h-[35px]">
-                      {localData.bankAccountName}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="normal-input-header">
-                      Bank account's number
-                    </label>
-                    <p className="normal-data min-h-[35px]">
-                      {localData.bankAccountNumber}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="normal-input-header">
-                      Bank
-                    </label>
-                    <p className="normal-data min-h-[35px]">
-                      {localData.bankName}
-                    </p>
-                  </div>
-                </div>}
-
-                {!editPaymentState &&
-                <a
-                  href="#"
-                  className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-[#4285f4] text-[25px] text-right underline mt-8"
-                  onClick={onEditPaymentClick}>
-                  Change payment account
-                </a>}
+                <div className="flex items-center text-[#5a96f0]">
+                  {!editIState && !editPassword &&
+                  <button onClick = {onEditPasswordClick} className="data">
+                    Change password
+                  </button>}
+                  {!editIState && !editPassword &&
+                  <PencilIcon onClick={onEditPasswordClick} className="w-6 h-6 ml-2" />}
+                </div>
 
                 <div className="space-y-2">
                   <div>
-                    {editPaymentState &&
-                    <p className="normal-input-header"> Bank account's name </p>}
-                    {editPaymentState &&
-                    <input onChange={setBankName} className={errorName ? "error-input" : "normal-input"} value = {localData.bankAccountName}></input>}
-                    {editPaymentState &&
-                    <p className="error-text min-h-[20px]"> {warningBankName} </p>}
+                    {!editIState && editPassword &&
+                    <p className="normal-input-header"> Current password </p>}
+                    {!editIState && editPassword &&
+                    <input onChange={setCurrentPassword} className={errorCurrent ? "error-input" : "normal-input"} value = {currentPass}></input>}
+                    {!editIState && editPassword &&
+                    <p className="error-text min-h-[20px]"> {warningCurrentPass} </p>}
                   </div>
 
                   <div>
-                    {editPaymentState &&
-                    <p className="normal-input-header"> Bank account's number </p>}
-                    {editPaymentState &&
-                    <input onChange={setBankNumber} className={errorNumber ? "error-input" : "normal-input"} value = {localData.bankAccountNumber}></input>}
-                    {editPaymentState &&
-                    <p className="error-text min-h-[20px]"> {warningBankNumber} </p>}
+                    {!editIState && editPassword &&
+                    <p className="normal-input-header"> New password </p>}
+                    {!editIState && editPassword &&
+                    <input onChange={setNewPassword} className={errorNew ? "error-input" : "normal-input"} value = {newPass}></input>}
+                    {!editIState && editPassword &&
+                    <p className="error-text min-h-[20px]"> {warningNewPass} </p>}
                   </div>
 
-                  <div>
-                    {editPaymentState &&
-                    <p className="normal-input-header"> Bank </p>}
-                    {editPaymentState &&
-                    <input onChange={setBankBrand} className={errorBrand ? "error-input" : "normal-input"} value = {localData.bankName}></input>}
-                    {editPaymentState &&
-                    <p className="error-text min-h-[20px]"> {warningBankBrand} </p>}
+                  <div className="flex gap-x-6">
+                    {editPassword &&
+                    <Button onClick={onEditPasswordClick} className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
+                                                                  transition-colors duration-200 border border-transparent hover:border-white">
+                      <span className="button-blue-data">
+                        Confirm
+                      </span>
+                    </Button>}
+                    {editPassword &&
+                    <Button onClick={() => {setEditPassword(false)}} className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
+                                                                  transition-colors duration-200 border border-transparent hover:border-white">
+                      <span className="button-blue-data">
+                        Cancel
+                      </span>
+                    </Button>}
                   </div>
+                </div>    
+              </div>
+            </div>
+          </div>
+
+          <Separator orientation="vertical" className="mx-6"/>
+
+          {/* Right section */}
+          <div className="flex flex-col mt-8 w-[450px]">
+            <div className="flex flex-col h-[350px]">
+              <h2 className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-[24px] text-left pb-2">
+                Payment method
+              </h2>
+
+              {!editPaymentState &&
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="normal-input-header">
+                    Bank account's name
+                  </label>
+                  <p className="normal-data min-h-[35px]">
+                    {localData.bankAccountName}
+                  </p>
                 </div>
-                <div className="flex gap-x-6 pt-4">
-                  {editPaymentState &&
-                  <Button onClick={onEditPaymentClick} className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
-                                                                transition-colors duration-200 border border-transparent hover:border-white">
-                    <span className="button-blue-data">
-                      Confirm
-                    </span>
-                  </Button>}
-                  {editPaymentState &&
-                  <Button 
-                    onClick={() => {setEditPaymentState(false)
-                                    setLocalData(prevLocalData)
-                    }} 
-                    className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
-                               transition-colors duration-200 border border-transparent hover:border-white">
-                    <span className="button-blue-data">
-                      Cancel
-                    </span>
-                  </Button>}
+                <div className="space-y-2">
+                  <label className="normal-input-header">
+                    Bank account's number
+                  </label>
+                  <p className="normal-data min-h-[35px]">
+                    {localData.bankAccountNumber}
+                  </p>
                 </div>
+                <div className="space-y-2">
+                  <label className="normal-input-header">
+                    Bank
+                  </label>
+                  <p className="normal-data min-h-[35px]">
+                    {localData.bankName}
+                  </p>
+                </div>
+              </div>}
+
+              {!editPaymentState &&
+              <a
+                href="#"
+                className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-[#4285f4] text-[25px] text-right underline mt-8"
+                onClick={onEditPaymentClick}>
+                Change payment account
+              </a>}
+
+              <div className="space-y-2">
+                <div>
+                  {editPaymentState &&
+                  <p className="normal-input-header"> Bank account's name </p>}
+                  {editPaymentState &&
+                  <input onChange={setBankName} className={errorName ? "error-input" : "normal-input"} value = {localData.bankAccountName}></input>}
+                  {editPaymentState &&
+                  <p className="error-text min-h-[20px]"> {warningBankName} </p>}
+                </div>
+
+                <div>
+                  {editPaymentState &&
+                  <p className="normal-input-header"> Bank account's number </p>}
+                  {editPaymentState &&
+                  <input onChange={setBankNumber} className={errorNumber ? "error-input" : "normal-input"} value = {localData.bankAccountNumber}></input>}
+                  {editPaymentState &&
+                  <p className="error-text min-h-[20px]"> {warningBankNumber} </p>}
+                </div>
+
+                <div>
+                  {editPaymentState &&
+                  <p className="normal-input-header"> Bank </p>}
+                  {editPaymentState &&
+                  <input onChange={setBankBrand} className={errorBrand ? "error-input" : "normal-input"} value = {localData.bankName}></input>}
+                  {editPaymentState &&
+                  <p className="error-text min-h-[20px]"> {warningBankBrand} </p>}
+                </div>
+              </div>
+              <div className="flex gap-x-6 pt-4">
+                {editPaymentState &&
+                <Button onClick={onEditPaymentClick} className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
+                                                              transition-colors duration-200 border border-transparent hover:border-white">
+                  <span className="button-blue-data">
+                    Confirm
+                  </span>
+                </Button>}
+                {editPaymentState &&
+                <Button 
+                  onClick={() => {setEditPaymentState(false)
+                                  setLocalData(prevLocalData)
+                  }} 
+                  className="w-[110px] h-13 rounded-[15px] bg-[#5a96f0] hover:bg-[#4a86e0]
+                            transition-colors duration-200 border border-transparent hover:border-white">
+                  <span className="button-blue-data">
+                    Cancel
+                  </span>
+                </Button>}
               </div>
             </div>
           </div>
         </div>
       </div>
-    </main>
+    </div>
   )
 }
 
