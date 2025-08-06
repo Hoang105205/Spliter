@@ -73,8 +73,8 @@ const StatisticInfo = () => {
       if (userData?.id) {
         try {
           const expenses = await getUserExpenses(userData.id);
-          setPaidExpenses(Number(expenses?.paidExpenses || 0));
-          setUnpaidExpenses(Number(expenses?.unpaidExpenses || 0));
+          setPaidExpenses(Number(expenses?.paidExpenses.length || 0));
+          setUnpaidExpenses(Number(expenses?.unpaidExpenses.length || 0));
         } catch (err) {
           setPaidExpenses(0);
           setUnpaidExpenses(0);
@@ -115,15 +115,6 @@ const StatisticInfo = () => {
           Statistics
         </h1>
       </div>
-      <div
-        style={{
-          width: "100%",
-          marginTop: "45px",
-          maxHeight: "520px",
-          overflowY: "auto",
-          paddingRight: "8px",
-        }}
-      >
         <div
           style={{
             display: "flex",
@@ -212,7 +203,6 @@ const StatisticInfo = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

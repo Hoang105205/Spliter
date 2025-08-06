@@ -15,31 +15,28 @@ function Dashboard_statistics() {
   const [activeTab, setActiveTab] = useState("statistics"); // or "recently", etc.
 
   return (
-    <div className="bg-white flex flex-row justify-center w-full">
-      <div className="bg-white w-full max-w-[1500px] min-h-[1000px] p-5">
-        <div className="relative w-full max-w-[1409px] mx-auto">
+        <div className="page-container">
           {/* Header */}
-          <Head_bar />
+          <div className="page-header">
+                      <Head_bar />
+          </div>
 
           {/* Main Content */}
-          <div className="flex mt-4">
+          <div className="page-main-content">
             {/* Left Sidebar */}
-            <Left_bar activeTab={activeTab} setActiveTab={setActiveTab} />
-
+            <div className="page-left-sidebar">
+              <Left_bar activeTab={activeTab} setActiveTab={setActiveTab} />
+            </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 px-4">
-              <StatisticInfo />
+            <main className="page-center-content">
+              <div className="mb-20 mt-5">
+                <StatisticInfo />
+              </div>
             </main>
-
-            {/* Right Sidebar */}
-            <aside className="w-[269px] pl-4 border-l-4 border-[#4A73A8]">
-            </aside>
           </div>
 
         </div>
-      </div>
-    </div>
   );
 };
 

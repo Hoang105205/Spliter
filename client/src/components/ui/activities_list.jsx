@@ -30,6 +30,14 @@ const ActivityList = () => {
         return arr
           .filter(act => act.description && /group/i.test(act.description))
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      case "expense":
+        return arr
+          .filter(act => act.activityType === "expense")
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      case "report":
+        return arr
+          .filter(act => act.activityType === "report")
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       default:
         return arr;
     }
@@ -43,16 +51,6 @@ const ActivityList = () => {
         </h1>
         <Sort value={sortType} onChange={setSortType} />
       </div>
-      {/* Scrollable container for activities */}
-      <div
-        className="activities-scroll"
-        style={{
-          maxHeight: "500px",
-          overflowY: "auto",
-          width: "100%",
-          marginTop: "45px",
-        }}
-      >
         <div
           className="space-y-6"
           style={{
@@ -77,7 +75,6 @@ const ActivityList = () => {
           )}
         </div>
       </div>
-    </div>
   );
 };
 

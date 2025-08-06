@@ -10,7 +10,9 @@ const SORT_OPTIONS = [
       { label: "Friend", value: "relationship-friend" },
       { label: "Group", value: "relationship-group" }
     ]
-  }
+  },
+  { label: "Expense", value: "expense" },
+  { label: "Report", value: "report" }
 ];
 
 const Sort = ({ value, onChange }) => {
