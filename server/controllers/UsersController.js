@@ -1,5 +1,6 @@
 const Users = require('../schemas/Users');
 const uploadToCloudinary = require('../lib/cloudinaryUpload');
+const { updateUserStatus } = require('../services/userService');
 
 const getUsers = async (req, res) => {
     try {
@@ -154,6 +155,25 @@ const updateAvatar = async (req, res) => {
     }
 }
 
+const updateStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        
+        // Use userService to handle status update and email notification
+        const updatedUser = await updateUserStatus(id, status);
+        
+        // Return updated user without password
+        const { password, ...userWithoutPassword } = updatedUser.toJSON();
+        res.status(200).json({
+            message: `User status updated to ${status} successfully`,
+            user: userWithoutPassword
+        });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+}
+
 module.exports = {
     getUsers,
     getSingleUser,
@@ -163,5 +183,6 @@ module.exports = {
     changePassword,
     loginUser,
     getAvatar,
-    updateAvatar
+    updateAvatar,
+    updateStatus
 }

@@ -149,7 +149,7 @@ export const useUser = create(
       
       updateStatus: async (userId, status) => {
         try {
-          await api.put(`/api/users/${userId}`, { status });
+          await api.put(`/api/users/${userId}/status`, { status });
         } catch (error) {
           set({ error: error.response ? error.response.data : error.message });
           throw error; // Re-throw the error to handle it in the component
