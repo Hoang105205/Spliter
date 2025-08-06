@@ -276,7 +276,7 @@ export default function ReportTable() {
           <input
             type="text"
             placeholder="Search reports by username or reason..."
-            className="border pl-9 pr-3 py-2 rounded w-80"
+            className="border pl-9 pr-3 py-2 rounded w-[360px]"
             value={search}
             onChange={e => {
               setSearch(e.target.value);
@@ -501,7 +501,7 @@ export default function ReportTable() {
                 setExpandedReportId(null); // Close expanded details when changing rows per page
               }}
             >
-              {[5, 10, 15].map(n => (
+              {[5, 10].map(n => (
                 <option key={n} value={n}>{n}</option>
               ))}
             </select>
@@ -529,17 +529,19 @@ export default function ReportTable() {
             >
               &lt;
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button
-                key={p}
-                className={`w-8 h-8 rounded-full flex items-center justify-center ${p === page ? 'bg-gray-200 font-bold' : ''}`}
-                onClick={() => {
-                  setPage(p);
-                  setExpandedReportId(null); // Close expanded details when changing page
-                }}
-              >
-                {p}
-              </button>
+            {Array.from({ length: 3 }, (_, i) => page - 1 + i)
+              .filter(p => p >= 1 && p <= totalPages)
+              .map(p => (
+                <button
+                  key={p}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${p === page ? 'bg-gray-200 font-bold' : ''}`}
+                  onClick={() => {
+                    setPage(p);
+                    setExpandedUserId(null);
+                  }}
+                >
+                  {p}
+                </button>
             ))}
             <button
               className="px-2 py-1 rounded disabled:opacity-50"
