@@ -44,37 +44,43 @@ const ActivityList = () => {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="[font-family:'Bree_Serif',Helvetica] font-normal text-3xl text-[#193865]">
-          Activities
-        </h1>
-        <Sort value={sortType} onChange={setSortType} />
-      </div>
-        <div
-          className="space-y-6"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            width: "100%",
-            gap: "30px"
-          }}
-        >
-          {loading ? (
-            <BlockText title="Loading..." description="" />
-          ) : (
-            getSortedActivities().map((act, idx) => (
-              <BlockText
-                key={act.id || idx}
-                title={act.title}
-                description={act.description}
-                timestamp={act.createdAt}
-              />
-            ))
-          )}
-        </div>
-      </div>
+  <div className="overflow-x-hidden">
+    <div className="flex items-center justify-between mb-4">
+      <h1 className="[font-family:'Bree_Serif',Helvetica] font-normal text-3xl text-[#193865]">
+        Activities
+      </h1>
+      <Sort value={sortType} onChange={setSortType} />
+    </div>
+    <div
+      className="space-y-6"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        width: "100%",
+        maxWidth: 700,         
+        margin: "0 auto",      
+        gap: "30px",
+        boxSizing: "border-box",
+        paddingLeft: 16,      
+        paddingRight: 16,
+      }}
+    >
+      {loading ? (
+        <BlockText title="Loading..." description="" />
+      ) : (
+        getSortedActivities().map((act, idx) => (
+          <BlockText
+            key={act.id || idx}
+            title={act.title}
+            description={act.description}
+            timestamp={act.createdAt}
+            style={{ width: "100%", maxWidth: "100%" }}
+          />
+        ))
+      )}
+    </div>
+  </div>
   );
 };
 
