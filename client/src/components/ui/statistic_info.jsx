@@ -115,15 +115,6 @@ const StatisticInfo = () => {
           Statistics
         </h1>
       </div>
-      <div
-        style={{
-          width: "100%",
-          marginTop: "45px",
-          maxHeight: "520px",
-          overflowY: "auto",
-          paddingRight: "8px",
-        }}
-      >
         <div
           style={{
             display: "flex",
@@ -212,7 +203,6 @@ const StatisticInfo = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

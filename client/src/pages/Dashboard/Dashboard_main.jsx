@@ -296,76 +296,80 @@ function Dashboard_main() {
   const [activeTab, setActiveTab] = useState("dashboard"); // or "recently", etc.
 
   return (
-    <div className="bg-white flex flex-row justify-center w-full">
-      <div className="bg-white w-full max-w-[1500px] min-h-[1000px] p-5">
-        <div className="relative w-full max-w-[1409px] mx-auto">
+        <div className="page-container">
           {/* Header */}
-          <Head_bar/>
+          <div className="page-header">
+            <Head_bar />
+          </div>
 
           {/* Main Content */}
-          <div className="flex mt-4">
+          <div className="page-main-content">
             {/* Left Sidebar */}
-            <Left_bar activeTab={activeTab} setActiveTab={setActiveTab} />
+            <div className="page-left-sidebar">
+              <Left_bar activeTab={activeTab} setActiveTab={setActiveTab} />
+            </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 px-4">
-              <MainInfo />
+            <main className="page-center-content">
+              <div className="mb-20">
+                <MainInfo />
+              </div>
             </main>
 
             {/* Right Sidebar */}
-            <aside className="w-[269px] pl-4 border-l-4 border-[#4A73A8]">
-              <div className="bg-[#cccccc]/30 rounded-[15px] bg-[100%_100%] h-[38px] flex items-center justify-between px-3.5">
-                <span className="[font-family:'Roboto',Helvetica] text-[#666666] text-xl">
-                  Your friend
-                </span>
-                <Button variant="ghost" size="icon" className="p-0" onClick={() => setShowAddModal(true)}>
-                  <PlusIcon className="w-6 h-6" />
-                </Button>
-              </div>
+            <div className="page-right-sidebar">
+                <div className="bg-[#cccccc]/30 rounded-[15px] bg-[100%_100%] h-[38px] flex items-center justify-between px-3.5 mt-4">
+                  <span className="[font-family:'Roboto',Helvetica] text-[#666666] text-xl">
+                    Your friend
+                  </span>
+                  <Button variant="ghost" size="icon" className="p-0" onClick={() => setShowAddModal(true)}>
+                    <PlusIcon className="w-6 h-6" />
+                  </Button>
+                </div>
 
-              <div className="mt-4 space-y-6">
-                {friendsWithAvatars.map((friend) => (
-                  <div key={friend.id} className="relative flex items-center group" onContextMenu={(e) => handleContextMenu(e, friend.id, friend.friendshipId)}>
-                    <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[10px] z-10"></div>
-                    <div className="relative flex items-center z-20 px-1 py-1">
-                      <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
-                        {friend.avatarURL ? (
-                          <img
-                            src={friend.avatarURL}
-                            alt={friend.username}
-                            className="w-full h-full rounded-full object-cover"
-                          />
-                        ) : (
-                          <AvatarFallback>
-                            {friend.username?.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
+                <div className="mt-4 space-y-6">
+                  {friendsWithAvatars.map((friend) => (
+                    <div key={friend.id} className="relative flex items-center group" onContextMenu={(e) => handleContextMenu(e, friend.id, friend.friendshipId)}>
+                      <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[10px] z-10"></div>
+                      <div className="relative flex items-center z-20 px-1 py-1">
+                        <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
+                          {friend.avatarURL ? (
+                            <img
+                              src={friend.avatarURL}
+                              alt={friend.username}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <AvatarFallback>
+                              {friend.username?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                      </div>
+                      <div className="ml-2 [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg">
+                        {friend.username}
+                      </div>
                     </div>
-                    <div className="ml-2 [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg">
-                      {friend.username}
-                    </div>
-                  </div>
-                ))}
+                  ))}
 
-                {contextMenu.visible && (
-                  <div
-                    className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg py-2 px-4"
-                    style={{ top: contextMenu.y, left: contextMenu.x, minWidth: 120, maxWidth: '90wh', maxHeight: '90vh', overflow: 'auto' }}
-                  >
-                    <button
-                      className="w-full text-left text-red-600 hover:bg-red-50 hover:text-red-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
-                      onClick={() => {
-                        // Handle remove friend action
-                        handleUnfriend();
-                      }}
+                  {contextMenu.visible && (
+                    <div
+                      className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg py-2 px-4"
+                      style={{ top: contextMenu.y, left: contextMenu.x, minWidth: 120, maxWidth: '90wh', maxHeight: '90vh', overflow: 'auto' }}
                     >
-                      Unfriend
-                    </button> 
-                  </div>
-                )}
-              </div>
-            </aside>
+                      <button
+                        className="w-full text-left text-red-600 hover:bg-red-50 hover:text-red-700 px-2 py-1 rounded font-semibold transition-colors duration-150"
+                        onClick={() => {
+                          // Handle remove friend action
+                          handleUnfriend();
+                        }}
+                      >
+                        Unfriend
+                      </button> 
+                    </div>
+                  )}
+                </div>
+            </div>
             
             <AnimatePresence>
               {showAddModal && (
@@ -548,8 +552,6 @@ function Dashboard_main() {
             </AnimatePresence>
           </div>
         </div>
-      </div>
-    </div>
   );
 };
 

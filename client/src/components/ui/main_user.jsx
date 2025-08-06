@@ -186,28 +186,32 @@ const ChartBar = ({ data, color, emptyText }) => {
 
 const FriendList = ({ data, type }) => (
   <div>
-    {data.length === 0 && <div style={{ color: "#888", fontSize: 18, marginTop: 32, textAlign: "center" }}>No data</div>}
-    {data.map(friend => (
+    {data.length === 0 && (
+      <div
+        style={{
+          color: "#888",
+          fontSize: 18,
+          marginTop: 32,
+          textAlign: "center"
+        }}
+      >
+        No data
+      </div>
+    )}
+    {data.map((friend) => (
       <div key={friend.id} style={{ display: "flex", alignItems: "center", marginBottom: 18 }}>
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: "50%",
-            background: "#e0e0e0",
-            marginRight: 12
-          }}
-        ></div>
         <div>
-          <b style={{ fontSize: 18 }}>{friend.name}</b>
+          <b style={{ fontSize: 18 }}>
+            {friend.name.length > 20 ? friend.name.slice(0, 16) + "..." : friend.name}
+          </b>
           <div style={{ color: type === "owe" ? "#f34d4d" : "#19c37d", fontWeight: 500 }}>
             {type === "owe"
               ? `You owe ${Number.isInteger(friend.amount)
-                ? friend.amount.toLocaleString()
-                : friend.amount.toLocaleString().replace(/(\.\d{2})$/, '')} đ`
+                  ? friend.amount.toLocaleString()
+                  : friend.amount.toLocaleString().replace(/(\.\d{2})$/, "")} đ`
               : `Owes you ${Number.isInteger(friend.amount)
-                ? friend.amount.toLocaleString()
-                : friend.amount.toLocaleString().replace(/(\.\d{2})$/, '')} đ`}
+                  ? friend.amount.toLocaleString()
+                  : friend.amount.toLocaleString().replace(/(\.\d{2})$/, "")} đ`}
           </div>
         </div>
       </div>
@@ -556,7 +560,7 @@ const UnpaidBills = ({ bills, getExpenseById, getUsernameById, getGroupNameById 
         if (expired) {
           background = "#ffeaea";
           icon = <span role="img" aria-label="expired">❌</span>;
-          outerColor = "0 0 0 2px #f34d4d55";
+          outerColor = "0 0 0 4px #f34d4d55";
           highlightText = (
             <span style={{
               color: "#f34d4d",
@@ -566,7 +570,7 @@ const UnpaidBills = ({ bills, getExpenseById, getUsernameById, getGroupNameById 
               padding: "2px 10px",
               background: "#fff1f1",
               borderRadius: 8,
-              boxShadow: "0 0 0 1px #f34d4d"
+              boxShadow: "0 0 0 2px #f34d4d"
             }}>
               Expired!
             </span>
@@ -574,7 +578,7 @@ const UnpaidBills = ({ bills, getExpenseById, getUsernameById, getGroupNameById 
         } else if (expiringSoon) {
           background = "#fff1e0";
           icon = <span role="img" aria-label="expiring">⏰</span>;
-          outerColor = "0 0 0 2px #ff98004c";
+          outerColor = "0 0 0 4px #ff98004c";
           highlightText = (
             <span style={{
               color: "#ff9800",
@@ -584,7 +588,7 @@ const UnpaidBills = ({ bills, getExpenseById, getUsernameById, getGroupNameById 
               padding: "2px 10px",
               background: "#fff3e0",
               borderRadius: 8,
-              boxShadow: "0 0 0 1px #ff9800"
+              boxShadow: "0 0 0 2px #ff9800"
             }}>
               Expiring soon!
             </span>
@@ -603,7 +607,14 @@ const UnpaidBills = ({ bills, getExpenseById, getUsernameById, getGroupNameById 
               transition: "background 0.2s",
               background: openIdx === idx ? "#ffeeee" : background,
               position: "relative",
-              boxShadow: outerColor
+              boxShadow: outerColor,
+              borderRadius: 14,
+              zIndex: 1,
+              // Tăng chiều ngang: kéo bill rộng ra
+              marginLeft: -12,
+              marginRight: -12,
+              paddingLeft: 34,
+              paddingRight: 34,
             }}
             onClick={() => handleOpen(idx, bill.expenseId)}
           >
@@ -791,9 +802,9 @@ const UnpaidBills = ({ bills, getExpenseById, getUsernameById, getGroupNameById 
                         padding: (expired || expiringSoon) ? "2px 10px" : undefined,
                         borderRadius: (expired || expiringSoon) ? 8 : undefined,
                         boxShadow: expired
-                          ? "0 0 0 1px #f34d4d"
+                          ? "0 0 0 2px #f34d4d"
                           : expiringSoon
-                            ? "0 0 0 1px #ff9800"
+                            ? "0 0 0 2px #ff9800"
                             : undefined
                       }}>
                         {expired

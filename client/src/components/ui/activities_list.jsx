@@ -51,16 +51,6 @@ const ActivityList = () => {
         </h1>
         <Sort value={sortType} onChange={setSortType} />
       </div>
-      {/* Scrollable container for activities */}
-      <div
-        className="activities-scroll"
-        style={{
-          maxHeight: "500px",
-          overflowY: "auto",
-          width: "100%",
-          marginTop: "45px",
-        }}
-      >
         <div
           className="space-y-6"
           style={{
@@ -85,7 +75,6 @@ const ActivityList = () => {
           )}
         </div>
       </div>
-    </div>
   );
 };
 
