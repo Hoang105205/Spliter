@@ -10,7 +10,8 @@ const {
     loginUser,
     getAvatar,
     updateAvatar,
-    updateStatus
+    updateStatus,
+    updateBatchStatus
 } = require('../controllers/UsersController');
 const ensureAuthenticated = require('../middlewares/ensureAuthenticated');
 const upload = require('../middlewares/uploadMemory');
@@ -29,6 +30,12 @@ router.get('/:id/avatar', getAvatar);
 // Create a new user
 router.post('/', createUser);
 
+// Login user
+router.post('/login', loginUser);
+
+// BATCH API: Update multiple users status at once - MUST BE BEFORE /:id routes
+router.put('/batch-update-status', updateBatchStatus);
+
 // Update a user
 router.put('/:id', updateUser);
 
@@ -38,14 +45,11 @@ router.put('/:id/status', updateStatus);
 // Update user avatar
 router.put('/:id/avatar', upload, updateAvatar);
 
-// Delete a user
-router.delete('/:id', deleteUser);
-
 // Change password
 router.put('/:id/change-password', changePassword);
 
-// Login user
-router.post('/login', loginUser);
+// Delete a user
+router.delete('/:id', deleteUser);
 
 
 // (Tạo thêm route lấy user hiện tại nếu cần)
