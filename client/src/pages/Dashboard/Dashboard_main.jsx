@@ -1,5 +1,5 @@
 import { PlusIcon } from "lucide-react";
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar.jsx";
 import { Button } from "../../components/ui/button.jsx";
 import { useNavigate } from "react-router-dom";
@@ -25,10 +25,21 @@ function Dashboard_main() {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [expenseUsers, setExpenseUsers] = useState([]);
   const [friendsWithAvatars, setFriendsWithAvatars] = useState([]);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // Custom hooks for user and friend management
   const { userData, findUser, getAvatar } = useUser(); // Lấy trạng thái người dùng từ hook useUser
-  const { fetchFriends, friends, deleteFriend } = useFriend();
+  const { fetchFriends, friends, deleteFriend, loading: friendsLoading } = useFriend();
+
+  // Memoize friends with proper avatar handling
+  const optimizedFriends = useMemo(() => {
+    return friends.map(friend => ({
+      ...friend,
+      displayName: friend.username && friend.username.length > 12 
+        ? `${friend.username.substring(0, 12)}...` 
+        : friend.username
+    }));
+  }, [friends]);
 
   const [contextMenu, setContextMenu] = useState({
     visible: false,
@@ -47,40 +58,13 @@ function Dashboard_main() {
     }
   }, [userData.id, fetchFriends]);
 
+  // Simplified: Set friends directly without additional avatar fetching
   useEffect(() => {
-    let isMounted = true;
-
-    const loadAvatars = async () => {
-      // Lấy tất cả friends hiện tại, không chỉ newFriends
-      const avatarPromises = friends.map(async (friend) => {
-        let avatarURL = null;
-        try {
-          avatarURL = await getAvatar(friend.id); // Sẽ trả về null nếu 404
-        } catch (err) {
-          // Im lặng các lỗi, chỉ log nếu cần debug
-          // console.log('Error loading avatar:', err); // Bỏ comment nếu cần debug
-        }
-        return { ...friend, avatarURL };
-      });
-
-      const newAvatars = await Promise.all(avatarPromises);
-      if (isMounted) {
-        setFriendsWithAvatars(newAvatars); // Gán toàn bộ danh sách mới
-      }
-    };
-
-    if (friends.length > 0) {
-      loadAvatars();
-    } else {
-      if (isMounted) {
-        setFriendsWithAvatars([]); // Reset khi không có bạn
-      }
+    setFriendsWithAvatars(optimizedFriends); // Use memoized friends
+    if (optimizedFriends.length >= 0) {
+      setInitialLoad(false); // Data has been loaded (even if empty)
     }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [friends, getAvatar]); // Chỉ phụ thuộc vào friends
+  }, [optimizedFriends]);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false)
@@ -328,29 +312,41 @@ function Dashboard_main() {
                 </div>
 
                 <div className="mt-4 space-y-6">
-                  {friendsWithAvatars.map((friend) => (
-                    <div key={friend.id} className="relative flex items-center group" onContextMenu={(e) => handleContextMenu(e, friend.id, friend.friendshipId)}>
-                      <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[10px] z-10"></div>
-                      <div className="relative flex items-center z-20 px-1 py-1">
-                        <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
-                          {friend.avatarURL ? (
-                            <img
-                              src={friend.avatarURL}
-                              alt={friend.username}
-                              className="w-full h-full rounded-full object-cover"
-                            />
-                          ) : (
-                            <AvatarFallback>
-                              {friend.username?.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
-                      </div>
-                      <div className="ml-2 [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg">
-                        {friend.username}
-                      </div>
+                  {(friendsLoading || initialLoad) ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      <span className="ml-2 text-gray-500">Loading friends...</span>
                     </div>
-                  ))}
+                  ) : friendsWithAvatars.length > 0 ? (
+                    friendsWithAvatars.map((friend) => (
+                      <div key={friend.id} className="relative flex items-center group" onContextMenu={(e) => handleContextMenu(e, friend.id, friend.friendshipId)}>
+                        <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[10px] z-10"></div>
+                        <div className="relative flex items-center z-20 px-1 py-1">
+                          <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
+                            {friend.avatarURL ? (
+                              <img
+                                src={friend.avatarURL}
+                                alt={friend.username}
+                                className="w-full h-full rounded-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <AvatarFallback>
+                                {friend.username?.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                        </div>
+                        <div className="ml-2 [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg">
+                          {friend.displayName || friend.username}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No friends yet. Add some friends to get started!
+                    </div>
+                  )}
 
                   {contextMenu.visible && (
                     <div

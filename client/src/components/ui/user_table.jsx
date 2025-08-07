@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useUser } from "../../hooks/useUser";
 
 export default function UserTable() {
@@ -11,7 +11,7 @@ export default function UserTable() {
   
   // Local state for each user's status
   const [userStatus, setUserStatus] = useState({});
-  const { findAllUsers, updateStatus } = useUser();
+  const { findAllUsers, updateStatus, updateBatchStatus } = useUser();
 
   // Fetch all users on mount
   useEffect(() => {
@@ -50,35 +50,45 @@ export default function UserTable() {
   // Sort state
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'asc' });
 
-  // Filter by username (case insensitive)
-  let filteredCustomers = customersData.filter(
-    c => c.username.toLowerCase().includes(search.toLowerCase())
-  );
+  // OPTIMIZED: Memoized filtering and sorting to prevent unnecessary re-calculations
+  const { filteredCustomers, totalRows, totalPages, paginatedCustomers } = useMemo(() => {
+    // Filter by username (case insensitive)
+    let filtered = customersData.filter(
+      c => c.username.toLowerCase().includes(search.toLowerCase())
+    );
 
-  // Sort logic
-  if (sortConfig.key) {
-    filteredCustomers = [...filteredCustomers].sort((a, b) => {
-      let aValue = a[sortConfig.key];
-      let bValue = b[sortConfig.key];
-      if (sortConfig.key === 'id') {
-        aValue = Number(aValue);
-        bValue = Number(bValue);
-      } else {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }
+    // Sort logic
+    if (sortConfig.key) {
+      filtered = [...filtered].sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+        if (sortConfig.key === 'id') {
+          aValue = Number(aValue);
+          bValue = Number(bValue);
+        } else {
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+        }
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
 
-  const totalRows = filteredCustomers.length;
-  const totalPages = Math.ceil(totalRows / rowsPerPage);
-  const paginatedCustomers = filteredCustomers.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+    const total = filtered.length;
+    const pages = Math.ceil(total / rowsPerPage);
+    const paginated = filtered.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
-  // Sort handler
-  const handleSort = (key) => {
+    return {
+      filteredCustomers: filtered,
+      totalRows: total,
+      totalPages: pages,
+      paginatedCustomers: paginated
+    };
+  }, [customersData, search, sortConfig, page, rowsPerPage]);
+
+  // OPTIMIZED: Memoized handlers to prevent unnecessary re-renders
+  const handleSort = useCallback((key) => {
     setSortConfig(prev => {
       if (prev.key === key) {
         // Toggle direction
@@ -89,38 +99,41 @@ export default function UserTable() {
     });
     setPage(1);
     setExpandedUserId(null); // Close expanded details
-  };
+  }, []);
 
   const isAllSelected = selected.length === paginatedCustomers.length && paginatedCustomers.length > 0;
 
-  const handleSelectAll = (e) => {
+  const handleSelectAll = useCallback((e) => {
     if (e.target.checked) {
       setSelected(paginatedCustomers.map(c => c.id));
     } else {
       setSelected([]);
     }
     setExpandedUserId(null); // Close expanded details
-  };
-  const handleSelectRow = (id) => {
+  }, [paginatedCustomers]);
+
+  const handleSelectRow = useCallback((id) => {
     setSelected(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     setExpandedUserId(null); // Close expanded details
-  };
+  }, []);
 
   // Toggle expanded row
-  const handleExpandRow = (id) => {
+  const handleExpandRow = useCallback((id) => {
     setExpandedUserId(prev => (prev === id ? null : id));
-  };
+  }, []);
 
+  // Toggle single user status - OPTIMIZED with better error handling
   const handleToggleStatus = async (id) => {
     const currentStatus = userStatus[id];
+    const newStatus = currentStatus === "Banned" ? "Unbanned" : "Banned";
+    
+    // Prevent double-clicking
+    if (updatingUsers.has(id)) return;
+    
+    // Add to updating set
+    setUpdatingUsers(prev => new Set([...prev, id]));
     
     try {
-      // Add to updating set
-      setUpdatingUsers(prev => new Set([...prev, id]));
-      
-      // Toggle between Banned and Unbanned
-      const newStatus = currentStatus === "Banned" ? "Unbanned" : "Banned";
-      
       // Update user status via API
       await updateStatus(id, newStatus);
       
@@ -130,21 +143,19 @@ export default function UserTable() {
         [id]: newStatus
       }));
       
-      // Remove from updating set after completion
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
+      console.log(`Successfully ${newStatus.toLowerCase()} user ${id}`);
     } catch (error) {
-      // Remove from updating set on error
+      console.error(`Failed to ${newStatus.toLowerCase()} user ${id}:`, error);
+      
+      // Optionally show user-friendly error message
+      // Could add toast notification here
+    } finally {
+      // Always remove from updating set
       setUpdatingUsers(prev => {
         const newSet = new Set(prev);
         newSet.delete(id);
         return newSet;
       });
-      
-      console.error("Failed to update user status:", error);
     }
   };
 
@@ -166,93 +177,187 @@ export default function UserTable() {
     }
   }, [selected.length]);
 
-  // Ban selected users
+  // Ban selected users - OPTIMIZED with BATCH API + fallback
   const handleBanSelected = async () => {
+    // Filter only unbanned users
+    const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
+    
+    if (usersToBan.length === 0) return;
+    
+    // Add users to updating set
+    setUpdatingUsers(prev => new Set([...prev, ...usersToBan]));
+    
     try {
-      // Filter only unbanned users
-      const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
+      // TRY BATCH API FIRST - Single request for all users
+      console.log(`Attempting batch ban for ${usersToBan.length} users...`);
       
-      if (usersToBan.length === 0) return;
+      try {
+        const batchResponse = await updateBatchStatus(usersToBan, "Banned");
+        
+        // Process batch results - handle the nested structure
+        const successfulUsers = [];
+        const failedUsers = [];
+        
+        if (batchResponse && batchResponse.results && Array.isArray(batchResponse.results)) {
+          batchResponse.results.forEach(result => {
+            if (result.success) {
+              successfulUsers.push(result.userId);
+            } else {
+              failedUsers.push(result.userId);
+            }
+          });
+        } else {
+          // Fallback: assume all users were processed successfully
+          successfulUsers.push(...usersToBan);
+        }
+        
+        // Update local state for successful users
+        if (successfulUsers.length > 0) {
+          setUserStatus(prev => {
+            const updated = { ...prev };
+            successfulUsers.forEach(id => {
+              updated[id] = "Banned";
+            });
+            return updated;
+          });
+        }
+        
+        console.log(`Batch ban completed: ${successfulUsers.length} successful, ${failedUsers.length} failed`);
+        
+      } catch (batchError) {
+        // FALLBACK TO INDIVIDUAL API CALLS if batch fails
+        console.warn("Batch API failed, falling back to individual calls:", batchError.message);
+        
+        // Use individual updateStatus calls
+        const successfulUsers = [];
+        for (const userId of usersToBan) {
+          try {
+            await updateStatus(userId, "Banned");
+            successfulUsers.push(userId);
+          } catch (error) {
+            console.error(`Failed to ban user ${userId}:`, error.message);
+          }
+        }
+        
+        // Update local state for successful users
+        if (successfulUsers.length > 0) {
+          setUserStatus(prev => {
+            const updated = { ...prev };
+            successfulUsers.forEach(id => {
+              updated[id] = "Banned";
+            });
+            return updated;
+          });
+        }
+        
+        console.log(`Fallback ban completed: ${successfulUsers.length} successful, ${usersToBan.length - successfulUsers.length} failed`);
+      }
       
-      // Add users to updating set
-      setUpdatingUsers(prev => new Set([...prev, ...usersToBan]));
-      
-      // Update each user via API
-      const banPromises = usersToBan.map(id => updateStatus(id, "Banned"));
-      await Promise.all(banPromises);
-      
-      // Update local state if all API calls successful
-      setUserStatus(prev => {
-        const updated = { ...prev };
-        usersToBan.forEach(id => {
-          updated[id] = "Banned";
-        });
-        return updated;
-      });
-      
-      // Remove users from updating set and clear selection
+    } catch (error) {
+      console.error("Failed to ban selected users:", error);
+    } finally {
+      // Remove all users from updating set
       setUpdatingUsers(prev => {
         const newSet = new Set(prev);
         usersToBan.forEach(id => newSet.delete(id));
         return newSet;
       });
+      
+      // Clear selection and expanded state
       setSelected([]);
       setExpandedUserId(null);
-    } catch (error) {
-      // Remove users from updating set on error
-      const usersToBan = selected.filter(id => userStatus[id] === "Unbanned");
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        usersToBan.forEach(id => newSet.delete(id));
-        return newSet;
-      });
-      
-      console.error("Failed to ban selected users:", error);
     }
   };
 
-  // Unban selected users
+  // Unban selected users - OPTIMIZED with BATCH API + fallback
   const handleUnbanSelected = async () => {
+    // Filter only banned users
+    const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
+    
+    if (usersToUnban.length === 0) return;
+    
+    // Add users to updating set
+    setUpdatingUsers(prev => new Set([...prev, ...usersToUnban]));
+    
     try {
-      // Filter only banned users
-      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
+      // TRY BATCH API FIRST - Single request for all users
+      console.log(`Attempting batch unban for ${usersToUnban.length} users...`);
       
-      if (usersToUnban.length === 0) return;
+      try {
+        const batchResponse = await updateBatchStatus(usersToUnban, "Unbanned");
+        
+        // Process batch results - handle the nested structure
+        const successfulUsers = [];
+        const failedUsers = [];
+        
+        if (batchResponse && batchResponse.results && Array.isArray(batchResponse.results)) {
+          batchResponse.results.forEach(result => {
+            if (result.success) {
+              successfulUsers.push(result.userId);
+            } else {
+              failedUsers.push(result.userId);
+            }
+          });
+        } else {
+          // Fallback: assume all users were processed successfully
+          successfulUsers.push(...usersToUnban);
+        }
+        
+        // Update local state for successful users
+        if (successfulUsers.length > 0) {
+          setUserStatus(prev => {
+            const updated = { ...prev };
+            successfulUsers.forEach(id => {
+              updated[id] = "Unbanned";
+            });
+            return updated;
+          });
+        }
+        
+        console.log(`Batch unban completed: ${successfulUsers.length} successful, ${failedUsers.length} failed`);
+        
+      } catch (batchError) {
+        // FALLBACK TO INDIVIDUAL API CALLS if batch fails
+        console.warn("Batch API failed, falling back to individual calls:", batchError.message);
+        
+        // Use individual updateStatus calls
+        const successfulUsers = [];
+        for (const userId of usersToUnban) {
+          try {
+            await updateStatus(userId, "Unbanned");
+            successfulUsers.push(userId);
+          } catch (error) {
+            console.error(`Failed to unban user ${userId}:`, error.message);
+          }
+        }
+        
+        // Update local state for successful users
+        if (successfulUsers.length > 0) {
+          setUserStatus(prev => {
+            const updated = { ...prev };
+            successfulUsers.forEach(id => {
+              updated[id] = "Unbanned";
+            });
+            return updated;
+          });
+        }
+        
+        console.log(`Fallback unban completed: ${successfulUsers.length} successful, ${usersToUnban.length - successfulUsers.length} failed`);
+      }
       
-      // Add users to updating set
-      setUpdatingUsers(prev => new Set([...prev, ...usersToUnban]));
-      
-      // Update each user via API
-      const unbanPromises = usersToUnban.map(id => updateStatus(id, "Unbanned"));
-      await Promise.all(unbanPromises);
-      
-      // Update local state if all API calls successful
-      setUserStatus(prev => {
-        const updated = { ...prev };
-        usersToUnban.forEach(id => {
-          updated[id] = "Unbanned";
-        });
-        return updated;
-      });
-      
-      // Remove users from updating set and clear selection
+    } catch (error) {
+      console.error("Failed to unban selected users:", error);
+    } finally {
+      // Remove all users from updating set
       setUpdatingUsers(prev => {
         const newSet = new Set(prev);
         usersToUnban.forEach(id => newSet.delete(id));
         return newSet;
       });
+      
+      // Clear selection and expanded state
       setSelected([]);
       setExpandedUserId(null);
-    } catch (error) {
-      // Remove users from updating set on error
-      const usersToUnban = selected.filter(id => userStatus[id] === "Banned");
-      setUpdatingUsers(prev => {
-        const newSet = new Set(prev);
-        usersToUnban.forEach(id => newSet.delete(id));
-        return newSet;
-      });
-      
-      console.error("Failed to unban selected users:", error);
     }
   };
 

@@ -14,8 +14,8 @@ const getFriendsOfUser = async (req, res) => {
         ]
       },
       include: [
-        { model: Users, as: 'requester', attributes: ['id', 'username', 'email'] },
-        { model: Users, as: 'addressee', attributes: ['id', 'username', 'email'] }
+        { model: Users, as: 'requester', attributes: ['id', 'username', 'email', 'avatarURL'] },
+        { model: Users, as: 'addressee', attributes: ['id', 'username', 'email', 'avatarURL'] }
       ]
     });
 

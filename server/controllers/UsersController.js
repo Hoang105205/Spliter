@@ -174,6 +174,60 @@ const updateStatus = async (req, res) => {
     }
 }
 
+// BATCH API: Update multiple users status at once - OPTIMIZED
+const updateBatchStatus = async (req, res) => {
+    try {
+        const { userIds, status } = req.body;
+        
+        // Validate input
+        if (!Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ message: 'userIds must be a non-empty array' });
+        }
+        
+        if (!status || !['Banned', 'Unbanned'].includes(status)) {
+            return res.status(400).json({ message: 'Status must be either "Banned" or "Unbanned"' });
+        }
+        
+        // Process each user individually to handle partial failures
+        const results = [];
+        const successfulUsers = [];
+        
+        for (const userId of userIds) {
+            try {
+                // Use userService to handle status update and email notification
+                await updateUserStatus(userId, status);
+                
+                results.push({
+                    userId: parseInt(userId),
+                    success: true
+                });
+                
+                successfulUsers.push(userId);
+            } catch (error) {
+                results.push({
+                    userId: parseInt(userId),
+                    success: false,
+                    error: error.message
+                });
+                
+                console.error(`Failed to update user ${userId} status:`, error.message);
+            }
+        }
+        
+        // Return simplified results
+        res.status(200).json({
+            successful: successfulUsers.length,
+            failed: userIds.length - successfulUsers.length,
+            results: results
+        });
+        
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+
+
 module.exports = {
     getUsers,
     getSingleUser,
@@ -184,5 +238,6 @@ module.exports = {
     loginUser,
     getAvatar,
     updateAvatar,
-    updateStatus
+    updateStatus,
+    updateBatchStatus
 }
