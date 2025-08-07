@@ -6,7 +6,6 @@ import Admin_left_bar from "../../components/ui/admin_leftbar.jsx";
 import AdminStatisticInfo from "../../components/ui/admin_statistic_info.jsx";
 
 const AdminStatistics = () => {
-  const [tab, setTab] = useState("overview");
   const [activeTab, setActiveTab] = useState("statistics");
 
   return (

@@ -1,15 +1,15 @@
 const { Groups, Users, Expenses, expenseItems } = require('../schemas');
 const sequelize = require('../config/db');
+const { deleteGroup: deleteGroupService } = require('../services/groupService');
 
 // Only Admin can access this controller
 const getAllGroups = async (req, res) => {
     try {
         const groups = await Groups.findAll({
-            attributes: ['id', 'name', 'ownerId'],
             include: [{
                 model: Users,
                 as: 'owner',
-                attributes: ['id', 'username', 'email']
+                attributes: ['id', 'username', 'email', 'avatarURL']
             }]
         });
         res.status(200).json(groups);
@@ -22,11 +22,10 @@ const getAllGroups = async (req, res) => {
 const getGroupById = async (req, res) => {
     try {
         const group = await Groups.findByPk(req.params.id, {
-            attributes: ['id', 'name', 'ownerId'],
             include: [{
                 model: Users,
                 as: 'owner',
-                attributes: ['id', 'username', 'email']
+                attributes: ['id', 'username', 'email', 'avatarURL']
             }]
         });
         if (!group) {
@@ -99,7 +98,7 @@ const getGroupMembers = async (req, res) => {
             include: [{
                 model: Users,
                 as: 'members',
-                attributes: ['id', 'username', 'email'],
+                attributes: ['id', 'username', 'email', 'avatarURL'],
                 through: {
                     where : { status: 'accepted' },
                     attributes: [] 
@@ -115,11 +114,41 @@ const getGroupMembers = async (req, res) => {
     }
 }
 
+// Delete group - Admin only
+const deleteGroup = async (req, res) => {
+    try {
+        const groupId = req.params.id;
+        
+        if (!groupId) {
+            return res.status(400).json({ message: 'Group ID is required' });
+        }
+        
+        // Check if group exists
+        const group = await Groups.findByPk(groupId);
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+        
+        // Use groupService to delete group
+        await deleteGroupService(groupId);
+        
+        res.status(200).json({ 
+            message: 'Group deleted successfully',
+            groupId: parseInt(groupId)
+        });
+        
+    } catch (error) {
+        console.error('Delete group error:', error);
+        res.status(500).json({ message: error.message || 'Failed to delete group' });
+    }
+}
+
 module.exports = {
     getAllGroups,
     getGroupById,
     createGroup,
     updateGroupName,
     getGroupMembers,
+    deleteGroup,
 };
 

@@ -28,11 +28,13 @@ export const useGroup = () => {
         if (isMounted) {
           setMembers(response.data); // Lấy dữ liệu từ response.data
         }
+        return response.data || [];
       } catch (err) {
         if (isMounted) {
           setError(
             err.response?.data?.message || err.message || "Failed to fetch members"
           ); // Xử lý lỗi chi tiết
+          return [];
         }
       } finally {
         if (isMounted) {
@@ -97,5 +99,41 @@ export const useGroup = () => {
     []
   );
 
-  return { members, loading, error, getGroupmember, fetchAllGroups, renameGroup };
+  const deleteGroup = useCallback(
+    async (groupId) => {
+      if (!groupId) {
+        setError("Group ID is required");
+        return false;
+      }
+
+      let isMounted = true;
+      setLoading(true);
+      setError(null);
+
+      try {
+        await api.delete(`/api/groups/${groupId}`);
+        if (isMounted) {
+          return true; // Trả về true nếu xóa thành công
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(
+            err.response?.data?.message || err.message || "Failed to delete group"
+          );
+        }
+        return false; // Trả về false nếu thất bại
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+
+      return () => {
+        isMounted = false;
+      };
+    },
+    []
+  );
+
+  return { members, loading, error, getGroupmember, fetchAllGroups, renameGroup, deleteGroup };
 };

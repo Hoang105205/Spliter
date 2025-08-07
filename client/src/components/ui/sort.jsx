@@ -81,7 +81,7 @@ const Sort = ({ value, onChange }) => {
           borderRadius: "8px",
           boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
           marginTop: 6,
-          minWidth: 140,
+          minWidth: "100%",
         }}
       >
         {SORT_OPTIONS.map(opt => (
@@ -123,8 +123,8 @@ const Sort = ({ value, onChange }) => {
                   display: subOpen ? "block" : "none",
                   position: "absolute",
                   top: 0,
-                  left: "100%",
-                  minWidth: 120,
+                  right: "100%",
+                  minWidth: "100%",
                   background: "#fff",
                   border: "1px solid #d1d5db",
                   borderRadius: "8px",

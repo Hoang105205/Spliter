@@ -74,6 +74,7 @@ export const useUser = create(
               bankAccountNumber: '',
               bankAccountName: '',
               bankName: '',
+              status: '',
             }
           });
           localStorage.removeItem('user-storage'); // Clear Zustand persisted storage
@@ -106,9 +107,8 @@ export const useUser = create(
       login: async (username, password) => {
         try {
           const response = await api.post('/api/users/login', { username, password });
-          const userData = response.data;
-          set({ userData });
-          return userData;
+          set({ userData: response.data });
+          return response.data;
         } catch (error) {
           set({ error: error.response ? error.response.data : error.message });
           throw error; // Re-throw the error to handle it in the component
@@ -153,6 +153,20 @@ export const useUser = create(
         } catch (error) {
           set({ error: error.response ? error.response.data : error.message });
           throw error; // Re-throw the error to handle it in the component
+        }
+      },
+
+      // BATCH API: Update multiple users status at once - OPTIMIZED
+      updateBatchStatus: async (userIds, status) => {
+        try {
+          const response = await api.put('/api/users/batch-update-status', { 
+            userIds, 
+            status 
+          });
+          return response.data; // Returns array of results
+        } catch (error) {
+          set({ error: error.response ? error.response.data : error.message });
+          throw error;
         }
       },
     }), 
