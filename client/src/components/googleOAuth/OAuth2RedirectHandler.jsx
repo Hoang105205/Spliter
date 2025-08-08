@@ -51,7 +51,12 @@ function OAuth2RedirectHandler() {
             bankAccountName: user.bankAccountName,
             bankName: user.bankName
           });
-
+          
+          // Check if user is banned
+          if (user.status === 'Banned') {
+            navigate('/ban-announcement');
+            return;
+          }
           // Check if user has all 3 bank info fields
           const hasAllBankInfo = user.bankAccountNumber && user.bankAccountName && user.bankName;
           if (!hasAllBankInfo) {

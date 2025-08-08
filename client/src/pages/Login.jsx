@@ -60,7 +60,7 @@ function Login() {
         
       } else if (user.role === 'user') {
         if (user.status === 'Banned'){
-          setErrors({ username: 'Your account is banned', password: '' });
+          navigate('/ban-announcement');
           return;
         }
         if (!user.bankAccountNumber || !user.bankAccountName || !user.bankName) { // Check if user has bank info

@@ -11,6 +11,7 @@ import { useUser } from './hooks/useUser.js';
 // Import pages (User)
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import BanAnnouncement from './pages/BanAnnouncement.jsx';
 import BankAccountSetupPage from './pages/BankAccountSetupPage';
 import AccountPage from './pages/Dashboard/Accountpage';
 import Dashboard_main from './pages/Dashboard/Dashboard_main';
@@ -43,6 +44,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/ban-announcement" element={<BanAnnouncement />} />
           <Route path="/setup-bank" element={<BankAccountSetupPage />} />
           {/* OAuth2 redirect handler */}
           <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
@@ -90,6 +92,15 @@ function App() {
                 element={
                   <ProtectedLayout>
                     <AccountPage />
+                  </ProtectedLayout>
+                }
+              />
+
+              <Route
+                path="/ban-announcement"
+                element={
+                  <ProtectedLayout>
+                    <BanAnnouncement />
                   </ProtectedLayout>
                 }
               />

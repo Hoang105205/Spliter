@@ -28,6 +28,12 @@ function Admin_head_bar(){
 
   const navigate = useNavigate();
   
+  // Function to get first letter of username for avatar fallback
+  const getInitials = (username) => {
+    if (!username) return "A";
+    return username.charAt(0).toUpperCase();
+  };
+  
 
   // State management
   const [showNotifications, setShowNotifications] = useState(false);
@@ -425,8 +431,18 @@ function Admin_head_bar(){
           {/* Avatar & Dropdown */}
           <div className="flex items-center" ref={accountRef}>
             <Avatar className="w-[34px] h-[33px] bg-[#d9d9d9]">
-              <AvatarImage src={avatarUrl || userData.avatarURL} />
-              <AvatarFallback />
+              {(avatarUrl || userData.avatarURL) ? (
+                <img
+                  src={avatarUrl || userData.avatarURL}
+                  alt={userData.username}
+                  className="w-full h-full rounded-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <AvatarFallback>
+                  {getInitials(userData.username)}
+                </AvatarFallback>
+              )}
             </Avatar>
             {/*Username*/}
             <span className="ml-2 [font-family:'Poetsen_One',Helvetica] font-normal text-white text-2xl">
@@ -499,8 +515,18 @@ function Admin_head_bar(){
                 <div className="flex flex-col items-center w-[250px] pr-6">
                   <div className="relative w-[150px] h-[150px] mb-4">
                     <Avatar className="w-full h-full bg-[#d9d9d9]">
-                      <AvatarImage src={avatarUrl || userData.avatarURL} />
-                      <AvatarFallback />
+                      {(avatarUrl || userData.avatarURL) ? (
+                        <img
+                          src={avatarUrl || userData.avatarURL}
+                          alt={userData.username}
+                          className="w-full h-full rounded-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <AvatarFallback>
+                          {getInitials(userData.username)}
+                        </AvatarFallback>
+                      )}
                     </Avatar>
                     
                     <button

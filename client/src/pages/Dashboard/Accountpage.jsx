@@ -12,6 +12,13 @@ import { useUser } from '../../hooks/useUser.js'
 
 function AccountPage() {
   const { updateUser, handleChangePassword, userData, setUserData, setAvatar, getAvatar } = useUser()
+  
+  // Function to get first letter of username for avatar fallback
+  const getInitials = (username) => {
+    if (!username) return "U";
+    return username.charAt(0).toUpperCase();
+  };
+  
   const [localData, setLocalData] = useState({
     id: '',
     username: '',
@@ -340,8 +347,18 @@ function AccountPage() {
 
             <div className="relative w-[216px] h-[216px]">
               <Avatar className="w-full h-full bg-[#d9d9d9]">
-                <AvatarImage src={avatarUrl || localData.avatarURL} />
-                <AvatarFallback></AvatarFallback>
+                {(avatarUrl || localData.avatarURL) ? (
+                  <img
+                    src={avatarUrl || localData.avatarURL}
+                    alt={localData.username}
+                    className="w-full h-full rounded-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <AvatarFallback>
+                    {getInitials(localData.username)}
+                  </AvatarFallback>
+                )}
               </Avatar>
 
               <button
