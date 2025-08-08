@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useReport } from "../../hooks/useReport.js";
 import { toast } from "sonner";
 
-function Report({ show, onClose, ws }) {
+function Report({ show, onClose }) {
   const [search, setSearch] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -14,6 +14,7 @@ function Report({ show, onClose, ws }) {
   const [reason, setReason] = useState("");
   const { userData, findUser } = useUser();
   const { createReport } = useReport();
+  const ws = useContext(WebSocketContext); // Use WebSocket from context
 
 
   useEffect(() => {
@@ -51,34 +52,37 @@ function Report({ show, onClose, ws }) {
       alert("Please provide a reason for the report.");
       return;
     }
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      alert("WebSocket not available.");
+      return;
+    }
+
     try {
+      // Send via WebSocket for activity logging
+      ws.send(
+        JSON.stringify({
+          type: "SUBMIT_REPORT",
+          payload: {
+            reporterId: userData.id,
+            reportedUserId: selectedUser.id,
+            reason: reason,
+          },
+        })
+      );
+
+      // Also create via REST API for database storage
       await createReport({
         reporterId: userData.id,
         reportedUserId: selectedUser.id,
         reason: reason,
       });
+
       toast.success("Report submitted successfully.");
     } catch (error) {
       console.error("Report submission failed", error);
       toast.error("Failed to submit report. Please try again.");
     }
-
-
-    // if (!ws || ws.readyState !== WebSocket.OPEN) {
-    //   alert("WebSocket not available.");
-    //   return;
-    // }
-
-    // ws.send(
-    //   JSON.stringify({
-    //     type: "REPORT_USER",
-    //     payload: {
-    //       reporterId: userData.id,
-    //       reportedUserId: selectedUser.id,
-    //       reason: reason,
-    //     },
-    //   })
-    // );
 
     setLoading(false);
     onClose(); // ✅ Đóng popup sau khi gửi

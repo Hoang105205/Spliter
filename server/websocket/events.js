@@ -1,7 +1,7 @@
 const { createFriendRequest } = require('../services/friendService.js');
 const { createGroup, createGroupMemberRequest, deleteGroup } = require('../services/groupService.js');
 const { logActivity } = require('../services/activityService.js');
-const { Users, Groups, groupMembers, Expenses, expenseItems } = require('../schemas');
+const { Users, Groups, groupMembers, Expenses, expenseItems, Reports } = require('../schemas');
 const { logNotification } = require('../services/notificationService.js');
 
 module.exports = function(ws, connectedClients) {
@@ -93,6 +93,13 @@ module.exports = function(ws, connectedClients) {
           handleUpdateExpenseItemStatus(ws, connectedClients, jsonData.payload);
           break;
 
+        case 'SUBMIT_REPORT':
+          handleSubmitReport(ws, connectedClients, jsonData.payload);
+          break;
+
+        // case 'RESOLVE_REPORT':
+        //   handleResolveReport(ws, connectedClients, jsonData.payload);
+        //   break;
 
       
         default:
@@ -1078,3 +1085,160 @@ async function handleUpdateExpenseItemStatus(ws, connectedClients, payload) {
     }));
   }
 }
+
+// Handle submit report
+async function handleSubmitReport(ws, connectedClients, payload) {
+  const { reporterId, reportedUserId, reason } = payload;
+
+  if (!reporterId || !reportedUserId || !reason) {
+    return ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: 'Missing required fields for report submission.'
+    }));
+  }
+
+  try {
+    // Get user information
+    const reportedUser = await Users.findByPk(reportedUserId);
+    if (!reportedUser) {
+      return ws.send(JSON.stringify({
+        type: 'ERROR',
+        message: 'Reported user not found.'
+      }));
+    }
+
+    // Log activity for the reporter
+    await logActivity({
+      userId: reporterId,
+      title: 'Submit Report',
+      activityType: 'report',
+      description: `Submitted a report against user "${reportedUser.username}" for: ${reason}`
+    });
+
+    // Get reporter info for notification
+    const reporterUser = await Users.findByPk(reporterId);
+
+    // Get all admin users and send notifications
+    const adminUsers = await Users.findAll({ where: { role: 'admin' } });
+    
+    // Log notifications for all admins
+    const adminNotifications = adminUsers.map(admin =>
+      logNotification({
+        userId: admin.id,
+        description: `New report submitted by "${reporterUser.username}" against "${reportedUser.username}" for: ${reason}`
+      })
+    );
+    await Promise.all(adminNotifications);
+
+    // Send real-time notifications to online admins via WebSocket
+    adminUsers.forEach(admin => {
+      const adminClient = connectedClients[admin.id];
+      if (adminClient && adminClient.ws.readyState === ws.OPEN) {
+        adminClient.ws.send(JSON.stringify({
+          type: 'NEW_REPORT_NOTIFICATION',
+          payload: {
+            reporterId,
+            reportedUsername: reportedUser.username,
+            reason,
+            message: `New report submitted by "${reporterUser.username}" against "${reportedUser.username}"`
+          }
+        }));
+      }
+    });
+
+    // Send confirmation to reporter
+    const reporterClient = connectedClients[reporterId];
+    if (reporterClient && reporterClient.ws.readyState === ws.OPEN) {
+      reporterClient.ws.send(JSON.stringify({
+        type: 'REPORT_SUBMITTED',
+        payload: {
+          reporterId,
+          reportedUsername: reportedUser.username,
+          reason
+        }
+      }));
+    }
+
+  } catch (error) {
+    console.error("Error handling report submission:", error);
+    ws.send(JSON.stringify({
+      type: 'ERROR',
+      message: "Failed to submit report. Please try again."
+    }));
+  }
+}
+
+// // Handle resolve report
+// async function handleResolveReport(ws, connectedClients, payload) {
+//   const { reportId, adminId } = payload;
+
+//   if (!reportId || !adminId) {
+//     return ws.send(JSON.stringify({
+//       type: 'ERROR',
+//       message: 'Missing required fields for report resolution.'
+//     }));
+//   }
+
+//   try {
+//     // Get report information
+//     const report = await Reports.findByPk(reportId, {
+//       include: [
+//         {
+//           model: Users,
+//           as: 'reporter',
+//           attributes: ['id', 'username']
+//         },
+//         {
+//           model: Users,
+//           as: 'reportedUser',
+//           attributes: ['id', 'username']
+//         }
+//       ]
+//     });
+
+//     if (!report) {
+//       return ws.send(JSON.stringify({
+//         type: 'ERROR',
+//         message: 'Report not found.'
+//       }));
+//     }
+
+//     // Update report status
+//     report.status = 'Resolved';
+//     await report.save();
+
+//     // Log notification for the reporter
+//     await logNotification({
+//       userId: report.reporterId,
+//       description: 'Your report has been resolved!'
+//     });
+
+//     // Send real-time notification to reporter via WebSocket
+//     const reporterClient = connectedClients[report.reporterId];
+//     if (reporterClient && reporterClient.ws.readyState === ws.OPEN) {
+//       reporterClient.ws.send(JSON.stringify({
+//         type: 'REPORT_RESOLVED',
+//         payload: {
+//           reportId: report.id,
+//           message: 'Your report has been resolved!'
+//         }
+//       }));
+//     }
+
+//     // Send confirmation to admin
+//     ws.send(JSON.stringify({
+//       type: 'REPORT_RESOLVE_SUCCESS',
+//       payload: {
+//         reportId: report.id,
+//         message: 'Report resolved successfully'
+//       }
+//     }));
+
+//   } catch (error) {
+//     console.error("Error handling report resolution:", error);
+//     ws.send(JSON.stringify({
+//       type: 'ERROR',
+//       message: "Failed to resolve report. Please try again."
+//     }));
+//   }
+// }

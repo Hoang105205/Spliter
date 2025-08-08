@@ -555,24 +555,22 @@ function Admin_head_bar(){
 
                   {/* Password Section */}
                   <div className="space-y-2">
-                    <div>
-                      <div className="flex items-center">
-                        <label className="block text-lg font-semibold text-gray-700">Password</label>
-                      </div>
-                      {!editPassword ? (
-                        <>
-                          <p className="text-gray-600 text-lg mb-1">••••••••••••</p>
-                          <button
-                            onClick={handlePasswordChange}
-                            className="flex items-center text-blue-500 hover:text-blue-700 mt-1"
-                          >
-                            <PencilIcon className="w-4 h-4 mr-1" />
-                            Change Password
-                          </button>
-                        </>
-                      ) : null}
+                    <div className="flex items-center justify-start">
+                      <label className="block text-lg font-semibold text-gray-700">Password</label>
+                      {!editPassword && (
+                        <button
+                          onClick={handlePasswordChange}
+                          className="flex items-center text-blue-500 hover:text-blue-700 ml-[120px]"
+                        >
+                          <PencilIcon className="w-4 h-4 mr-1" />
+                          Change Password
+                        </button>
+                      )}
                     </div>
-                    {editPassword && (
+                    
+                    {!editPassword ? (
+                      <p className="text-gray-600 text-lg">••••••••••••</p>
+                    ) : (
                       <div className="space-y-3">
                         <input
                           type="password"

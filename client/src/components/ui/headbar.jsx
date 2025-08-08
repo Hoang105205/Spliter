@@ -539,7 +539,7 @@ function Head_bar(){
       </AnimatePresence>
 
       {/* Report Modal */}
-      <Report show={showReportPopup} onClose={() => setShowReportPopup(false)} ws={ws} />
+      <Report show={showReportPopup} onClose={() => setShowReportPopup(false)} />
 
       {/* See All Notifications Modal */}
       <AnimatePresence>

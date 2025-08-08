@@ -147,6 +147,25 @@ export const useWebSocketHandler = (ws) => {
         incrementNotificationTrigger();
         break;
 
+      case 'REPORT_SUBMITTED':
+        handleReportSubmitted(jsonData.payload);
+        incrementNotificationTrigger();
+        break;
+
+      case 'NEW_REPORT_NOTIFICATION':
+        handleNewReportNotification(jsonData.payload);
+        incrementNotificationTrigger();
+        break;
+
+      // case 'REPORT_RESOLVED':
+      //   handleReportResolved(jsonData.payload);
+      //   incrementNotificationTrigger(); // Chỉ cần trigger để cập nhật bell icon
+      //   break;
+
+      // case 'REPORT_RESOLVE_SUCCESS':
+      //   handleReportResolveSuccess(jsonData.payload);
+      //   break;
+
         
       default:
         console.warn(`⚠️ Loại tin nhắn không hỗ trợ: ${type}`);
@@ -285,8 +304,35 @@ export const useWebSocketHandler = (ws) => {
     else if (status === 'no') {
       toast.info(`❌ A settled up expense request with title: "${expenseTitle}" in group "${groupName}" has been returned to "Unpaid".`);
     }
-
   }
+
+  // Handle report submitted
+  const handleReportSubmitted = ({ reporterId, reportedUsername, reason }) => {
+    if (userData.id === reporterId) {
+      toast.success(`📋 Report submitted against user "${reportedUsername}" successfully`);
+    }
+  }
+
+  // Handle new report notification for admins
+  const handleNewReportNotification = ({ reporterUsername, reportedUsername, reason }) => {
+    if (userData.role === 'admin') {
+      toast.info(`🚨 New report: "${reporterUsername}" reported "${reportedUsername}" for: ${reason}`);
+    }
+  }
+
+  // // Handle report resolved notification for reporter
+  // const handleReportResolved = ({ reportId }) => {
+  //   // Không hiển thị toast, chỉ trigger để cập nhật notification bell icon
+  //   // Notification đã được log vào database ở backend
+  //   console.log(`Report ${reportId} has been resolved - notification updated`);
+  // }
+
+  // // Handle report resolve success for admin
+  // const handleReportResolveSuccess = ({ reportId }) => {
+  //   console.log(`Report ${reportId} resolved successfully by admin`);
+  //   // Trigger refresh of reports list to update UI
+  //   incrementNotificationTrigger();
+  // }
 };
 
 
