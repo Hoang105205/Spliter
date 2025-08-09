@@ -884,18 +884,18 @@ const MainInfo = () => {
         const oweRes = await getAllOwe(userData.id);
         const lendRes = await getAllLend(userData.id);
         const oweArr = Object.entries(oweRes?.userOwe || {}).map(([uid, amount]) => {
-          const friend = friends.find(f => f.id === Number(uid));
+          const username = getUsernameById(uid);
           return {
             id: uid,
-            name: friend?.username || `User ${uid}`,
+            name: username || `User ${uid}`,
             amount: Number(amount)
           };
         });
         const lendArr = Object.entries(lendRes?.userLend || {}).map(([uid, amount]) => {
-          const friend = friends.find(f => f.id === Number(uid));
+          const username = getUsernameById(uid);
           return {
             id: uid,
-            name: friend?.username || `User ${uid}`,
+            name: username || `User ${uid}`,
             amount: Number(amount)
           };
         });
@@ -904,7 +904,7 @@ const MainInfo = () => {
       }
     };
     fetchData();
-  }, [userData?.id, friends, getAllOwe, getAllLend]);
+  }, [userData?.id, allUsers, getUsernameById, getAllOwe, getAllLend]);
 
   // Fetch all paid transactions and unpaid bills from getUserExpenses
   useEffect(() => {
