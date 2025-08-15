@@ -3,221 +3,76 @@ import { useFriend } from "../../hooks/useFriend.js";
 import { useExpense } from "../../hooks/useExpense.js";
 import { useUser } from "../../hooks/useUser.js";
 import { useGroupMember } from "../../hooks/useGroupMember.js";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-
-// Custom animated Toggle Button
-const ToggleView = ({ active, onToggle }) => (
-  <div style={{
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 0,
-    margin: "0px 0 20px 0"
-  }}>
-    <div style={{
-      display: "inline-flex",
-      borderRadius: 30,
-      background: "#f5f5f5",
-      boxShadow: "0 2px 10px #e2e2e2",
-      overflow: "hidden",
-      border: "1px solid #e0e0e0",
-      padding: "2px"
-    }}>
-      <button
-        onClick={() => onToggle("list")}
-        style={{
-          padding: "10px 32px",
-          background: active === "list" ? "linear-gradient(90deg,#4e8cff33,#4e8cff11)" : "transparent",
-          color: active === "list" ? "#4e8cff" : "#333",
-          border: "none",
-          outline: "none",
-          fontWeight: 600,
-          fontSize: 17,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          cursor: "pointer",
-          boxShadow: active === "list" ? "0 2px 8px #4e8cff44" : "none",
-          transition: "all 0.25s cubic-bezier(0.55,0,0.1,1)",
-          borderRadius: "30px"
-        }}
-      >
-        <span role="img" aria-label="list" style={{fontSize:18}}>📋</span>
-        View as list
-      </button>
-      <button
-        onClick={() => onToggle("chart")}
-        style={{
-          padding: "10px 32px",
-          background: active === "chart" ? "linear-gradient(90deg,#ffa50033,#ffa50011)" : "transparent",
-          color: active === "chart" ? "#ffa500" : "#333",
-          border: "none",
-          outline: "none",
-          fontWeight: 600,
-          fontSize: 17,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          cursor: "pointer",
-          boxShadow: active === "chart" ? "0 2px 8px #ffa50044" : "none",
-          transition: "all 0.25s cubic-bezier(0.55,0,0.1,1)",
-          borderRadius: "30px"
-        }}
-      >
-        <span role="img" aria-label="chart" style={{fontSize:18}}>📊</span>
-        View chart
-      </button>
-    </div>
-  </div>
-);
-
-// Custom Tooltip for chart, always show full username and amount
-const CustomTooltip = ({ active, payload }) => {
-  if (active && payload && payload.length) {
-    const { fullName, amount } = payload[0].payload;
-    const formatMoney = (value) =>
-      Number.isInteger(value)
-        ? value.toLocaleString()
-        : value.toLocaleString().replace(/(\.\d{2})$/, '') + '';
-    return (
-      <div style={{
-        background: "#fff",
-        borderRadius: 10,
-        boxShadow: "0 2px 8px #e2e2e2",
-        padding: "10px 18px",
-        fontSize: 18,
-        fontWeight: 600,
-        color: "#333"
-      }}>
-        <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 2 }}>{fullName}</div>
-        <div style={{ fontWeight: 500, fontSize: 16 }}>{formatMoney(amount)} đ</div>
-      </div>
-    );
-  }
-  return null;
-};
-
-const CustomBarLabel = ({ x, y, width, height, value, name }) => (
-  <g>
-    <text
-      x={x + 18}
-      y={y + height / 2 - 4}
-      fontWeight={700}
-      fontSize={22}
-      fill="#fff"
-      alignmentBaseline="middle"
-      style={{ pointerEvents: "none" }}
-    >
-      {name}
-    </text>
-    <text
-      x={x + 18}
-      y={y + height / 2 + 22}
-      fontWeight={500}
-      fontSize={18}
-      fill="#fff"
-      alignmentBaseline="middle"
-      style={{ pointerEvents: "none" }}
-    >
-      {value}
-    </text>
-  </g>
-);
-
-const ChartBar = ({ data, color, emptyText }) => {
-  if (!data || data.length === 0) {
-    return (
-      <div style={{ color: "#888", fontSize: 18, marginTop: 32, textAlign: "center" }}>
-        {emptyText}
-      </div>
-    );
-  }
-  const chartData = data.map(f => ({
-    name: f.name.length > 15 ? f.name.slice(0, 12) + "..." : f.name,
-    fullName: f.name,
-    amount: f.amount
-  }));
-  const formatMoney = (value) =>
-    Number.isInteger(value)
-      ? value.toLocaleString()
-      : value.toLocaleString().replace(/(\.\d{2})$/, '') + '';
-  return (
-    <ResponsiveContainer width="100%" height={86 * chartData.length + 20}>
-      <BarChart
-        data={chartData}
-        layout="vertical"
-        margin={{ top: 16, right: 24, left: 24, bottom: 16 }}
-        barCategoryGap="16%"
-      >
-        <XAxis type="number" hide />
-        <YAxis
-          dataKey="name"
-          type="category"
-          axisLine={false}
-          tickLine={false}
-          width={0}
-        />
-        <Tooltip
-          content={<CustomTooltip />}
-        />
-        <Bar
-          dataKey="amount"
-          fill={color}
-          radius={[20, 20, 20, 20]}
-          isAnimationActive={true}
-          animationDuration={650}
-          animationEasing="ease-in-out"
-          barSize={78}
-          label={{
-            position: "insideLeft",
-            content: (props) => (
-              <CustomBarLabel
-                {...props}
-                value={formatMoney(props.value) + " đ"}
-                name={chartData[props.index].name}
-              />
-            )
-          }}
-        />
-      </BarChart>
-    </ResponsiveContainer>
-  );
-};
 
 const FriendList = ({ data, type }) => (
   <div>
     {data.length === 0 && (
       <div
         style={{
-          color: "#888",
-          fontSize: 18,
+          color: "#b3b3b3",
+          fontSize: 19,
           marginTop: 32,
-          textAlign: "center"
+          textAlign: "center",
+          fontStyle: "italic",
+          letterSpacing: 0.5,
         }}
       >
         No data
       </div>
     )}
-    {data.map((friend) => (
-      <div key={friend.id} style={{ display: "flex", alignItems: "center", marginBottom: 18 }}>
-        <div>
-          <b style={{ fontSize: 18 }}>
-            {friend.name.length > 20 ? friend.name.slice(0, 16) + "..." : friend.name}
-          </b>
-          <div style={{ color: type === "owe" ? "#f34d4d" : "#19c37d", fontWeight: 500 }}>
-            {type === "owe"
-              ? `You owe ${Number.isInteger(friend.amount)
-                  ? friend.amount.toLocaleString()
-                  : friend.amount.toLocaleString().replace(/(\.\d{2})$/, "")} đ`
-              : `Owes you ${Number.isInteger(friend.amount)
-                  ? friend.amount.toLocaleString()
-                  : friend.amount.toLocaleString().replace(/(\.\d{2})$/, "")} đ`}
+    <div style={{ display: "flex", flexDirection: "column", gap: 18, marginTop: 4 }}>
+      {data.map((friend) => (
+        <div key={friend.id}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            background: type === "owe" ? "#fff4f4" : "#f4fff7",
+            borderRadius: 18,
+            boxShadow: type === "owe"
+              ? "0 2px 10px #ffeaea"
+              : "0 2px 10px #eafaf3",
+            padding: "14px 22px",
+            minHeight: 68,
+            transition: "box-shadow 0.2s",
+            border: type === "owe"
+              ? "1px solid #ffd7d7"
+              : "1px solid #c8eedc"
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <b style={{
+              fontSize: 20,
+              color: "#222",
+              letterSpacing: 0.3,
+              fontWeight: 700,
+              wordBreak: "break-all"
+            }}>
+              {friend.name.length > 20 ? friend.name.slice(0, 16) + "..." : friend.name}
+            </b>
+            <div style={{
+              color: type === "owe" ? "#f34d4d" : "#19c37d",
+              fontWeight: 600,
+              marginTop: 2,
+              fontSize: 16,
+              letterSpacing: 0.2
+            }}>
+              {type === "owe"
+                ? <>You Owe <span style={{ fontWeight: 700 }}>{Number.isInteger(friend.amount)
+                    ? friend.amount.toLocaleString()
+                    : friend.amount.toLocaleString().replace(/(\.\d{2})$/, "")}</span> đ</>
+                : <>You Lend <span style={{ fontWeight: 700 }}>{Number.isInteger(friend.amount)
+                    ? friend.amount.toLocaleString()
+                    : friend.amount.toLocaleString().replace(/(\.\d{2})$/, "")}</span> đ</>
+              }
+            </div>
           </div>
         </div>
-      </div>
-    ))}
+      ))}
+    </div>
   </div>
 );
+
 
 // History Transactions Section (click to show detail)
 const HistoryTransactions = ({ transactions, getExpenseById, getUsernameById, getGroupNameById }) => {
@@ -841,7 +696,6 @@ const MainInfo = () => {
   const { getAllOwe, getAllLend, getUserExpenses, getExpenseById } = useExpense();
   const { groups, fetchGroups } = useGroupMember();
 
-  const [viewMode, setViewMode] = useState("list");
   const [oweList, setOweList] = useState([]);
   const [lendList, setLendList] = useState([]);
   const [historyTransactions, setHistoryTransactions] = useState([]);
@@ -904,7 +758,7 @@ const MainInfo = () => {
       }
     };
     fetchData();
-  }, [userData?.id, allUsers, getUsernameById, getAllOwe, getAllLend]);
+  }, [userData?.id, allUsers, getAllOwe, getAllLend]);
 
   // Fetch all paid transactions and unpaid bills from getUserExpenses
   useEffect(() => {
@@ -966,10 +820,6 @@ const MainInfo = () => {
           Welcome
         </span>
       </div>
-      {/* View toggle centered */}
-      <div>
-        <ToggleView active={viewMode} onToggle={setViewMode} />
-      </div>
       {/* You owe / You lend header */}
       <div style={{
         display: "flex",
@@ -1017,9 +867,7 @@ const MainInfo = () => {
           boxShadow: "0 4px 16px #e2e2e2",
           transition: "box-shadow 0.25s cubic-bezier(0.55,0,0.1,1)",
         }}>
-          {viewMode === "list"
-            ? <FriendList data={oweList} type="owe" />
-            : <ChartBar data={oweList} color="#f34d4d" emptyText="You do not owe anyone" />
+          {<FriendList data={oweList} type="owe" />
           }
         </div>
         {/* Lend column */}
@@ -1032,9 +880,8 @@ const MainInfo = () => {
           boxShadow: "0 4px 16px #e2e2e2",
           transition: "box-shadow 0.25s cubic-bezier(0.55,0,0.1,1)",
         }}>
-          {viewMode === "list"
-            ? <FriendList data={lendList} type="lend" />
-            : <ChartBar data={lendList} color="#19c37d" emptyText="You are not owed anything" />
+          {
+             <FriendList data={lendList} type="lend" />
           }
         </div>
       </div>
