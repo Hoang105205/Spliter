@@ -1127,7 +1127,7 @@ function Dashboard_group() {
                   onContextMenu={(e) => handleContextMenu(e, member.id)}
                 >
                   <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[10px] z-10"></div>
-                  <div className="relative flex items-center z-20 px-1 py-1">
+                  <div className="relative flex items-center z-20 px-1 py-1 flex-shrink-0">
                     <Avatar className="w-[53px] h-[53px] bg-[#d9d9d9]">
                       {memberAvatars[member.id] ? (
                         <img
@@ -1142,12 +1142,14 @@ function Dashboard_group() {
                       )}
                     </Avatar>
                   </div>
-                  <div className="ml-2 [font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg">
-                    {member.username}
+                  <div className="ml-2 flex items-center min-w-0 flex-1">
+                    <div className="[font-family:'Roboto_Condensed',Helvetica] font-bold text-black text-lg truncate pr-2">
+                      {member.username}
+                    </div>
+                    {member.id === selectedGroup?.ownerId && (
+                      <CrownIcon className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                    )}
                   </div>
-                  {member.id === selectedGroup?.ownerId && (
-                    <CrownIcon className="w-5 h-5 text-yellow-500 ml-2" />
-                  )}
                 </div>
               ))
             ) : (
@@ -1856,4 +1858,3 @@ function Dashboard_group() {
 };
 export default Dashboard_group;
 
-  
