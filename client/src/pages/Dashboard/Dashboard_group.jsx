@@ -984,7 +984,7 @@ function Dashboard_group() {
                 </div>
               </div>
               
-              <div className="space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "600px" }}>
+              <div className="space-y-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 pr-2 flex-grow" style={{ maxHeight: "600px" }}>
                 {expenses.length > 0 && (
                   <div className="mt-4">
                     {[...expenses].reverse().map((expense) => {
