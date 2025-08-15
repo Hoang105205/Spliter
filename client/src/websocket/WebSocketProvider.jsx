@@ -14,7 +14,7 @@ export const WebSocketProvider = ({ children }) => {
   useEffect(() => {
     if (!userData?.id) return;
 
-    const socket = new WebSocket('ws://localhost:3000');
+    const socket = new WebSocket('wss://spliter-gr0z.onrender.com');
 
     setWebSocket(socket);
 
