@@ -456,7 +456,7 @@ const AdminStatisticInfo = () => {
                   <XAxis dataKey="name" />
                   <YAxis tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`} />
                   <Tooltip 
-                    formatter={(value, name) => [formatCurrency(value), name === 'total' ? 'Total' : name === 'paid' ? 'Paid' : 'Unpaid']} 
+                    formatter={(value, name) => [formatCurrency(value), name === 'total' ? 'Total' : name === 'paid' ? 'Paid' : name === 'unpaid' ? 'Unpaid' : name]} 
                   />
                   <Legend />
                   <Bar dataKey="total" fill="#2196f3" name="Total" />
@@ -473,3 +473,4 @@ const AdminStatisticInfo = () => {
 };
 
 export default AdminStatisticInfo;
+
